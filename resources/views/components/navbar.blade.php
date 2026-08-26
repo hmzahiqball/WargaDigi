@@ -29,7 +29,7 @@
                 <a href="#" class="btn-notif">
                     <i class="bi bi-bell"></i>
                 </a>
-                <a href="/register" class="btn btn-masuk">Masuk</a>
+                <a href="/login" class="btn btn-masuk">Masuk</a>
             </div>
         </div>
     </div>
