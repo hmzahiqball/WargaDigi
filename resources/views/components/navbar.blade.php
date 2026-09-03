@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-warga">
     <div class="container">
         <a class="navbar-brand" href="/">
-            <img src="{{ asset('images/logo.svg') }}" alt="WargaDigi 21 Logo">
+            <img src="{{ asset('images/logo warga-digi.png') }}" alt="WargaDigi 21 Logo">
             WargaDigi 21
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
