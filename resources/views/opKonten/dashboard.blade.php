@@ -1,4 +1,4 @@
-@extends('layouts.opKonten')
+@extends('layouts.global')
 
 @section('title', 'Dashboard Operator Konten')
 

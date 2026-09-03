@@ -1,4 +1,4 @@
-@extends('layouts.rw')
+@extends('layouts.global')
 
 @section('title', 'Dashboard RW')
 

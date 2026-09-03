@@ -27,12 +27,24 @@
                     </div>
 
                     {{-- Error Alert --}}
-                    <div id="loginError" class="alert p-2 d-none align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
-                        <i class="bi bi-exclamation-circle"></i>
-                        <span id="loginErrorText">Username atau password salah.</span>
-                    </div>
+                    @if ($errors->any())
+                        <div id="loginError" class="alert p-2 d-flex align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span id="loginErrorText">{{ $errors->first() }}</span>
+                        </div>
+                    @elseif (session('error'))
+                        <div id="loginError" class="alert p-2 d-flex align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span id="loginErrorText">{{ session('error') }}</span>
+                        </div>
+                    @else
+                        <div id="loginError" class="alert p-2 d-none align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span id="loginErrorText"></span>
+                        </div>
+                    @endif
 
-                    <form method="POST" action="{{ route('login') }}">
+                    <form id="loginForm" method="POST" action="{{ route('login') }}">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-dark">Nomor Induk Kependudukan (NIK)</label>

@@ -1,4 +1,7 @@
-@extends('layouts.opKeuangan')
+@extends('layouts.global')
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
 
 @section('title', 'Dashboard Operator Keuangan')
 

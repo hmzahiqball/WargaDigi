@@ -8,18 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Data Berita[cite: 1]
         Schema::create('berita', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('judul_berita');
             $table->string('slug')->unique();
             $table->string('kategori');
             $table->text('isi_berita');
             $table->string('featured_image')->nullable();
-            // Siklus Status Berita[cite: 1]
             $table->enum('status', ['Draft', 'Review', 'Approve', 'Publish', 'Archive', 'Delete'])->default('Draft');
-            $table->foreignId('operator_id')->constrained('users'); // Relasi ke tabel users standar Laravel
-            $table->foreignId('approval_id')->nullable()->constrained('users');
+            $table->foreignUuid('operator_id')->constrained('users');
+            $table->foreignUuid('approval_id')->nullable()->constrained('users');
             $table->timestamp('tanggal_publish')->nullable();
             $table->timestamps();
         });

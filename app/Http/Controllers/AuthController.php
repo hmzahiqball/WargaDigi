@@ -24,31 +24,13 @@ class AuthController extends Controller
 
             $user = Auth::user();
             
-            if (in_array($user->role, ['Admin Aplikasi'])) {
-                return redirect()->intended('/admin/dashboard');
+            foreach(config('sidebarMenu') as $item) {
+                if (in_array($user->role, $item['roles'])) {
+                    return redirect()->intended($item['url']);
+                }
             }
 
-            if (in_array($user->role, ['Admin RW','Pimpinan RW'])) {
-                return redirect()->intended('/rw/dashboard');
-            }
-
-            if (in_array($user->role, ['Ketua RT'])) {
-                return redirect()->intended('/rt/dashboard');
-            }
-
-            if (in_array($user->role, ['Op. Konten RW','Op. Konten RT'])) {
-                return redirect()->intended('/op-konten/dashboard');
-            }
-
-            if (in_array($user->role, ['Op. Keuangan RW', 'Op. Keuangan RT','DKM'])) {
-                return redirect()->intended('/op-keuangan/dashboard');
-            }
-
-            if (in_array($user->role, ['Warga'])) {
-                return redirect()->intended('/warga/dashboard');
-            }
-
-            return redirect()->intended('/dashboard');
+            return redirect()->intended('/warga');
         }
 
         return back()->withErrors([
