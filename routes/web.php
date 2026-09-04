@@ -18,6 +18,10 @@ use App\Http\Controllers\RwController;
 use App\Http\Controllers\RtController;
 use App\Http\Controllers\OpKontenController;
 use App\Http\Controllers\OpKeuanganController;
+use App\Http\Controllers\OpKonten\AgendaController as OpKontenAgendaController;
+use App\Http\Controllers\OpKonten\GaleriController as OpKontenGaleriController;
+use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
+use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanController;
 
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -57,17 +61,21 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/', [RtController::class, 'dashboard']);
 });
 
-// Operator Konten Routes (Role: Op. Konten RW, Op. Konten RT)
-Route::middleware(['auth', 'role:Op. Konten RW,Op. Konten RT'])->group(function () {
-    Route::prefix('op-konten')->group(function () {
-        Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('opkonten.dashboard');
+// Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
+Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT'])->group(function () {
+    Route::prefix('op-konten')->name('opkonten.')->group(function () {
+        Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('dashboard');
+        Route::get('/berita', [OpKontenBeritaController::class, 'index'])->name('berita.index');
+        Route::get('/agenda', [OpKontenAgendaController::class, 'index'])->name('agenda.index');
+        Route::get('/galeri', [OpKontenGaleriController::class, 'index'])->name('galeri.index');
+        Route::get('/pengumuman', [OpKontenPengumumanController::class, 'index'])->name('pengumuman.index');
         Route::get('/', [OpKontenController::class, 'dashboard']);
     });
     Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
 });
 
 // Operator Keuangan Routes (Role: Op. Keuangan RW, Op. Keuangan RT, DKM)
-Route::middleware(['auth', 'role:Op. Keuangan RW,Op. Keuangan RT,DKM'])->group(function () {
+Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM'])->group(function () {
     Route::prefix('op-keuangan')->group(function () {
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
         Route::get('/', [OpKeuanganController::class, 'dashboard']);

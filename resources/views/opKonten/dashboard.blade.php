@@ -9,7 +9,7 @@
         <h2 class="fw-bold text-dark mb-1">Dashboard</h2>
         <p class="text-muted mb-0">Gambaran umum status konten dan aktivitas terkini.</p>
     </div>
-    <button class="btn btn-outline-secondary btn-sm rounded-2 px-3 py-2 fw-semibold bg-white shadow-sm border-light-subtle">
+    <button type="button" onclick="alert('Fitur Export Laporan sedang dalam tahap pengembangan.')" class="btn btn-outline-secondary btn-sm rounded-2 px-3 py-2 fw-semibold bg-white shadow-sm border-light-subtle">
         <i class="bi bi-download me-1"></i> Export Laporan
     </button>
 </div>
@@ -85,7 +85,7 @@
         <div class="card card-custom p-4 shadow-sm border-0 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold mb-0">Status Berita Terkini</h5>
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
+                <a href="{{ route('opkonten.berita.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
             </div>
 
             <div class="table-responsive">
@@ -145,7 +145,7 @@
             </div>
 
             <div class="text-center mt-4 pt-3 border-top">
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua Agenda</a>
+                <a href="{{ route('opkonten.agenda.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua Agenda</a>
             </div>
         </div>
     </div>
