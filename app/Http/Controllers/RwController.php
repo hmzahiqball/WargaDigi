@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PengajuanSurat;
 use Illuminate\Http\Request;
 
 class RwController extends Controller
@@ -96,5 +97,115 @@ class RwController extends Controller
         ];
 
         return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs'));
+    }
+
+    /**
+     * Halaman Persetujuan Dokumen RW — menampilkan daftar surat yang sudah disetujui RT.
+     */
+    public function persetujuanDokumen()
+    {
+        // Dummy data untuk UI prototyping (sesuai desain Figma)
+        $pengajuan = collect([
+            (object) [
+                'id' => 1,
+                'nama_pemohon' => 'Budi Santoso',
+                'nik' => '3217041111111111',
+                'alamat' => 'Blok A2 / No. 14',
+                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
+                'tanggal_pengajuan' => '12 Okt 2024',
+                'status' => 'Disetujui RT',
+                'jenis_kelamin' => 'Laki-laki',
+                'tempat_tgl_lahir' => 'Bandung, 15-08-1980',
+                'agama' => 'Islam',
+                'pendidikan_terakhir' => 'S1',
+                'pekerjaan' => 'Karyawan Swasta',
+                'status_perkawinan' => 'Kawin',
+                'kewarganegaraan' => 'WNI',
+                'nama_orang_tua' => 'Sutrisno / Aminah',
+                'file_ktp' => 'KTP_Budi_Santoso.pdf',
+                'file_kk' => 'KK_Budi_Santoso.pdf',
+                'file_ktp_size' => '2.4 MB',
+                'file_kk_size' => '2.4 MB',
+                'foto' => null,
+                // Data untuk template surat
+                'nama_kepala_desa' => 'Budi Santoso, S.Sos.',
+                'alamat_kepala_desa' => 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.',
+                'nama_pemohon_surat' => 'Rahayu Lestari',
+                'tempat_tgl_lahir_surat' => 'Bantul, 6 Juli 1993',
+                'jenis_kelamin_surat' => 'Perempuan',
+                'pekerjaan_surat' => 'Wiraswasta',
+                'agama_surat' => 'Islam',
+                'status_perkawinan_surat' => 'Belum Menikah',
+                'kewarganegaraan_surat' => 'Indonesia',
+                'alamat_surat' => 'RT 21 RW 10, Desa Tanimulya, Ngamprah, Bandung Barat.',
+                'nomor_surat' => '323/SKD/VIII/2024',
+            ],
+            (object) [
+                'id' => 2,
+                'nama_pemohon' => 'Dewi Anggraeni',
+                'nik' => '3217044444444444',
+                'alamat' => 'Blok D1 / No. 3',
+                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
+                'tanggal_pengajuan' => '13 Okt 2024',
+                'status' => 'Disetujui RT',
+                'jenis_kelamin' => 'Perempuan',
+                'tempat_tgl_lahir' => 'Jakarta, 05-07-1988',
+                'agama' => 'Islam',
+                'pendidikan_terakhir' => 'S2',
+                'pekerjaan' => 'Dosen',
+                'status_perkawinan' => 'Kawin',
+                'kewarganegaraan' => 'WNI',
+                'nama_orang_tua' => 'Supardi / Sari',
+                'file_ktp' => 'KTP_Dewi_Anggraeni.pdf',
+                'file_kk' => 'KK_Dewi_Anggraeni.pdf',
+                'file_ktp_size' => '1.9 MB',
+                'file_kk_size' => '2.2 MB',
+                'foto' => null,
+                'nama_kepala_desa' => 'Budi Santoso, S.Sos.',
+                'alamat_kepala_desa' => 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.',
+                'nama_pemohon_surat' => 'Dewi Anggraeni',
+                'tempat_tgl_lahir_surat' => 'Jakarta, 5 Juli 1988',
+                'jenis_kelamin_surat' => 'Perempuan',
+                'pekerjaan_surat' => 'Dosen',
+                'agama_surat' => 'Islam',
+                'status_perkawinan_surat' => 'Kawin',
+                'kewarganegaraan_surat' => 'Indonesia',
+                'alamat_surat' => 'RT 21 RW 10, Desa Tanimulya, Ngamprah, Bandung Barat.',
+                'nomor_surat' => '324/SKD/VIII/2024',
+            ],
+        ]);
+
+        return view('rw.persetujuan-dokumen', compact('pengajuan'));
+    }
+
+    /**
+     * Menyetujui dokumen (status -> Selesai).
+     */
+    public function approveDokumen(Request $request, $id)
+    {
+        return redirect()->route('rw.persetujuan-dokumen')
+            ->with('success', 'Dokumen berhasil disahkan dan dikirim ke pemohon.');
+    }
+
+    /**
+     * Menolak dokumen (status -> Ditolak RW) beserta catatan.
+     */
+    public function rejectDokumen(Request $request, $id)
+    {
+        $request->validate([
+            'catatan_penolakan' => 'required|string|max:1000',
+        ]);
+
+        return redirect()->route('rw.persetujuan-dokumen')
+            ->with('success', 'Catatan penolakan telah dikirim.');
+    }
+
+    /**
+     * Preview / Pratinjau Surat (JSON response untuk modal).
+     */
+    public function previewSurat($id)
+    {
+        // Untuk prototyping, return dummy template data
+        return response()->json(['success' => true]);
     }
 }

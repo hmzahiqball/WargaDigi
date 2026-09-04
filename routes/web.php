@@ -49,12 +49,19 @@ Route::prefix('admin')->group(function () {
 Route::prefix('rw')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('rw.dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
+    Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('rw.persetujuan-dokumen');
+    Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('rw.surat.approve');
+    Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('rw.surat.reject');
+    Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('rw.surat.preview');
 });
 
 // RT Routes
 Route::prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
+    Route::get('/persetujuan-dokumen', [RtController::class, 'persetujuanDokumen'])->name('rt.persetujuan-dokumen');
+    Route::post('/surat/{id}/approve', [RtController::class, 'approveDokumen'])->name('rt.surat.approve');
+    Route::post('/surat/{id}/reject', [RtController::class, 'rejectDokumen'])->name('rt.surat.reject');
 });
 
 // Operator Konten Routes

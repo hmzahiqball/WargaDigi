@@ -6,7 +6,7 @@
 $primary:       #2E7D32;
 $primary-light: #4CAF50;
 $primary-dark:  #1B5E20;
-$secondary:     #FFC107;
+$secondary:     #4C56AF;
 $success:       #43A047;
 $info:          #0288D1;
 $warning:       #FF9800;
@@ -17,9 +17,9 @@ $white:         #ffffff;
 $primary-green: #378E56;
 $light-green:   #E8F5E9;
 $text-dark:     #333333;
-$bg-body:       #F8F9FA;
+$bg-body:       #F3FAFF;
 
-$body-bg:       #f8faf8;
+$body-bg:       #F3FAFF;
 $body-color:    #2d3436;
 
 $font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -59,6 +59,43 @@ $transition-base: all 0.3s ease;
 
 // 5. Custom Styles
 // ==========================================
+
+// Global Button Overrides (Fix text color on hover/active)
+.btn {
+    font-weight: 600;
+    
+    // Prevent black text color change on active/hover for outline buttons
+    &.btn-outline-danger {
+        &:hover, &:active, &.active {
+            background-color: $danger;
+            color: $white !important;
+            border-color: $danger;
+        }
+    }
+    &.btn-outline-success {
+        &:hover, &:active, &.active {
+            background-color: $success;
+            color: $white !important;
+            border-color: $success;
+        }
+    }
+    
+    // Solid buttons
+    &.btn-success {
+        color: $white !important;
+        &:hover, &:active, &.active {
+            background-color: $primary-dark !important;
+            color: $white !important;
+        }
+    }
+    &.btn-danger {
+        color: $white !important;
+        &:hover, &:active, &.active {
+            background-color: darken($danger, 10%) !important;
+            color: $white !important;
+        }
+    }
+}
 
 //======================//
 // LANDING PAGE STYLES  //
@@ -1249,7 +1286,7 @@ $transition-base: all 0.3s ease;
     left: 0;
     width: 250px;
     height: 100vh;
-    background: $white;
+    background-color: #ffffff !important;
     border-right: 1px solid #e8ece8;
     z-index: 1040;
     display: flex;
@@ -2658,10 +2695,12 @@ $transition-base: all 0.3s ease;
 
 // Custom Cards
 .card-custom {
+    background-color: #ffffff !important;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
+
 
 .action-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;

@@ -7,6 +7,40 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — Admin RW WargaDigi</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Sidebar Active State Customization */
+        .sidebar-link.active {
+            background-color: rgba(46, 125, 50, 0.1) !important; /* Forest Green opacity */
+            background-image: none !important;
+            box-shadow: none !important;
+            color: #2E7D32 !important;
+            border-right: 4px solid #2E7D32 !important;
+            font-weight: 700;
+        }
+        .sidebar-link.active i {
+            color: #2E7D32 !important;
+        }
+        
+        /* Notification Bell Fix */
+        #notifBtn {
+            position: relative;
+        }
+        #notifBtn .topbar-badge {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background-color: #E53935;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            padding: 0;
+            color: transparent;
+            font-size: 0;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body class="admin-body">
     {{-- Sidebar --}}
@@ -44,7 +78,7 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="#" class="sidebar-link @if(request()->is('rw/dokumen*')) active @endif">
+                    <a href="{{ route('rw.persetujuan-dokumen') }}" class="sidebar-link @if(request()->routeIs('rw.persetujuan-dokumen')) active @endif">
                         <i class="bi bi-file-earmark-text-fill"></i>
                         <span>Persetujuan Dokumen</span>
                     </a>
@@ -75,7 +109,7 @@
                 </li>
                 <li class="sidebar-item">
                     <a href="#" class="sidebar-link @if(request()->is('rw/koperasi*')) active @endif">
-                        <i class="bi bi-storefront"></i>
+                        <i class="bi bi-shop"></i>
                         <span>Koperasi</span>
                     </a>
                 </li>
