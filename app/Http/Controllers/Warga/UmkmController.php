@@ -138,4 +138,43 @@ class UmkmController extends Controller
         return redirect()->route('warga.umkm.kelola')
             ->with('success', 'Produk UMKM berhasil ditambahkan.');
     }
+
+    public function editProduk($id)
+    {
+        $produk = UmkmProduk::findOrFail($id);
+        return view('warga.umkm.edit_produk', compact('produk'));
+    }
+
+    public function updateProduk(Request $request, $id)
+    {
+        $produk = UmkmProduk::findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_produk' => 'required|string|max:100',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
+            'deskripsi' => 'nullable|string',
+            'link_wa' => 'nullable|string',
+        ]);
+
+        $produk->update($validated);
+
+        return redirect()->route('warga.umkm.kelola')
+            ->with('success', 'Produk UMKM berhasil diperbarui.');
+    }
+
+    public function destroyProduk($id)
+    {
+        $produk = UmkmProduk::findOrFail($id);
+        $produk->delete();
+
+        return redirect()->route('warga.umkm.kelola')
+            ->with('success', 'Produk UMKM berhasil dihapus.');
+    }
+
+    public function showProduk($id)
+    {
+        $produk = UmkmProduk::with('usaha.user.penduduk')->findOrFail($id);
+        return view('warga.umkm.detail_produk', compact('produk'));
+    }
 }

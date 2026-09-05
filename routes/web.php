@@ -27,7 +27,9 @@ use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanCont
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/informasi', [InformasiController::class, 'index'])->name('informasi');
 Route::get('/transparansi', [TransparansiController::class, 'index'])->name('transparansi');
+Route::get('/transparansi/{id}/pdf', [TransparansiController::class, 'downloadPdf'])->name('transparansi.download-pdf');
 Route::get('/berita', [BeritaController::class, 'index'])->name('berita');
+Route::get('/berita/{id}', [BeritaController::class, 'show'])->name('berita.show');
 Route::get('/pojok-umkm', [UmkmController::class, 'index'])->name('pojok-umkm');
 Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
 
@@ -92,6 +94,7 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::get('/surat/create', [SuratController::class, 'create'])->name('surat.create');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
+    Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
     Route::get('/umkm/galeri', [WargaUmkmController::class, 'indexGaleri'])->name('umkm.galeri');
     Route::get('/umkm/kelola', [WargaUmkmController::class, 'kelolaProduk'])->name('umkm.kelola');
     Route::get('/umkm/daftar', [WargaUmkmController::class, 'createUsaha'])->name('umkm.daftar');
@@ -99,4 +102,8 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/umkm/produk', [WargaUmkmController::class, 'kelolaProduk'])->name('umkm.produk.index');
     Route::get('/umkm/produk/create', [WargaUmkmController::class, 'createProduk'])->name('umkm.produk.create');
     Route::post('/umkm/produk', [WargaUmkmController::class, 'storeProduk'])->name('umkm.produk.store');
+    Route::get('/umkm/produk/{id}/edit', [WargaUmkmController::class, 'editProduk'])->name('umkm.produk.edit');
+    Route::put('/umkm/produk/{id}', [WargaUmkmController::class, 'updateProduk'])->name('umkm.produk.update');
+    Route::delete('/umkm/produk/{id}', [WargaUmkmController::class, 'destroyProduk'])->name('umkm.produk.destroy');
+    Route::get('/umkm/produk/{id}', [WargaUmkmController::class, 'showProduk'])->name('umkm.produk.show');
 });

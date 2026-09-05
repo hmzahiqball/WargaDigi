@@ -201,13 +201,17 @@
             <div class="col-sm-6 col-md-4 col-lg-3">
                 <div class="product-card h-100 d-flex flex-column">
                     <div class="product-img-wrapper">
-                        <img src="{{ $item->foto_produk ? asset('storage/' . $item->foto_produk) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop' }}" alt="{{ $item->nama_produk }}">
+                        <a href="{{ route('warga.umkm.produk.show', $item->id) }}">
+                            <img src="{{ $item->foto_produk ? asset('storage/' . $item->foto_produk) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop' }}" alt="{{ $item->nama_produk }}">
+                        </a>
                         <span class="badge bg-light text-dark border px-2 py-1 position-absolute top-0 end-0 m-3 shadow-sm small fw-semibold">
                             {{ $item->usaha->kategori ?? 'UMKM' }}
                         </span>
                     </div>
                     <div class="p-3 d-flex flex-column flex-grow-1">
-                        <h6 class="fw-bold text-dark mb-1">{{ $item->nama_produk }}</h6>
+                        <a href="{{ route('warga.umkm.produk.show', $item->id) }}" class="text-decoration-none">
+                            <h6 class="fw-bold text-dark mb-1">{{ $item->nama_produk }}</h6>
+                        </a>
                         <small class="text-muted d-block mb-3">
                             <i class="bi bi-person me-1"></i> {{ $item->usaha->nama_usaha ?? 'Warga RW 21' }}
                         </small>

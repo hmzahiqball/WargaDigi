@@ -175,12 +175,16 @@
                             <a href="{{ $item->link_wa ?? '#' }}" target="_blank" class="text-success text-decoration-none" title="Lihat WA">
                                 <i class="bi bi-whatsapp fs-5"></i>
                             </a>
-                            <a href="#" class="text-secondary text-decoration-none" title="Edit Produk">
+                            <a href="{{ route('warga.umkm.produk.edit', $item->id) }}" class="text-secondary text-decoration-none" title="Edit Produk">
                                 <i class="bi bi-pencil fs-5"></i>
                             </a>
-                            <a href="#" class="text-secondary text-decoration-none" title="Hapus Produk">
-                                <i class="bi bi-trash fs-5"></i>
-                            </a>
+                            <form action="{{ route('warga.umkm.produk.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus produk ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-link text-secondary text-decoration-none p-0" title="Hapus Produk">
+                                    <i class="bi bi-trash fs-5"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
