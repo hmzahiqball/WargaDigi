@@ -104,76 +104,53 @@ class RwController extends Controller
      */
     public function persetujuanDokumen()
     {
-        // Dummy data untuk UI prototyping (sesuai desain Figma)
-        $pengajuan = collect([
-            (object) [
-                'id' => 1,
-                'nama_pemohon' => 'Budi Santoso',
-                'nik' => '3217041111111111',
-                'alamat' => 'Blok A2 / No. 14',
-                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
-                'tanggal_pengajuan' => '12 Okt 2024',
-                'status' => 'Disetujui RT',
-                'jenis_kelamin' => 'Laki-laki',
-                'tempat_tgl_lahir' => 'Bandung, 15-08-1980',
-                'agama' => 'Islam',
-                'pendidikan_terakhir' => 'S1',
-                'pekerjaan' => 'Karyawan Swasta',
-                'status_perkawinan' => 'Kawin',
+        // Ambil data pengajuan yang sudah disetujui RT dari database
+        $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
+            ->whereIn('status', ['Disetujui RT', 'Ditolak RW', 'Selesai'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Transform data dari database agar kompatibel dengan blade yang sudah ada
+        $pengajuan = $pengajuanDb->map(function ($item) {
+            $p = $item->penduduk;
+            $k = $p ? $p->keluarga : null;
+            return (object) [
+                'id' => $item->id,
+                'nama_pemohon' => $p->nama_lengkap ?? 'Tidak Diketahui',
+                'nik' => $p->nik ?? '-',
+                'alamat' => $k->alamat ?? '-',
+                'tipe_surat' => $item->tipe_surat,
+                'tanggal_pengajuan' => $item->created_at->format('d M Y'),
+                'status' => $item->status,
+                'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+                'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d-m-Y')) : '-',
+                'agama' => $p->agama ?? '-',
+                'pendidikan_terakhir' => '-',
+                'pekerjaan' => $p->pekerjaan ?? '-',
+                'status_perkawinan' => $p->status_perkawinan ?? '-',
                 'kewarganegaraan' => 'WNI',
-                'nama_orang_tua' => 'Sutrisno / Aminah',
-                'file_ktp' => 'KTP_Budi_Santoso.pdf',
-                'file_kk' => 'KK_Budi_Santoso.pdf',
-                'file_ktp_size' => '2.4 MB',
-                'file_kk_size' => '2.4 MB',
+                'nama_orang_tua' => '-',
+                'file_ktp' => $item->file_ktp ? basename($item->file_ktp) : 'Belum diunggah',
+                'file_kk' => $item->file_kk ? basename($item->file_kk) : 'Belum diunggah',
+                'file_ktp_size' => $item->file_ktp ? $this->getFileSize($item->file_ktp) : '-',
+                'file_kk_size' => $item->file_kk ? $this->getFileSize($item->file_kk) : '-',
+                'file_ktp_url' => $item->file_ktp ? asset('storage/' . $item->file_ktp) : null,
+                'file_kk_url' => $item->file_kk ? asset('storage/' . $item->file_kk) : null,
                 'foto' => null,
                 // Data untuk template surat
                 'nama_kepala_desa' => 'Budi Santoso, S.Sos.',
                 'alamat_kepala_desa' => 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.',
-                'nama_pemohon_surat' => 'Rahayu Lestari',
-                'tempat_tgl_lahir_surat' => 'Bantul, 6 Juli 1993',
-                'jenis_kelamin_surat' => 'Perempuan',
-                'pekerjaan_surat' => 'Wiraswasta',
-                'agama_surat' => 'Islam',
-                'status_perkawinan_surat' => 'Belum Menikah',
+                'nama_pemohon_surat' => $p->nama_lengkap ?? '-',
+                'tempat_tgl_lahir_surat' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d F Y')) : '-',
+                'jenis_kelamin_surat' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+                'pekerjaan_surat' => $p->pekerjaan ?? '-',
+                'agama_surat' => $p->agama ?? '-',
+                'status_perkawinan_surat' => $p->status_perkawinan ?? '-',
                 'kewarganegaraan_surat' => 'Indonesia',
-                'alamat_surat' => 'RT 21 RW 10, Desa Tanimulya, Ngamprah, Bandung Barat.',
-                'nomor_surat' => '323/SKD/VIII/2024',
-            ],
-            (object) [
-                'id' => 2,
-                'nama_pemohon' => 'Dewi Anggraeni',
-                'nik' => '3217044444444444',
-                'alamat' => 'Blok D1 / No. 3',
-                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
-                'tanggal_pengajuan' => '13 Okt 2024',
-                'status' => 'Disetujui RT',
-                'jenis_kelamin' => 'Perempuan',
-                'tempat_tgl_lahir' => 'Jakarta, 05-07-1988',
-                'agama' => 'Islam',
-                'pendidikan_terakhir' => 'S2',
-                'pekerjaan' => 'Dosen',
-                'status_perkawinan' => 'Kawin',
-                'kewarganegaraan' => 'WNI',
-                'nama_orang_tua' => 'Supardi / Sari',
-                'file_ktp' => 'KTP_Dewi_Anggraeni.pdf',
-                'file_kk' => 'KK_Dewi_Anggraeni.pdf',
-                'file_ktp_size' => '1.9 MB',
-                'file_kk_size' => '2.2 MB',
-                'foto' => null,
-                'nama_kepala_desa' => 'Budi Santoso, S.Sos.',
-                'alamat_kepala_desa' => 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.',
-                'nama_pemohon_surat' => 'Dewi Anggraeni',
-                'tempat_tgl_lahir_surat' => 'Jakarta, 5 Juli 1988',
-                'jenis_kelamin_surat' => 'Perempuan',
-                'pekerjaan_surat' => 'Dosen',
-                'agama_surat' => 'Islam',
-                'status_perkawinan_surat' => 'Kawin',
-                'kewarganegaraan_surat' => 'Indonesia',
-                'alamat_surat' => 'RT 21 RW 10, Desa Tanimulya, Ngamprah, Bandung Barat.',
-                'nomor_surat' => '324/SKD/VIII/2024',
-            ],
-        ]);
+                'alamat_surat' => $k->alamat ?? '-',
+                'nomor_surat' => '---/SKD/VIII/' . now()->format('Y'),
+            ];
+        });
 
         return view('rw.persetujuan-dokumen', compact('pengajuan'));
     }
@@ -183,6 +160,13 @@ class RwController extends Controller
      */
     public function approveDokumen(Request $request, $id)
     {
+        $pengajuan = PengajuanSurat::findOrFail($id);
+        $pengajuan->update([
+            'status' => 'Selesai',
+            'catatan_rw' => $request->input('catatan', null),
+            'tanggal_selesai' => now(),
+        ]);
+
         return redirect()->route('rw.persetujuan-dokumen')
             ->with('success', 'Dokumen berhasil disahkan dan dikirim ke pemohon.');
     }
@@ -196,6 +180,12 @@ class RwController extends Controller
             'catatan_penolakan' => 'required|string|max:1000',
         ]);
 
+        $pengajuan = PengajuanSurat::findOrFail($id);
+        $pengajuan->update([
+            'status' => 'Ditolak RW',
+            'catatan_rw' => $request->catatan_penolakan,
+        ]);
+
         return redirect()->route('rw.persetujuan-dokumen')
             ->with('success', 'Catatan penolakan telah dikirim.');
     }
@@ -205,7 +195,19 @@ class RwController extends Controller
      */
     public function previewSurat($id)
     {
-        // Untuk prototyping, return dummy template data
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Helper: Mendapatkan ukuran file dalam format yang mudah dibaca.
+     */
+    private function getFileSize(string $path): string
+    {
+        $fullPath = storage_path('app/public/' . $path);
+        if (!file_exists($fullPath)) return '-';
+        $bytes = filesize($fullPath);
+        if ($bytes >= 1048576) return round($bytes / 1048576, 1) . ' MB';
+        if ($bytes >= 1024) return round($bytes / 1024, 0) . ' KB';
+        return $bytes . ' B';
     }
 }

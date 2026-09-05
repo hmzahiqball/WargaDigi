@@ -81,75 +81,41 @@ class RtController extends Controller
      */
     public function persetujuanDokumen()
     {
-        // Dummy data untuk UI prototyping (sesuai desain Figma)
-        $pengajuan = collect([
-            (object) [
-                'id' => 1,
-                'nama_pemohon' => 'Budi Santoso',
-                'nik' => '3217041111111111',
-                'alamat' => 'Blok A2 / No. 14',
-                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
-                'tanggal_pengajuan' => '12 Okt 2024',
-                'status' => 'Diajukan',
-                'jenis_kelamin' => 'Laki-laki',
-                'tempat_tgl_lahir' => 'Bandung, 15-08-1980',
-                'agama' => 'Islam',
-                'pendidikan_terakhir' => 'S1',
-                'pekerjaan' => 'Karyawan Swasta',
-                'status_perkawinan' => 'Kawin',
+        // Ambil data pengajuan dari database, eager load penduduk + keluarga
+        $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
+            ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Ditolak RT'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Transform data dari database agar kompatibel dengan blade yang sudah ada
+        $pengajuan = $pengajuanDb->map(function ($item) {
+            $p = $item->penduduk;
+            $k = $p ? $p->keluarga : null;
+            return (object) [
+                'id' => $item->id,
+                'nama_pemohon' => $p->nama_lengkap ?? 'Tidak Diketahui',
+                'nik' => $p->nik ?? '-',
+                'alamat' => $k->alamat ?? '-',
+                'tipe_surat' => $item->tipe_surat,
+                'tanggal_pengajuan' => $item->created_at->format('d M Y'),
+                'status' => $item->status,
+                'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+                'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d-m-Y')) : '-',
+                'agama' => $p->agama ?? '-',
+                'pendidikan_terakhir' => '-',
+                'pekerjaan' => $p->pekerjaan ?? '-',
+                'status_perkawinan' => $p->status_perkawinan ?? '-',
                 'kewarganegaraan' => 'WNI',
-                'nama_orang_tua' => 'Sutrisno / Aminah',
-                'file_ktp' => 'KTP_Budi_Santoso.pdf',
-                'file_kk' => 'KK_Budi_Santoso.pdf',
-                'file_ktp_size' => '2.4 MB',
-                'file_kk_size' => '2.4 MB',
+                'nama_orang_tua' => '-',
+                'file_ktp' => $item->file_ktp ? basename($item->file_ktp) : 'Belum diunggah',
+                'file_kk' => $item->file_kk ? basename($item->file_kk) : 'Belum diunggah',
+                'file_ktp_size' => $item->file_ktp ? $this->getFileSize($item->file_ktp) : '-',
+                'file_kk_size' => $item->file_kk ? $this->getFileSize($item->file_kk) : '-',
+                'file_ktp_url' => $item->file_ktp ? asset('storage/' . $item->file_ktp) : null,
+                'file_kk_url' => $item->file_kk ? asset('storage/' . $item->file_kk) : null,
                 'foto' => null,
-            ],
-            (object) [
-                'id' => 2,
-                'nama_pemohon' => 'Siti Rahayu',
-                'nik' => '3217042222222222',
-                'alamat' => 'Blok B3 / No. 7',
-                'tipe_surat' => 'Surat Keterangan Tidak Mampu (SKTM)',
-                'tanggal_pengajuan' => '13 Okt 2024',
-                'status' => 'Diajukan',
-                'jenis_kelamin' => 'Perempuan',
-                'tempat_tgl_lahir' => 'Bandung, 22-03-1992',
-                'agama' => 'Islam',
-                'pendidikan_terakhir' => 'SMA',
-                'pekerjaan' => 'Ibu Rumah Tangga',
-                'status_perkawinan' => 'Kawin',
-                'kewarganegaraan' => 'WNI',
-                'nama_orang_tua' => 'Ahmad / Fatimah',
-                'file_ktp' => 'KTP_Siti_Rahayu.pdf',
-                'file_kk' => 'KK_Siti_Rahayu.pdf',
-                'file_ktp_size' => '1.8 MB',
-                'file_kk_size' => '2.1 MB',
-                'foto' => null,
-            ],
-            (object) [
-                'id' => 3,
-                'nama_pemohon' => 'Ahmad Fauzi',
-                'nik' => '3217043333333333',
-                'alamat' => 'Blok C1 / No. 22',
-                'tipe_surat' => 'Surat Keterangan Domisili (SKD)',
-                'tanggal_pengajuan' => '14 Okt 2024',
-                'status' => 'Diajukan',
-                'jenis_kelamin' => 'Laki-laki',
-                'tempat_tgl_lahir' => 'Cimahi, 10-12-1975',
-                'agama' => 'Islam',
-                'pendidikan_terakhir' => 'D3',
-                'pekerjaan' => 'Wiraswasta',
-                'status_perkawinan' => 'Kawin',
-                'kewarganegaraan' => 'WNI',
-                'nama_orang_tua' => 'Hasan / Maryam',
-                'file_ktp' => 'KTP_Ahmad_Fauzi.pdf',
-                'file_kk' => 'KK_Ahmad_Fauzi.pdf',
-                'file_ktp_size' => '2.0 MB',
-                'file_kk_size' => '1.9 MB',
-                'foto' => null,
-            ],
-        ]);
+            ];
+        });
 
         return view('rt.persetujuan-dokumen', compact('pengajuan'));
     }
@@ -159,7 +125,13 @@ class RtController extends Controller
      */
     public function approveDokumen(Request $request, $id)
     {
-        // Untuk saat ini menggunakan dummy response (tanpa database)
+        $pengajuan = PengajuanSurat::findOrFail($id);
+        $pengajuan->update([
+            'status' => 'Disetujui RT',
+            'catatan_rt' => $request->input('catatan', null),
+            'tanggal_disetujui_rt' => now(),
+        ]);
+
         return redirect()->route('rt.persetujuan-dokumen')
             ->with('success', 'Dokumen berhasil disetujui dan diteruskan ke RW.');
     }
@@ -173,8 +145,26 @@ class RtController extends Controller
             'catatan_penolakan' => 'required|string|max:1000',
         ]);
 
-        // Untuk saat ini menggunakan dummy response (tanpa database)
+        $pengajuan = PengajuanSurat::findOrFail($id);
+        $pengajuan->update([
+            'status' => 'Ditolak RT',
+            'catatan_rt' => $request->catatan_penolakan,
+        ]);
+
         return redirect()->route('rt.persetujuan-dokumen')
             ->with('success', 'Catatan penolakan telah dikirim ke pemohon.');
+    }
+
+    /**
+     * Helper: Mendapatkan ukuran file dalam format yang mudah dibaca.
+     */
+    private function getFileSize(string $path): string
+    {
+        $fullPath = storage_path('app/public/' . $path);
+        if (!file_exists($fullPath)) return '-';
+        $bytes = filesize($fullPath);
+        if ($bytes >= 1048576) return round($bytes / 1048576, 1) . ' MB';
+        if ($bytes >= 1024) return round($bytes / 1024, 0) . ' KB';
+        return $bytes . ' B';
     }
 }

@@ -33,10 +33,38 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
-Route::get('/login',[RegisterController::class,'login'])->name('login');
+Route::get('/login', [RegisterController::class, 'login'])->name('login');
+
+// Temporary Magic Login for Testing
+Route::get('/login-warga', function () {
+    $user = \App\Models\User::where('nik', '3204xxxxxxxxx0001')->first();
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('warga.surat.index');
+    }
+    return "User warga tidak ditemukan. Pastikan seeder sudah dijalankan.";
+});
+
+Route::get('/login-rt', function () {
+    $user = \App\Models\User::where('nik', '3217010101010008')->first(); // NIK RT
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('rt.persetujuan-dokumen');
+    }
+    return "User RT tidak ditemukan.";
+});
+
+Route::get('/login-rw', function () {
+    $user = \App\Models\User::where('nik', '3217010101010002')->first(); // NIK RW
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('rw.persetujuan-dokumen');
+    }
+    return "User RW tidak ditemukan.";
+});
 
 // Admin Routes
-Route::prefix('admin')->group(function () {
+Route::middleware(['role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
     Route::get('/manajemen-hak-akses', [AdminController::class, 'manajemenHakAkses'])->name('admin.manajemen-hak-akses');
@@ -46,7 +74,7 @@ Route::prefix('admin')->group(function () {
 });
 
 // RW Routes
-Route::prefix('rw')->group(function () {
+Route::middleware(['role:Admin RW,Pimpinan RW'])->prefix('rw')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('rw.dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
     Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('rw.persetujuan-dokumen');
@@ -56,7 +84,7 @@ Route::prefix('rw')->group(function () {
 });
 
 // RT Routes
-Route::prefix('rt')->group(function () {
+Route::middleware(['role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
     Route::get('/persetujuan-dokumen', [RtController::class, 'persetujuanDokumen'])->name('rt.persetujuan-dokumen');
@@ -80,12 +108,11 @@ Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
 
 // Warga Routes
 Route::middleware(['auth'])->prefix('warga')->name('warga.')->group(function () {
-      Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
-    Route::get('/surat/create', [SuratController::class, 'create'])->name('surat.create');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
     Route::get('/umkm/daftar', [WargaUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/umkm/daftar', [WargaUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');

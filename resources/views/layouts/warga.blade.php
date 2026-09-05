@@ -27,19 +27,19 @@
             <ul class="sidebar-menu">
                 <li class="sidebar-item">
                     <a href="{{ route('warga.dashboard') }}" class="sidebar-link @if(request()->routeIs('warga.dashboard')) active @endif">
-                        <i class="bi bi-grid-1x2-fill"></i>
+                        <i class="bi bi-grid-1x2"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
                     <a href="{{ route('berita') }}" class="sidebar-link @if(request()->routeIs('berita*')) active @endif">
-                        <i class="bi bi-newspaper"></i>
+                        <i class="bi bi-chat-square-text"></i>
                         <span>Berita</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
                     <a href="{{ route('warga.surat.index') }}" class="sidebar-link @if(request()->routeIs('warga.surat.*')) active @endif">
-                        <i class="bi bi-file-earmark-text-fill"></i>
+                        <i class="bi bi-file-earmark-text"></i>
                         <span>Permohonan Surat</span>
                     </a>
                 </li>
@@ -51,13 +51,13 @@
                 </li>
                 <li class="sidebar-item">
                     <a href="{{ route('informasi') }}" class="sidebar-link @if(request()->routeIs('informasi*')) active @endif">
-                        <i class="bi bi-calendar-event-fill"></i>
+                        <i class="bi bi-calendar-event"></i>
                         <span>Agenda Warga</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
                     <a href="{{ route('warga.keluarga.index') }}" class="sidebar-link @if(request()->routeIs('warga.keluarga.*')) active @endif">
-                        <i class="bi bi-people-fill"></i>
+                        <i class="bi bi-gear"></i>
                         <span>Pengaturan Keluarga</span>
                     </a>
                 </li>

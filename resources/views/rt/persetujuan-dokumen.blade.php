@@ -73,7 +73,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($pengajuan as $item)
+                @forelse($pengajuan as $item)
                 <tr class="bg-white">
                     <td class="ps-4 py-3 bg-white">
                         <div class="d-flex align-items-center gap-3">
@@ -120,22 +120,32 @@
                         @endif
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr class="bg-white">
+                    <td colspan="5" class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                            <i class="bi bi-inbox fs-1 mb-2"></i>
+                            <h6 class="fw-bold mb-1">Belum Ada Pengajuan</h6>
+                            <p class="small mb-0">Tidak ada pengajuan surat yang perlu diproses saat ini.</p>
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
     
     {{-- Pagination --}}
+    @if(count($pengajuan) > 0)
     <div class="d-flex justify-content-between align-items-center p-4 border-top">
-        <span class="text-muted small">Menampilkan 1 sampai 4 dari 24 entri</span>
+        <span class="text-muted small">Menampilkan 1 sampai {{ count($pengajuan) }} dari {{ count($pengajuan) }} entri</span>
         <div class="d-flex gap-2">
             <button class="btn btn-sm btn-outline-success rounded-2 px-2 disabled"><i class="bi bi-chevron-left"></i></button>
             <button class="btn btn-sm btn-success rounded-2 px-3 fw-bold text-white">1</button>
-            <button class="btn btn-sm btn-outline-success rounded-2 px-3 fw-bold">2</button>
-            <button class="btn btn-sm btn-outline-success rounded-2 px-3 fw-bold">3</button>
-            <button class="btn btn-sm btn-outline-success rounded-2 px-2"><i class="bi bi-chevron-right"></i></button>
+            <button class="btn btn-sm btn-outline-success rounded-2 px-2 disabled"><i class="bi bi-chevron-right"></i></button>
         </div>
     </div>
+    @endif
 </div>
 
 {{-- ==================== MODALS ==================== --}}
