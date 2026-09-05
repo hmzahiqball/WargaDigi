@@ -6,27 +6,34 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Berita extends Model
+class Agenda extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'berita';
+    protected $table = 'agenda';
 
     protected $fillable = [
-        'judul_berita',
-        'slug',
+        'judul_agenda',
         'kategori',
-        'isi_berita', 
-        'featured_image',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'lokasi',
+        'link_gmaps',
+        'detail_pengumuman',
+        'banner_flyer',
+        'is_rsvp_enabled',
+        'foto_dokumentasi',
         'status',
         'catatan_revisi',
         'operator_id',
         'approval_id',
-        'tanggal_publish',
     ];
 
     protected $casts = [
-        'tanggal_publish' => 'datetime',
+        'tanggal_mulai' => 'datetime',
+        'tanggal_selesai' => 'datetime',
+        'is_rsvp_enabled' => 'boolean',
+        'foto_dokumentasi' => 'array',
     ];
 
     public function operator()

@@ -6,18 +6,16 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Berita extends Model
+class Pengumuman extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'berita';
+    protected $table = 'pengumuman';
 
     protected $fillable = [
-        'judul_berita',
-        'slug',
-        'kategori',
-        'isi_berita', 
-        'featured_image',
+        'judul_pengumuman',
+        'isi_pengumuman',
+        'is_priority',
         'status',
         'catatan_revisi',
         'operator_id',
@@ -26,6 +24,7 @@ class Berita extends Model
     ];
 
     protected $casts = [
+        'is_priority' => 'boolean',
         'tanggal_publish' => 'datetime',
     ];
 

@@ -9,40 +9,113 @@ class BeritaController extends Controller
 {
     public function index(Request $request)
     {
-        // Data dummy sesuai dengan desain Figma
-        $berita = [
-            [
-                'id' => 1,
-                'judul' => 'Vaksinasi Massal Warga 04',
-                'kategori' => 'SOSIAL',
-                'penulis' => 'Budi Santoso',
-                'status' => 'Draft',
-                'status_bg' => '#F3F4F6',
-                'status_color' => '#6B7280',
-                'image' => 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=200&auto=format&fit=crop',
-            ],
-            [
-                'id' => 2,
-                'judul' => 'Renovasi Pos Ronda RT 02',
-                'kategori' => 'INFRASTRUKTUR',
-                'penulis' => 'Siti Aminah',
-                'status' => 'Publish',
-                'status_bg' => '#D1FAE5',
-                'status_color' => '#065F46',
-                'image' => 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=200&auto=format&fit=crop',
-            ],
-            [
-                'id' => 3,
-                'judul' => 'Persiapan Malam Tirakatan 17an',
-                'kategori' => 'HIBURAN',
-                'penulis' => 'Budi Santoso',
-                'status' => 'Review',
-                'status_bg' => '#FEE2E2',
-                'status_color' => '#991B1B',
-                'image' => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&auto=format&fit=crop',
-            ]
-        ];
+        $query = \App\Models\Berita::with('operator')->where('operator_id', auth()->id());
+
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $query->where('judul_berita', 'like', '%' . $request->search . '%');
+        }
+
+        $berita = $query->latest()->paginate(10)->withQueryString();
 
         return view('opKonten.berita.index', compact('berita'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'judul_berita' => 'required|string|max:255',
+            'kategori' => 'required|string',
+            'isi_berita' => 'required|string',
+            'foto_utama' => 'nullable|image|max:5120', // 5MB max
+            'action' => 'required|in:draft,review'
+        ]);
+
+        $data = $request->only(['judul_berita', 'kategori', 'isi_berita']);
+        $data['slug'] = \Illuminate\Support\Str::slug($request->judul_berita) . '-' . uniqid();
+        $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
+        $data['operator_id'] = auth()->id();
+
+        if ($request->hasFile('foto_utama')) {
+            $path = $request->file('foto_utama')->store('berita', 'public');
+            $data['featured_image'] = '/storage/' . $path;
+        }
+
+        \App\Models\Berita::create($data);
+
+        $msg = $request->action === 'review' ? 'Berita berhasil diajukan untuk direview!' : 'Draft berita berhasil disimpan!';
+        return back()->with('success', $msg);
+    }
+
+    public function update(Request $request, \App\Models\Berita $berita)
+    {
+        // Ensure user owns this
+        if ($berita->operator_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'judul_berita' => 'required|string|max:255',
+            'kategori' => 'required|string',
+            'isi_berita' => 'required|string',
+            'foto_utama' => 'nullable|image|max:5120',
+            'action' => 'required|in:draft,review'
+        ]);
+
+        $data = $request->only(['judul_berita', 'kategori', 'isi_berita']);
+        if ($request->judul_berita !== $berita->judul_berita) {
+            $data['slug'] = \Illuminate\Support\Str::slug($request->judul_berita) . '-' . uniqid();
+        }
+        
+        $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
+
+        if ($request->hasFile('foto_utama')) {
+            $path = $request->file('foto_utama')->store('berita', 'public');
+            $data['featured_image'] = '/storage/' . $path;
+        }
+
+        $berita->update($data);
+
+        $msg = $request->action === 'review' ? 'Berita berhasil diajukan untuk direview!' : 'Draft berita berhasil diperbarui!';
+        return back()->with('success', $msg);
+    }
+    public function submit(\App\Models\Berita $berita)
+    {
+        if ($berita->operator_id !== auth()->id() || !in_array($berita->status, ['Draft', 'Revisi'])) abort(403);
+        $berita->update(['status' => 'Review']);
+        return back()->with('success', 'Berita berhasil diajukan untuk direview!');
+    }
+
+    public function destroy(\App\Models\Berita $berita)
+    {
+        if ($berita->operator_id !== auth()->id() || $berita->status !== 'Draft') abort(403);
+        $berita->delete();
+        return back()->with('success', 'Berita berhasil dihapus.');
+    }
+
+    public function archive(\App\Models\Berita $berita)
+    {
+        if ($berita->operator_id !== auth()->id() || $berita->status !== 'Publish') abort(403);
+        $berita->update(['status' => 'Archive']);
+        return back()->with('success', 'Berita berhasil diarsipkan.');
+    }
+
+    public function unarchive(\App\Models\Berita $berita)
+    {
+        if ($berita->operator_id !== auth()->id() || $berita->status !== 'Archive') abort(403);
+        $berita->update(['status' => 'Publish']);
+        return back()->with('success', 'Arsip berita berhasil dibuka.');
+    }
+
+    public function revoke(\App\Models\Berita $berita)
+    {
+        if ($berita->operator_id !== auth()->id() || $berita->status !== 'Review') abort(403);
+        $berita->update(['status' => 'Draft']);
+        return back()->with('success', 'Berita berhasil ditarik kembali ke Draft.');
     }
 }

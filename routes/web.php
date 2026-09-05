@@ -55,6 +55,11 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
 Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('rw.dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
+    
+    // Berita Approval Routes
+    Route::get('/berita', [\App\Http\Controllers\Rw\BeritaController::class, 'index'])->name('rw.berita.index');
+    Route::put('/berita/{berita}/approve', [\App\Http\Controllers\Rw\BeritaController::class, 'approve'])->name('rw.berita.approve');
+    Route::put('/berita/{berita}/reject', [\App\Http\Controllers\Rw\BeritaController::class, 'reject'])->name('rw.berita.reject');
 });
 
 // RT Routes (Role: Ketua RT)
@@ -68,6 +73,13 @@ Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT'])->group(function ()
     Route::prefix('op-konten')->name('opkonten.')->group(function () {
         Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('dashboard');
         Route::get('/berita', [OpKontenBeritaController::class, 'index'])->name('berita.index');
+        Route::post('/berita', [OpKontenBeritaController::class, 'store'])->name('berita.store');
+        Route::put('/berita/{berita}', [OpKontenBeritaController::class, 'update'])->name('berita.update');
+        Route::delete('/berita/{berita}', [OpKontenBeritaController::class, 'destroy'])->name('berita.destroy');
+        Route::put('/berita/{berita}/submit', [OpKontenBeritaController::class, 'submit'])->name('berita.submit');
+        Route::put('/berita/{berita}/archive', [OpKontenBeritaController::class, 'archive'])->name('berita.archive');
+        Route::put('/berita/{berita}/unarchive', [OpKontenBeritaController::class, 'unarchive'])->name('berita.unarchive');
+        Route::put('/berita/{berita}/revoke', [OpKontenBeritaController::class, 'revoke'])->name('berita.revoke');
         Route::get('/agenda', [OpKontenAgendaController::class, 'index'])->name('agenda.index');
         Route::get('/galeri', [OpKontenGaleriController::class, 'index'])->name('galeri.index');
         Route::get('/pengumuman', [OpKontenPengumumanController::class, 'index'])->name('pengumuman.index');

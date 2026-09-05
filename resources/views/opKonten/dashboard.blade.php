@@ -6,11 +6,11 @@
 {{-- Page Header --}}
 <div class="d-flex justify-content-between align-items-end mb-4">
     <div>
-        <h2 class="fw-bold text-dark mb-1">Dashboard</h2>
+        <h2 class="fw-bold text-dark mb-1">Dasbor</h2>
         <p class="text-muted mb-0">Gambaran umum status konten dan aktivitas terkini.</p>
     </div>
-    <button type="button" onclick="alert('Fitur Export Laporan sedang dalam tahap pengembangan.')" class="btn btn-outline-secondary btn-sm rounded-2 px-3 py-2 fw-semibold bg-white shadow-sm border-light-subtle">
-        <i class="bi bi-download me-1"></i> Export Laporan
+    <button type="button" onclick="alert('Fitur Ekspor Laporan sedang dalam tahap pengembangan.')" class="btn btn-outline-secondary btn-sm rounded-2 px-3 py-2 fw-semibold bg-white shadow-sm border-light-subtle">
+        <i class="bi bi-download me-1"></i> Ekspor Laporan
     </button>
 </div>
 
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    {{-- Card 3: Tinjauan Sedang Diprosese --}}
+    {{-- Card 3: Tinjauan Sedang Diproses --}}
     <div class="col-6 col-md-3">
         <div class="card card-custom p-3 h-100 shadow-sm border-0">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -92,10 +92,10 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr class="text-muted text-uppercase text-xs fw-bold" style="letter-spacing: 0.5px;">
-                            <th scope="col" class="py-3">TITLE</th>
+                            <th scope="col" class="py-3">JUDUL</th>
                             <th scope="col" class="py-3">KATEGORI</th>
                             <th scope="col" class="py-3">STATUS</th>
-                            <th scope="col" class="py-3">UPDATE TERAKHIR</th>
+                            <th scope="col" class="py-3">PEMBARUAN TERAKHIR</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,7 +120,7 @@
     {{-- Right: Upcoming Agenda --}}
     <div class="col-lg-4">
         <div class="card card-custom p-4 shadow-sm border-0 h-100 d-flex flex-column">
-            <h5 class="fw-bold mb-4">Upcoming Agenda</h5>
+            <h5 class="fw-bold mb-4">Agenda Mendatang</h5>
 
             <div class="d-flex flex-column gap-3 mb-auto">
                 @foreach($upcomingAgenda as $agenda)
