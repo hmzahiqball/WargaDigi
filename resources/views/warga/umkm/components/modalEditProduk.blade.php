@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="modal-footer justify-content-end gap-2 px-4 py-3 border-top mt-2">
-                    <button type="button" class="btn btn-white bg-white border px-4 py-2 rounded-3 small fw-semibold text-dark shadow-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-light border px-4 py-2 rounded-3 small fw-semibold text-dark" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn text-white px-4 py-2 rounded-3 small fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #4E8D5F; border-color: #4E8D5F;">
                         <i class="bi bi-journal-check"></i> Simpan Perubahan
                     </button>
