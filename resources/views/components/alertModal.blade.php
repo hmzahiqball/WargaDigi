@@ -1,6 +1,6 @@
 <!-- Component Modal Konfirmasi & Notifikasi Alert Dinamis -->
 
-<!-- 1. Modal Konfirmasi Hapus (Dinamis Sesuai Desain) -->
+
 <div class="modal fade" id="modalConfirmDelete" tabindex="-1" aria-labelledby="modalConfirmDeleteTitle" aria-hidden="true" style="z-index: 1065;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
         <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 24px; padding: 2.25rem 2rem 2rem 2rem; background: #ffffff;">
@@ -12,17 +12,17 @@
                 </svg>
             </div>
 
-            <!-- Judul Modal -->
+
             <h4 class="fw-bold text-dark mb-2" id="modalConfirmDeleteTitle" style="font-size: 1.35rem; line-height: 1.35; color: #1e293b;">
                 <span id="modalConfirmDeletePrefix">Hapus Produk</span> <span id="modalConfirmDeleteItemName" class="text-success fw-bold" style="color: #2E7D32 !important;">Produk ini?</span>
             </h4>
 
-            <!-- Subtitle Modal -->
+
             <p class="text-muted mb-4" id="modalConfirmDeleteSubtitle" style="font-size: 0.95rem; color: #64748b; line-height: 1.5;">
                 Anda yakin untuk menghapus produk ini?
             </p>
 
-            <!-- Action Buttons: Batal & Hapus -->
+
             <div class="d-flex justify-content-center align-items-center gap-3 w-100">
                 <button type="button" class="btn btn-batal-confirm w-50" data-bs-dismiss="modal" style="border: 1.5px solid #2E7D32; color: #2E7D32; background-color: transparent; border-radius: 12px; font-weight: 600; padding: 0.65rem 1.25rem; font-size: 1rem; transition: all 0.2s;">
                     Batal
@@ -35,7 +35,7 @@
     </div>
 </div>
 
-<!-- 2. Modal Konfirmasi Berhasil (Dinamis Sukses Usaha, Produk, Update) -->
+
 <div class="modal fade" id="modalAlertSuccess" tabindex="-1" aria-labelledby="modalAlertSuccessTitle" aria-hidden="true" style="z-index: 1065;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
         <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 24px; padding: 2.25rem 2rem 2rem 2rem; background: #ffffff;">

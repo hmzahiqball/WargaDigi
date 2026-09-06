@@ -104,7 +104,6 @@
     </div>
 </header>
 
-{{-- Dynamic Notification Panel --}}
 <div class="admin-notif-panel" id="notifPanel">
     <div class="notif-panel-header">
         <h6><i class="bi bi-bell-fill"></i> {{ $notifTitle }}</h6>
