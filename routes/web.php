@@ -20,7 +20,7 @@ use App\Http\Controllers\RtController;
 use App\Http\Controllers\OpKontenController;
 use App\Http\Controllers\OpKeuanganController;
 
-// Public Routes
+//LandingPage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/informasi', [InformasiController::class, 'index'])->name('informasi');
 Route::get('/transparansi', [TransparansiController::class, 'index'])->name('transparansi');
@@ -33,7 +33,7 @@ Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->
 Route::get('/warga/galeri/produk/{id}', [UmkmController::class, 'detailProduk'])->name('warga.umkm.produk.detail');
 Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
 
-// Authentication Routes
+//Auth
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -41,6 +41,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
 
+//Admin
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
@@ -50,7 +51,7 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
 });
 
-// RW Routes (Role: Admin RW, Pimpinan RW)
+// RW (Role: Admin RW, Pimpinan RW)
 Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->name('rw.')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
@@ -59,11 +60,14 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->name('rw
     Route::post('/umkm/{id}/reject', [RwController::class, 'rejectUmkm'])->name('umkm.reject');
 });
 
+//RT (Role: Ketua RT)
 Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
 });
 
+
+//Op Konten
 Route::middleware(['auth', 'role:Op. Konten RW,Op. Konten RT'])->group(function () {
     Route::prefix('op-konten')->group(function () {
         Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('opkonten.dashboard');
@@ -72,6 +76,7 @@ Route::middleware(['auth', 'role:Op. Konten RW,Op. Konten RT'])->group(function 
     Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
 });
 
+//Op Keuangan
 Route::middleware(['auth', 'role:Op. Keuangan RW,Op. Keuangan RT,DKM'])->group(function () {
     Route::prefix('op-keuangan')->group(function () {
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
@@ -80,7 +85,7 @@ Route::middleware(['auth', 'role:Op. Keuangan RW,Op. Keuangan RT,DKM'])->group(f
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
 });
 
-// Warga Routes (Role: Warga)
+//Warga
 Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
