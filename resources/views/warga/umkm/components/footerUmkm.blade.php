@@ -1,4 +1,3 @@
-<!-- Footer Credit Text Component -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center py-4 border-top mt-5 text-muted small">
     <div>
         &copy; {{ $year ?? date('Y') }} Portal WargaDigi RW 12 Desa Tanimulya. Wadah digital pemberdayaan ekonomi lokal.

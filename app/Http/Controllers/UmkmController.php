@@ -114,7 +114,7 @@ class UmkmController extends Controller
         $produk->increment('jumlah_akses');
 
         $usaha = $produk->usaha;
-        $isDashboard = false;
+        $isDashboard = auth()->check();
 
         return view('pages.detail_produk', compact('produk', 'usaha', 'isDashboard'));
     }

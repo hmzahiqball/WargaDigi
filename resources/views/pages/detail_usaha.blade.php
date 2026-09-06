@@ -19,7 +19,7 @@
         $cleanWa = '62' . $cleanWa;
     }
 
-    // Messaging Integration (Telegram / WhatsApp)
+
     $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
     $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
     $messagingDriverName = \App\Services\Messaging\MessagingService::getName();
@@ -40,9 +40,7 @@
 
 @section('content')
 <div class="{{ $isDashboard ? 'container-fluid px-0' : 'container py-4' }}">
-    <!-- Header Nama Usaha & Pemilik -->
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <!-- Bagian Kiri: Nama Usaha dan Detail Owner -->
         <div>
             <h2 class="fw-bold text-success mb-1">{{ $namaUsaha }}</h2>
             <div class="text-muted small">
@@ -50,7 +48,7 @@
             </div>
         </div>
 
-        <!-- Bagian Kanan: Tombol Kembali -->
+
         <div>
             @if($isDashboard)
                 <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
@@ -65,7 +63,6 @@
     </div>
 
 
-    <!-- Hero Banner Card -->
     <div class="mb-5">
         <div class="usaha-banner-card rounded-4 position-relative overflow-hidden" style="background-image: url('{{ $fotoUsaha }}'); min-height: 320px;">
             <div class="banner-overlay"></div>
@@ -88,7 +85,7 @@
         </div>
     </div>
 
-    <!-- Filter & Search Bar -->
+
     @include('warga.umkm.components.filterSearchBar', [
         'actionUrl' => $filterActionUrl,
         'placeholder' => 'Cari Produk Usaha...',
@@ -98,7 +95,7 @@
         'usaha' => $usaha ?? null
     ])
 
-    <!-- Product Grid Showcase -->
+
     <div class="row g-4 mb-4">
         @forelse($produk as $item)
             @include('warga.umkm.components.cardProduct', ['item' => $item, 'showOwner' => false])
@@ -107,10 +104,10 @@
         @endforelse
     </div>
 
-    <!-- Pagination Component -->
+
     @include('components.pagination', ['paginator' => $produk, 'label' => 'produk'])
 
-    <!-- Footer Credit Text Component -->
+
     @include('warga.umkm.components.footerUmkm')
 </div>
 @endsection

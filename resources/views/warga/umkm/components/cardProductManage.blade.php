@@ -82,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- Action Icons Footer -->
             <div class="d-flex justify-content-end align-items-center gap-3 pt-1">
                 {{--
                 <a href="{{ $linkMessaging }}" target="_blank" class="text-decoration-none" style="color: {{ $messagingColor }};" title="Hubungi via {{ $messagingLabel }}">

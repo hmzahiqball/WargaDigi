@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Membuat Akun Super Administrator
+
         User::create([
             'nik' => '3217010101010001',
             'username' => 'superadmin',
@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 2. Membuat Akun Admin RW 21
+
         User::create([
             'nik' => '3217010101010002',
             'username' => 'adminrw21',
@@ -31,7 +31,6 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 3. Membuat Akun Warga
         User::create([
             'nik' => '3217010101010003',
             'username' => 'Budi Sampurno',
@@ -41,7 +40,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 4. Membuat Akun Pimpinan
+
         User::create([
             'nik' => '3217010101010004',
             'username' => 'pimpinan',
@@ -51,7 +50,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 5. Membuat Akun Op. Konten RW 21
+    
         User::create([
             'nik' => '3217010101010005',
             'username' => 'opkontenrw21',
@@ -61,7 +60,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 6. Membuat Akun Op. Keuangan RW 21
+
         User::create([
             'nik' => '3217010101010006',
             'username' => 'opkeuanganrw21',
@@ -71,7 +70,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 7. Membuat Akun DKM
+
         User::create([
             'nik' => '3217010101010007',
             'username' => 'dkm',
@@ -81,7 +80,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 8. Membuat Akun Ketua RT 01 RW 21
+
         User::create([
             'nik' => '3217010101010008',
             'username' => 'ketuart01rw21',
@@ -91,7 +90,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 9. Membuat Akun Op. Keuangan RT 01 RW 21
+
         User::create([
             'nik' => '3217010101010009',
             'username' => 'opkeuanganrt01rw21',
@@ -101,7 +100,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 10. Membuat Akun Op. Konten RT 01 RW 21
+
         User::create([
             'nik' => '3217010101010010',
             'username' => 'opkontenrt01rw21',
@@ -111,7 +110,7 @@ class DatabaseSeeder extends Seeder
             'nik_verified_at' => now(),
         ]);
 
-        // 11. Generate Master Data RT untuk wilayah RW 21 Desa Tanimulya
+
         $rtData = [
             ['kode_rt' => '01', 'nama_rt' => 'RT 01 / RW 21'],
             ['kode_rt' => '02', 'nama_rt' => 'RT 02 / RW 21'],
@@ -125,7 +124,7 @@ class DatabaseSeeder extends Seeder
             MasterRt::create($rt);
         }
 
-        // 12. Seed Data UMKM (Kategori, Usaha, & Produk)
+
         $this->call([
             KategoriUmkmSeeder::class,
             UmkmUsahaSeeder::class,

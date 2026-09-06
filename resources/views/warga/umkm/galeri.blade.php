@@ -4,7 +4,6 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    <!-- Header Galeri UMKM -->
     <div class="row align-items-center mb-4 g-3">
         <div class="col-md-7">
             <h2 class="fw-bold text-success mb-2">Galeri UMKM</h2>
@@ -22,7 +21,6 @@
         </div>
     </div>
 
-    {{-- Alert Pending Usaha untuk Warga --}}
     @if(isset($pendingUsahaCount) && $pendingUsahaCount > 0)
     <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
         <div class="d-flex align-items-center gap-3">
@@ -40,7 +38,6 @@
     </div>
     @endif
 
-    <!-- Section Produk Unggulan RW 21 -->
     @php
         $hero1 = isset($produkUnggulan) ? $produkUnggulan->get(0) : null;
         $hero2 = isset($produkUnggulan) ? $produkUnggulan->get(1) : null;
@@ -68,7 +65,7 @@
             'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
             default => 'badge-kerajinan'
         };
-        $detailUrl1 = $hero1 ? route('warga.umkm.produk.detail', $hero1->id) : route('warga.umkm.usaha.show');
+        $detailUrl1 = $hero1 ? route('produk.show', $hero1->id) : route('warga.umkm.usaha.show');
         $noWa1 = preg_replace('/[^0-9]/', '', $hero1->usaha->no_wa ?? '628123456789');
         if (str_starts_with($noWa1, '0')) { $noWa1 = '62' . substr($noWa1, 1); }
         $hero1Message = 'Halo, saya tertarik dengan produk ' . ($hero1->nama_produk ?? 'Pahatan Kayu Jati Custom');
@@ -89,7 +86,7 @@
             'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
             default => 'badge-kuliner'
         };
-        $detailUrl2 = $hero2 ? route('warga.umkm.produk.detail', $hero2->id) : route('warga.umkm.usaha.show');
+        $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('warga.umkm.usaha.show');
 
         $kat3 = $hero3->kategori_produk->nama_kategori ?? $hero3->usaha->kategori_umkm->nama_kategori ?? 'Fashion';
         $bg3 = ($hero3 && !empty($hero3->foto_produk)) 
@@ -103,7 +100,7 @@
             'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
             default => 'badge-fashion'
         };
-        $detailUrl3 = $hero3 ? route('warga.umkm.produk.detail', $hero3->id) : route('warga.umkm.usaha.show');
+        $detailUrl3 = $hero3 ? route('produk.show', $hero3->id) : route('warga.umkm.usaha.show');
     @endphp
 
     <div class="mb-5">
@@ -114,7 +111,6 @@
             </a>
         </div>
         <div class="row g-3">
-            <!-- Left Large Hero Card -->
             <div class="col-lg-7">
                 <div class="umkm-hero-card h-100 position-relative" style="min-height: 380px; background-image: url('{{ $bg1 }}'); cursor: pointer;" onclick="if(!event.target.closest('a')) window.location.href='{{ $detailUrl1 }}'">
                     <div class="umkm-hero-overlay"></div>
@@ -138,9 +134,7 @@
                 </div>
             </div>  
 
-            <!-- Right Stacked Cards -->
             <div class="col-lg-5 d-flex flex-column gap-3">
-                <!-- Top Card -->
                 <div class="umkm-hero-card flex-grow-1" style="min-height: 180px; background-image: url('{{ $bg2 }}'); cursor: pointer;" onclick="if(!event.target.closest('a')) window.location.href='{{ $detailUrl2 }}'">
                     <div class="umkm-hero-overlay"></div>
                     <div class="umkm-hero-content">
@@ -152,7 +146,6 @@
                     </div>
                 </div>
 
-                <!-- Bottom Card -->
                 <div class="umkm-hero-card flex-grow-1" style="min-height: 180px; background-image: url('{{ $bg3 }}'); cursor: pointer;" onclick="if(!event.target.closest('a')) window.location.href='{{ $detailUrl3 }}'">
                     <div class="umkm-hero-overlay"></div>
                     <div class="umkm-hero-content">
@@ -167,7 +160,6 @@
         </div>
     </div>
 
-    {{-- Section Carousel Produk Terbaru --}}
     @if(isset($produkTerbaru) && count($produkTerbaru) > 0)
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -188,7 +180,6 @@
         </div>
 
         <div class="carousel-products-wrapper position-relative">
-            <!-- Tombol Navigasi Kiri (Tengah Sisi Kiri Carousel) -->
             <button type="button" 
                     class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 start-0 translate-middle-y carousel-nav-btn ms-2 ms-md-3" 
                     id="btnPrevTerbaru" 
@@ -198,7 +189,6 @@
                 <i class="bi bi-chevron-left fs-5 text-dark"></i>
             </button>
 
-            <!-- Track Produk -->
             <div class="d-flex gap-3 overflow-x-auto py-2 px-1" id="trackProdukTerbaru" style="scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none;">
                 @foreach($produkTerbaru as $item)
                     <div class="flex-shrink-0" style="width: 270px;">
@@ -211,7 +201,6 @@
                 @endforeach
             </div>
 
-            <!-- Tombol Navigasi Kanan (Tengah Sisi Kanan Carousel) -->
             <button type="button" 
                     class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 end-0 translate-middle-y carousel-nav-btn me-2 me-md-3" 
                     id="btnNextTerbaru" 
@@ -224,7 +213,6 @@
     </div>
     @endif
 
-    <!-- Filter & Search Bar -->
     @include('warga.umkm.components.filterSearchBar', [
         'actionUrl' => route('warga.umkm.galeri'),
         'placeholder' => 'Cari Toko / Produk Berdasarkan Nama',
@@ -232,7 +220,6 @@
         'showStatus' => false
     ])
 
-    <!-- Product Grid -->
     <div class="row g-4 mb-4">
         @forelse($produk as $item)
             @include('warga.umkm.components.cardProduct', ['item' => $item, 'showOwner' => true])
@@ -250,29 +237,23 @@
         @endforelse
     </div>
 
-    <!-- Pagination Component -->
     @include('components.pagination', ['paginator' => $produk, 'label' => 'produk'])
 
-    <!-- Footer Credit Text Component -->
     @include('warga.umkm.components.footerUmkm')
 </div>
 
-<!-- Modal Daftarkan Usaha Anda -->
 <div class="modal fade" id="modalDaftarUsaha" tabindex="-1" aria-labelledby="modalDaftarUsahaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <!-- Modal Header -->
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 align-items-center">
                 <h4 class="modal-title fw-bold text-dark" id="modalDaftarUsahaLabel">Daftarkan Usaha Anda</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Modal Body -->
             <form action="{{ route('warga.umkm.store-usaha') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body px-4 py-3">
-                    
-                    <!-- Section 1: Informasi Bisnis -->
+
                     <div class="mb-4">
                         <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
                             <i class="bi bi-shop fs-5"></i> Informasi Bisnis
@@ -300,7 +281,6 @@
                         </div>
                     </div>
 
-                    <!-- Section 2: Kontak & Lokasi -->
                     <div class="mb-4">
                         <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
                             <i class="bi bi-geo-alt fs-5"></i> Kontak & Lokasi
@@ -320,7 +300,6 @@
                         </div>
                     </div>
 
-                    <!-- Section 3: Media -->
                     <div class="mb-2">
                         <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
                             <i class="bi bi-image fs-5"></i> Media
@@ -338,7 +317,6 @@
 
                 </div>
 
-                <!-- Modal Footer -->
                 <div class="modal-footer justify-content-end gap-2 px-4 py-3 border-top" style="background-color: #f1f8f3; border-top-color: #e2ece4 !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;">
                     <button type="button" class="btn btn-light border px-4 py-2 rounded-3 small fw-semibold text-dark" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-success px-4 py-2 rounded-3 small fw-semibold text-white" style="background-color: #5b9b76; border-color: #5b9b76;">Kirim Pendaftaran</button>

@@ -53,7 +53,6 @@
         </div>
 
         @if($showStatus)
-            <!-- Filter Kategori -->
             <div class="col-6 col-md-3 ms-md-auto">
                 <select name="kategori" class="form-select border-1 rounded-3 py-2 text-dark bg-white w-100" style="font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="">Semua Kategori</option>
@@ -63,7 +62,7 @@
                 </select>
             </div>
 
-            <!-- Filter Status -->
+
             <div class="col-6 col-md-3">
                 <select name="status" class="form-select border-1 rounded-3 py-2 text-dark bg-white w-100" style="font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
@@ -75,7 +74,7 @@
                 </select>
             </div>
         @else
-            <!-- Filter Kategori Tunggal -->
+
             <div class="col-12 col-md-4 col-lg-auto ms-md-auto">
                 <select name="kategori" class="form-select border-1 rounded-3 py-2 text-dark bg-white w-100" style="font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="">Semua Kategori</option>

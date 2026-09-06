@@ -54,7 +54,6 @@ class GaleriUmkmController extends Controller
         $produk = $query->paginate(8)->withQueryString();
         $daftarKategoriUmkm = KategoriUmkm::all();
 
-        // 3 Produk Unggulan (terpopuler, dibatasi maksimal 1 per toko)
         $produkUnggulan = UmkmProduk::with(['usaha.kategori_umkm', 'usaha.user.penduduk.keluarga.rt', 'kategori_produk'])
             ->where('status_produk', 'Aktif')
             ->whereHas('usaha', function ($q) {
@@ -67,7 +66,6 @@ class GaleriUmkmController extends Controller
             ->take(3)
             ->values();
 
-        // Produk Terbaru yang baru masuk sistem (dibatasi maksimal 1 per toko untuk carousel)
         $produkTerbaru = UmkmProduk::with(['usaha.kategori_umkm', 'usaha.user.penduduk.keluarga.rt', 'kategori_produk'])
             ->where('status_produk', 'Aktif')
             ->whereHas('usaha', function ($q) {
@@ -302,7 +300,7 @@ class GaleriUmkmController extends Controller
         $validated['status_verifikasi'] = 'Pending';
         $validated['is_active'] = false;
 
-        // Normalisasi nomor WhatsApp
+
         $cleanWa = preg_replace('/[^0-9]/', '', $validated['no_wa']);
         if (str_starts_with($cleanWa, '0')) {
             $cleanWa = '62' . substr($cleanWa, 1);
@@ -311,7 +309,7 @@ class GaleriUmkmController extends Controller
         }
         $validated['no_wa'] = $cleanWa;
 
-        // Handle file upload (bisa dari foto_sampul atau foto_usaha)
+        
         $file = $request->file('foto_sampul') ?? $request->file('foto_usaha');
         if ($file) {
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();

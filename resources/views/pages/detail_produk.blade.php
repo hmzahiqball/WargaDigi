@@ -1,5 +1,8 @@
 @php
-    $isDashboard = $isDashboard ?? (request()->is('warga/*') || (Auth::check() && !request()->is('produk/*') && !request()->is('pojok-umkm/*')));
+    $isDashboard = isset($isDashboard) ? (bool)$isDashboard : Auth::check();
+    if (Auth::check()) {
+        $isDashboard = true;
+    }
     $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
     $isFromKelola = $isFromKelola 
         ?? (request('from') === 'kelola_umkm' 
@@ -45,7 +48,7 @@
         $formattedWa = '+' . $cleanWa;
     }
 
-    // Messaging Integration (Telegram / WhatsApp)
+
     $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
     $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
     $messagingDriverName = \App\Services\Messaging\MessagingService::getName();
@@ -56,9 +59,9 @@
     $pesanText = "Halo {$namaUsaha}, saya tertarik untuk memesan produk {$namaProduk} seharga Rp {$harga}. Apakah stok masih tersedia?";
     $linkDirectChat = \App\Services\Messaging\MessagingService::getDirectChatUrl($cleanWa, $pesanText);
 
-    $currentUrl = request()->fullUrl();
+    $universalProductUrl = route('produk.show', $produk->id);
     $bagikanText = "Lihat produk {$namaProduk} dari {$namaUsaha} di WargaDigi:";
-    $linkShare = \App\Services\Messaging\MessagingService::getShareUrl($bagikanText, $currentUrl);
+    $linkShare = \App\Services\Messaging\MessagingService::getShareUrl($bagikanText, $universalProductUrl);
 
     $words = explode(' ', $namaUsaha);
     $initials = '';
@@ -105,7 +108,6 @@
 @section('content')
 <div class="{{ $isDashboard ? 'container-fluid px-0' : 'container py-4' }}">
 
-    <!-- Breadcrumb & Back Button Row -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0 small">
@@ -144,7 +146,6 @@
         </nav>
     </div>
 
-    <!-- Hero Banner Card -->
     <div class="mb-4">
         <div class="usaha-banner-card rounded-4 position-relative overflow-hidden" style="background-image: url('{{ $fotoUsaha }}'); min-height: 280px;">
             <div class="banner-overlay"></div>
@@ -167,26 +168,23 @@
         </div>
     </div>
 
-    <!-- Product Detail Section Card -->
     <div class="card border-0 shadow-sm rounded-4 p-4 p-md-4 mb-4 bg-white">
         <div class="row g-4 align-items-start">
-            <!-- Left: Product Image -->
             <div class="col-lg-5">
                 <div class="position-relative overflow-hidden rounded-4 shadow-sm border bg-light" style="height: 480px;">
                     <img src="{{ $fotoProduk }}" alt="{{ $namaProduk }}" class="w-100 h-100" style="object-fit: cover;">
                 </div>
             </div>
 
-            <!-- Right: Product Information & Actions -->
             <div class="col-lg-7 ps-lg-4">
-                <!-- Category Badge -->
+
                 <div class="mb-3">
                     <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: #dcfce7; color: #166534; font-size: 12px;">
                         {{ $kategoriNama }}
                     </span>
                 </div>
 
-                <!-- Store Info Box -->
+
                 <div class="store-info-card p-3 rounded-3 mb-3" style="background-color: #fafbfa; border: 1px solid #e2e8f0;">
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <div class="rounded-3 d-flex align-items-center justify-content-center fw-bold" style="width: 44px; height: 44px; background-color: #dcfce7; color: #166534; font-size: 16px;">
@@ -212,10 +210,10 @@
                     </div>
                 </div>
 
-                <!-- Product Title -->
+
                 <h2 class="fw-bold text-dark mb-3 fs-3">{{ $namaProduk }}</h2>
 
-                <!-- Price & Stock Status Box -->
+  
                 <div class="price-stock-box p-3 rounded-3 mb-4 d-flex justify-content-between align-items-center" style="background-color: #fafbfa; border: 1px solid #f1f5f9;">
                     <div>
                         <div class="text-muted fw-bold text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">
@@ -242,7 +240,7 @@
                     </div>
                 </div>
 
-                <!-- Product Description -->
+
                 <div class="mb-4">
                     <div class="fw-bold text-uppercase text-dark mb-2" style="font-size: 12px; letter-spacing: 0.5px;">
                         DESKRIPSI PRODUK
@@ -252,7 +250,7 @@
                     </p>
                 </div>
 
-                <!-- Specifications Table -->
+    
                 <div class="specs-table-wrapper rounded-3 mb-4 overflow-hidden" style="border: 1px solid #e2e8f0; background-color: #fff;">
                     @foreach($specs as $label => $val)
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 {{ !$loop->last ? 'border-bottom' : '' }}" style="background-color: {{ $loop->odd ? '#ffffff' : '#fafbfa' }}; font-size: 13px;">
@@ -262,10 +260,10 @@
                     @endforeach
                 </div>
 
-                <!-- Action Buttons -->
+
                 <div class="row g-3 mt-1">
                     @auth
-                    <!-- Big Direct Order Button -->
+        
                     <div class="col-md-7">
                         <a href="{{ $linkDirectChat }}" target="_blank" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.2);">
@@ -278,7 +276,7 @@
                         </a>
                     </div>
 
-                    <!-- Share Button (Khusus Pengguna Login) -->
+
                     <div class="col-md-5">
                         <a href="{{ $linkShare }}" target="_blank" class="btn w-100 rounded-3 text-decoration-none p-3 shadow-sm d-flex align-items-center justify-content-center gap-2 h-100 fw-semibold" style="background-color: {{ $messagingLightBg }}; border: 1.5px solid {{ $messagingBorderColor }}; color: {{ $messagingColor }}; font-size: 14px;">
                             <i class="{{ $messagingIcon }} fs-5"></i>
@@ -305,7 +303,7 @@
         </div>
     </div>
 
-    <!-- Footer Credit Text Component -->
+
     @include('warga.umkm.components.footerUmkm')
 
 </div>

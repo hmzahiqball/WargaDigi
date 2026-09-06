@@ -11,17 +11,14 @@
     }
 @endphp
 
-<!-- Modal Tambah Produk Baru -->
 <div class="modal fade" id="modalTambahProduk" tabindex="-1" aria-labelledby="modalTambahProdukLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <!-- Modal Header -->
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 align-items-center">
                 <h4 class="modal-title fw-bold text-dark fs-5 mb-0" id="modalTambahProdukLabel">Tambah Produk Baru</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Modal Body Form -->
             <form action="{{ route('warga.umkm.produk.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @if($usahaId)
@@ -29,7 +26,6 @@
                 @endif
 
                 <div class="modal-body px-4 py-3">
-                    <!-- Unggah Foto Produk -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-2">Unggah Foto Produk</label>
                         <div class="upload-drag-drop-box text-center p-4 rounded-3 border-2 border-dashed position-relative" 
@@ -59,13 +55,11 @@
                         </div>
                     </div>
 
-                    <!-- Nama Produk -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
                         <input type="text" name="nama_produk" class="form-control rounded-3 py-2 px-3 border shadow-none" placeholder="Contoh: Kopi Kenangan Mantan" required>
                     </div>
 
-                    <!-- Status Stok & Kategori -->
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-semibold text-dark mb-1">Status Stok</label>
@@ -91,7 +85,6 @@
                         </div>
                     </div>
 
-                    <!-- Harga -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Harga</label>
                         <div class="input-group">
@@ -100,14 +93,11 @@
                         </div>
                     </div>
 
-                    <!-- Deskripsi Produk -->
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Deskripsi Produk</label>
                         <textarea name="deskripsi" class="form-control rounded-3 py-2 px-3 border shadow-none" rows="3" placeholder="Jelaskan detail produk Anda..."></textarea>
                     </div>
                 </div>
-
-                <!-- Modal Footer -->
                 <div class="modal-footer justify-content-end gap-2 px-4 py-3 border-top mt-2">
                     <button type="button" class="btn btn-white bg-white border px-4 py-2 rounded-3 small fw-semibold text-dark shadow-sm" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn text-white px-4 py-2 rounded-3 small fw-semibold shadow-sm" style="background-color: #4E8D5F; border-color: #4E8D5F;">Simpan Produk</button>

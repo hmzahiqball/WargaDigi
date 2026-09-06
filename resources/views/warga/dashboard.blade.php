@@ -13,7 +13,6 @@
     </span>
 </div>
 
-{{-- Status Notifikasi Pendaftaran UMKM Pending --}}
 @if(isset($pendingUmkmList) && count($pendingUmkmList) > 0)
     <div class="mb-4">
         @foreach($pendingUmkmList as $pUmkm)
@@ -38,7 +37,6 @@
     </div>
 @endif
 
-<!-- Quick Actions -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">
@@ -75,10 +73,7 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Bagian Kiri -->
     <div class="col-lg-8">
-        
-        <!-- Data Anggota Keluarga -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0">Data Anggota Keluarga</h5>
             <a href="{{ route('warga.keluarga.index') }}" class="text-success text-decoration-none small fw-semibold">+ Kelola Keluarga</a>
@@ -108,7 +103,6 @@
             </div>
         </div>
 
-        <!-- Ringkasan Transparansi Keuangan -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0">Transparansi Keuangan RW 21</h5>
             <a href="{{ route('transparansi') }}" class="text-success text-decoration-none small fw-semibold">Lihat Detail</a>
@@ -134,7 +128,6 @@
             </div>
         </div>
 
-        <!-- Update Terkini -->
         <div class="d-flex align-items-center gap-3 mb-3">
             <h5 class="fw-bold mb-0">Update Terkini</h5>
             <div class="d-flex gap-2 ms-auto">
@@ -162,7 +155,6 @@
 
     </div>
 
-    <!-- Bagian Kanan -->
     <div class="col-lg-4">
         <div class="card card-custom p-4 mb-4 shadow-sm border-0">
             <h6 class="fw-bold mb-4"><i class="bi bi-megaphone text-success me-2"></i> Agenda Terkini</h6>
@@ -182,7 +174,6 @@
     </div>
 </div>
 
-<!-- Pojok UMKM -->
 <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
     <div>
         <h5 class="fw-bold mb-1">Pojok UMKM</h5>
@@ -204,6 +195,5 @@
     </div>
 </div>
 
-{{-- Footer Component --}}
 @include('warga.umkm.components.footerUmkm')
 @endsection

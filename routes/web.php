@@ -30,6 +30,7 @@ Route::get('/pojok-umkm/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->n
 Route::get('/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
 Route::get('/produk/{id}', [UmkmController::class, 'detailProduk'])->name('produk.show');
 Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->name('public.umkm.produk.show');
+Route::get('/warga/galeri/produk/{id}', [UmkmController::class, 'detailProduk'])->name('warga.umkm.produk.detail');
 Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
 
 // Authentication Routes
@@ -40,7 +41,6 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
 
-// Admin Routes (Role: Admin Aplikasi)
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
@@ -59,13 +59,11 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->name('rw
     Route::post('/umkm/{id}/reject', [RwController::class, 'rejectUmkm'])->name('umkm.reject');
 });
 
-// RT Routes (Role: Ketua RT)
 Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
 });
 
-// Operator Konten Routes (Role: Op. Konten RW, Op. Konten RT)
 Route::middleware(['auth', 'role:Op. Konten RW,Op. Konten RT'])->group(function () {
     Route::prefix('op-konten')->group(function () {
         Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('opkonten.dashboard');
@@ -74,7 +72,6 @@ Route::middleware(['auth', 'role:Op. Konten RW,Op. Konten RT'])->group(function 
     Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
 });
 
-// Operator Keuangan Routes (Role: Op. Keuangan RW, Op. Keuangan RT, DKM)
 Route::middleware(['auth', 'role:Op. Keuangan RW,Op. Keuangan RT,DKM'])->group(function () {
     Route::prefix('op-keuangan')->group(function () {
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
@@ -92,16 +89,12 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::get('/surat/create', [SuratController::class, 'create'])->name('surat.create');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
-    // Galeri UMKM (Eksplorasi & Publik Warga)
     Route::get('/galeri', [GaleriUmkmController::class, 'index'])->name('umkm.galeri');
     Route::get('/galeri/koleksi/{tipe?}', [GaleriUmkmController::class, 'koleksiProduk'])->name('umkm.koleksi');
     Route::get('/galeri/usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.usaha.show');
     Route::get('/galeri/detail-usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
-    Route::get('/galeri/produk/{id}', [GaleriUmkmController::class, 'detailProduk'])->name('umkm.produk.detail');
     Route::get('/galeri/daftar', [GaleriUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/galeri/daftar', [GaleriUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');
-
-    // Kelola UMKM (Manajemen Toko & Produk Pemilik UMKM)
     Route::get('/galeri/kelola', [KelolaUmkmController::class, 'index'])->name('umkm.kelola');
     Route::put('/galeri/usaha/{id}', [KelolaUmkmController::class, 'updateUsaha'])->name('umkm.update-usaha');
     Route::post('/galeri/usaha/{id}/sampul', [KelolaUmkmController::class, 'updateSampulUsaha'])->name('umkm.update-sampul');

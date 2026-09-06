@@ -13,11 +13,8 @@
     $usahaNama = $item->usaha->nama_usaha ?? 'Warga RW 12';
     $usahaId = $item->umkm_usaha_id ?? $item->usaha->id ?? '';
     $deskripsi = $item->deskripsi ?? 'Tidak ada deskripsi produk.';
-    $productDetailUrl = request()->is('warga/*')
-        ? (Route::has('warga.umkm.produk.detail') ? route('warga.umkm.produk.detail', $item->id) : route('produk.show', $item->id))
-        : route('produk.show', $item->id);
+    $productDetailUrl = route('produk.show', $item->id);
 
-    // Messaging Integration (Telegram / WhatsApp)
     $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
     $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
     $messagingBtnOutline = \App\Services\Messaging\MessagingService::getOutlineButtonClass();
@@ -39,7 +36,7 @@
                 <img src="{{ $foto }}" alt="{{ $namaProduk }}" class="img-fluid w-100" style="height: 200px; object-fit: cover;">
             </a>
 
-            {{-- Badges Kiri Atas: Baru & Populer --}}
+
             @if($isBaru || $isPopuler)
                 <div class="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1" style="z-index: 2;">
                     @if($isBaru)
@@ -106,7 +103,10 @@
                         @endif
                     </div>
                 </div>
-                @auth
+                <a href="{{ $shareLink }}" target="_blank" class="btn {{ $messagingBtnOutline }} w-100 rounded-3 fw-semibold small text-decoration-none d-inline-flex align-items-center justify-content-center gap-1">
+                    <i class="{{ $messagingIcon }}"></i> Share to {{ $messagingLabel }}
+                </a>
+                {{-- @auth
                     <a href="{{ $shareLink }}" target="_blank" class="btn {{ $messagingBtnOutline }} w-100 rounded-3 fw-semibold small text-decoration-none d-inline-flex align-items-center justify-content-center gap-1">
                         <i class="{{ $messagingIcon }}"></i> Share to {{ $messagingLabel }}
                     </a>
@@ -114,7 +114,7 @@
                     <a href="{{ $productDetailUrl }}" class="btn btn-outline-success w-100 rounded-3 fw-semibold small text-decoration-none">
                         <i class="bi bi-eye me-1"></i> Lihat Detail Produk
                     </a>
-                @endauth
+                @endauth --}}
             </div>
         </div>
     </div>

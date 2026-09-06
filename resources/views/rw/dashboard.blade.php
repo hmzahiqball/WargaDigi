@@ -18,7 +18,7 @@
     </div>
 </div>
 
-{{-- UMKM Baru Notification Banner --}}
+
 @if(isset($pendingUmkmCount) && $pendingUmkmCount > 0)
     <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
         <div class="d-flex align-items-center gap-3">
@@ -36,7 +36,7 @@
     </div>
 @endif
 
-{{-- Stats Row --}}
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="card card-custom p-3 h-100 shadow-sm">
@@ -87,9 +87,8 @@
     </div>
 </div>
 
-{{-- Main Grid --}}
+
 <div class="row g-4">
-    {{-- Left Column: Aktivitas RT Terakhir --}}
     <div class="col-lg-7">
         <div class="card card-custom p-4 h-100 shadow-sm border-0">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -125,9 +124,7 @@
         </div>
     </div>
 
-    {{-- Right Column: Aksi Cepat & Document Terakhir --}}
     <div class="col-lg-5 d-flex flex-column gap-4">
-        {{-- Aksi Cepat --}}
         <div class="card card-custom p-4 shadow-sm border-0">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Aksi Cepat</h5>
@@ -158,7 +155,6 @@
             </div>
         </div>
 
-        {{-- Document Terakhir --}}
         <div>
             <h5 class="fw-bold mb-3">Document Terakhir</h5>
             <div class="row g-3">

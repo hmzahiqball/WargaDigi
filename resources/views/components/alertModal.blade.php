@@ -47,17 +47,17 @@
                 </svg>
             </div>
 
-            <!-- Judul Sukses -->
+
             <h4 class="fw-bold text-dark mb-2" id="modalAlertSuccessTitle" style="font-size: 1.35rem; line-height: 1.35; color: #1e293b;">
                 Berhasil!
             </h4>
 
-            <!-- Pesan Sukses -->
+
             <p class="text-muted mb-4" id="modalAlertSuccessMessage" style="font-size: 0.95rem; color: #64748b; line-height: 1.5;">
                 Data berhasil diperbarui.
             </p>
 
-            <!-- Tombol Selesai -->
+
             <div class="d-flex justify-content-center align-items-center w-100">
                 <button type="button" class="btn w-100 text-white" data-bs-dismiss="modal" id="btnAlertSuccessAction" style="background-color: #2E7D32; border: none; border-radius: 12px; font-weight: 600; padding: 0.7rem 1.5rem; font-size: 1rem; transition: all 0.2s;">
                     Selesai

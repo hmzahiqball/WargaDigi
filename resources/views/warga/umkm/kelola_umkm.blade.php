@@ -4,7 +4,6 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    <!-- Header Kelola UMKM -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
             <h2 class="fw-bold text-success mb-1">{{ $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom' }}</h2>
@@ -34,9 +33,7 @@
             </div>
         </div>
 
-        <!-- Bagian Kanan: Dropdown Pilih Usaha & Tombol Kembali -->
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <!-- Dropdown Pilih Toko / Usaha Milik NIK (Sejajar Header) -->
             @if(isset($daftarUsaha) && $daftarUsaha->count() > 0)
             <div class="dropdown">
                 <button class="btn btn-white bg-white border shadow-sm rounded-3 px-3 py-2 dropdown-toggle d-flex align-items-center gap-2 text-dark" type="button" id="dropdownPilihUsaha" data-bs-toggle="dropdown" aria-expanded="false" style="height: 46px;">
@@ -109,7 +106,6 @@
         </div>
     </div>
 
-    {{-- Alert Banner jika Usaha Berstatus Pending --}}
     @if(isset($usaha) && $usaha->status_verifikasi === 'Pending')
     <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 p-md-4 mb-4 rounded-4 gap-3" style="background-color: #fffbeb; border-left: 6px solid #f59e0b !important;">
         <div class="d-flex align-items-center gap-3">
@@ -132,7 +128,6 @@
     </div>
     @endif
 
-    <!-- Hero Banner Card -->
     <div class="card border-0 rounded-4 overflow-hidden mb-4 shadow-sm position-relative text-white" style="min-height: 320px; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%), url('{{ !empty($usaha->foto_usaha) ? asset('storage/' . $usaha->foto_usaha) : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&auto=format&fit=crop' }}') center/cover no-repeat;">
         <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-between">
             <!-- Top Badges -->
@@ -146,7 +141,6 @@
                 </span>
             </div>
 
-            <!-- Main Content Banner -->
             <div>
                 <h2 class="fw-bold text-white mb-2 fs-1">{{ $usaha->nama_usaha ?? 'Seni Pahat Kayu Jati Asli Tanimulya' }}</h2>
                 <p class="text-white-50 mb-4 fs-6" style="max-width: 680px; line-height: 1.5;">
@@ -164,10 +158,8 @@
         </div>
     </div>
 
-    <!-- Summary Stat Cards -->
     @include('warga.umkm.components.cardSummaryStat')
 
-    <!-- Section Header: Produk Teratas & Katalog Etalase -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
         <div>
             <h5 class="fw-bold text-dark mb-1">Produk Teratas & Katalog Etalase</h5>
@@ -186,7 +178,6 @@
         </div>
     </div>
 
-    <!-- Filter & Search Bar -->
     @include('warga.umkm.components.filterSearchBar', [
         'actionUrl' => route('warga.umkm.kelola'),
         'placeholder' => 'Cari Produk Berdasarkan Nama',
@@ -197,14 +188,12 @@
         'usahaId' => $usaha->id ?? null
     ])
 
-        <!-- Product Cards Grid (4 Columns) -->
     <div class="row g-4 mb-4">
         @if(isset($produk) && count($produk) > 0)
             @foreach($produk as $item)
                 @include('warga.umkm.components.cardProductManage', ['item' => $item])
             @endforeach
         @endif
-        <!-- Card 4: Dotted Add Product Card -->
         <div class="col-sm-6 col-md-4 col-lg-3">
             @if(isset($usaha) && $usaha->status_verifikasi === 'Pending')
                 <div class="add-product-card text-muted" style="cursor: not-allowed; opacity: 0.75; background-color: #f8fafc; border-color: #cbd5e1;">
@@ -230,18 +219,14 @@
         </div>
     </div>
 
-    <!-- Pagination Component -->
     @include('components.pagination', ['paginator' => $produk, 'label' => 'produk'])
 
-    <!-- Footer Credit Text Component -->
     @include('warga.umkm.components.footerUmkm')
 </div>
 
-<!-- Modal Tambah & Edit Produk Component -->
 @include('warga.umkm.components.modalTambahProduk')
 @include('warga.umkm.components.modalEditProduk')
 
-<!-- Modal Edit Data UMKM -->
 <div class="modal fade" id="modalEditUMKM" tabindex="-1" aria-labelledby="modalEditUMKMLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -305,7 +290,6 @@
     </div>
 </div>
 
-<!-- Modal Ganti Foto Sampul -->
 <div class="modal fade" id="modalGantiSampul" tabindex="-1" aria-labelledby="modalGantiSampulLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
