@@ -1,16 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Sidebar Menu Configurations
-    |--------------------------------------------------------------------------
-    |
-    | Dynamic menu configuration for WargaDigi layout sidebar.
-    | Menu items will be rendered dynamically based on user role.
-    |
-    */
-
     // --- ADMIN APLIKASI ---
     [
         'title' => 'Dashboard',
@@ -107,7 +97,8 @@ return [
     ],
     [
         'title' => 'UMKM',
-        'url'   => '#',
+        'route' => 'rw.umkm',
+        'url'   => '/rw/umkm',
         'icon'  => 'bi-shop',
         'roles' => ['Admin RW', 'Pimpinan RW'],
         'active' => ['rw/umkm*'],
@@ -254,11 +245,11 @@ return [
     ],
     [
         'title' => 'Galeri UMKM',
-        'route' => 'warga.umkm.produk.index',
-        'url'   => '/warga/umkm/produk',
+        'route' => 'warga.umkm.galeri',
+        'url'   => '/warga/galeri',
         'icon'  => 'bi-shop',
         'roles' => ['Warga'],
-        'active' => ['warga.umkm.*'],
+        'active' => ['warga/galeri/kelola/produk','warga/galeri/kelola','warga/galeri*'],
     ],
     [
         'title' => 'Agenda Warga',

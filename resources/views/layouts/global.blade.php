@@ -24,6 +24,9 @@
         </main>
     </div>
 
+    {{-- Dynamic Alert & Confirmation Modals --}}
+    @include('components.alertModal')
+
     {{-- Toast Container --}}
     <div class="admin-toast-container" id="toastContainer"></div>
 

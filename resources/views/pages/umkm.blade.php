@@ -1,61 +1,52 @@
 @extends('layouts.app')
 
 @section('title', 'Pojok UMKM')
-@section('meta_description', 'Pojok UMKM WargaDigi 21 — Dukung usaha tetangga. Temukan beragam produk dan jasa unggulan dari warga RW 21 Tanimulya.')
+@section('meta_description', 'Pojok UMKM WargaDigi 21 — Dukung usaha tetangga. Temukan beragam toko, produk, dan jasa unggulan dari warga RW 21 Tanimulya.')
 
 @section('content')
 {{-- Page Hero --}}
-<section class="page-hero">
+<section class="page-hero mb-4">
     <div class="container">
         <h1>Pojok UMKM</h1>
-        <p>Dukung usaha tetangga. Temukan beragam produk dan jasa unggulan dari warga RW 21 Tanimulya.</p>
+        <p>Dukung usaha tetangga. Temukan beragam toko, produk, dan jasa unggulan dari warga RW 21 Tanimulya.</p>
     </div>
 </section>
 
-{{-- Filter & Search --}}
+{{-- Filter & Search Component --}}
 <section class="container mb-4">
-    <div class="row align-items-center g-3">
-        <div class="col-lg-8">
-            <div class="filter-pills">
-                @foreach($categories as $index => $cat)
-                <a href="#" class="filter-pill {{ $index === 0 ? 'active' : '' }}">{{ $cat }}</a>
-                @endforeach
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="search-box">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" class="form-control" placeholder="Cari produk atau toko...">
-            </div>
-        </div>
-    </div>
+    @include('warga.umkm.components.filterSearchBar', [
+        'actionUrl' => route('pojok-umkm'),
+        'placeholder' => 'Cari Toko / Usaha UMKM Berdasarkan Nama...',
+        'daftarKategoriUmkm' => $daftarKategoriUmkm ?? null,
+        'showStatus' => false
+    ])
 </section>
 
-{{-- Products Grid --}}
+{{-- Usaha / Toko Grid --}}
 <section class="container pb-5">
     <div class="row g-4">
-        @foreach($products as $product)
-        <div class="col-lg-3 col-md-6 fade-on-scroll">
-            <div class="card-umkm">
-                <div class="umkm-img-wrapper">
-                    <img src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
-                    <span class="price-badge">{{ $product['price'] }}</span>
-                </div>
-                <div class="card-body">
-                    <div class="umkm-rt"><i class="bi bi-geo-alt"></i> {{ $product['rt'] }}</div>
-                    <h5 class="card-title">{{ $product['name'] }}</h5>
-                    <p class="card-text">{{ $product['desc'] }}</p>
-                    <a href="#" class="btn btn-hubungi mt-2">
-                        <i class="bi bi-chat-dots"></i> Hubungi Penjual
-                    </a>
+        @forelse($daftarUsaha as $usaha)
+            @include('warga.umkm.components.cardUsaha', [
+                'usaha' => $usaha, 
+                'colClass' => 'col-lg-4 col-md-6 fade-on-scroll'
+            ])
+        @empty
+            <div class="col-12 text-center py-5">
+                <div class="card border-0 shadow-sm rounded-4 p-5 bg-white text-center">
+                    <i class="bi bi-shop fs-1 text-muted d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark mb-1">Tidak ada usaha atau toko ditemukan</h5>
+                    <p class="text-muted small mb-3">Coba gunakan kata kunci pencarian lain atau pilih kategori yang berbeda.</p>
+                    <div>
+                        <a href="{{ route('pojok-umkm') }}" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Reset Pencarian
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-        @endforeach
+        @endforelse
     </div>
 
-    <div class="text-center mt-5">
-        <a href="#" class="btn btn-outline-warga">Muat Lebih Banyak</a>
-    </div>
+    {{-- Pagination Component --}}
+    @include('components.pagination', ['paginator' => $daftarUsaha, 'label' => 'toko'])
 </section>
 @endsection

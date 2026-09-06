@@ -14,21 +14,44 @@ class UmkmProduk extends Model
 
     protected $fillable = [
         'umkm_usaha_id',
+        'kategori_produk_id',
         'nama_produk',
         'deskripsi',
         'harga',
-        'stok',
+        'status_stok',
         'foto_produk',
         'status_produk',
-        'is_tersedia',
         'link_wa',
+        'jumlah_akses',
     ];
 
     protected $casts = [
         'harga' => 'decimal:2',
-        'stok' => 'integer',
-        'is_tersedia' => 'boolean',
+        'jumlah_akses' => 'integer',
     ];
+
+    public function setStatusStokAttribute($value)
+    {
+        $this->attributes['status_stok'] = strtolower($value ?? 'tersedia');
+    }
+
+    public function getStatusStokFormattedAttribute()
+    {
+        return ucfirst($this->status_stok ?? 'tersedia');
+    }
+
+    public function getStokAttribute()
+    {
+        return $this->status_stok ?? 'tersedia';
+    }
+
+    /**
+     * Relasi ke Kategori Produk
+     */
+    public function kategori_produk()
+    {
+        return $this->belongsTo(KategoriProduk::class, 'kategori_produk_id');
+    }
 
     /**
      * Relasi ke usaha UMKM

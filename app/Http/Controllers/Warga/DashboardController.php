@@ -56,6 +56,14 @@ class DashboardController extends Controller
             ]
         ];
 
-        return view('warga.dashboard', compact('user', 'stats', 'anggotaKeluarga', 'updatesTerkini', 'agendaList'));
+        $pendingUmkmList = [];
+        if ($user && $user->nik) {
+            $pendingUmkmList = \App\Models\UmkmUsaha::where('nik', $user->nik)
+                ->where('status_verifikasi', 'Pending')
+                ->latest()
+                ->get();
+        }
+
+        return view('warga.dashboard', compact('user', 'stats', 'anggotaKeluarga', 'updatesTerkini', 'agendaList', 'pendingUmkmList'));
     }
 }

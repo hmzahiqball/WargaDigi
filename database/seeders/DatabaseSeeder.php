@@ -124,5 +124,13 @@ class DatabaseSeeder extends Seeder
         foreach ($rtData as $rt) {
             MasterRt::create($rt);
         }
+
+        // 12. Seed Data UMKM (Kategori, Usaha, & Produk)
+        $this->call([
+            KategoriUmkmSeeder::class,
+            UmkmUsahaSeeder::class,
+            KategoriProdukSeeder::class,
+            UmkmProdukSeeder::class,
+        ]);
     }
 }

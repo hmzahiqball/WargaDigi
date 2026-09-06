@@ -4,47 +4,118 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Models\UmkmProduk;
+use App\Models\UmkmUsaha;
+
 class UmkmController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = ['Semua Kategori', 'Makanan & Minuman', 'Jasa', 'Kerajinan', 'Sembako'];
+        $search = trim((string) ($request->get('q') ?? $request->get('search')));
+        $kategori = $request->get('kategori');
 
-        $products = [
-            [
-                'image' => '/images/umkm-1.jpg',
-                'name' => 'Nasi Kuning Bu Tejo Komplit',
-                'price' => 'Rp 25.000',
-                'rt' => 'Warga RT 02',
-                'desc' => 'Nasi kuning wangi dengan ayam goreng, telur balado, oreg tempe.',
-                'category' => 'Makanan & Minuman',
-            ],
-            [
-                'image' => '/images/umkm-2.jpg',
-                'name' => 'Jasa Servis Elektronik Pak Budi',
-                'price' => 'Mulai Rp 50k',
-                'rt' => 'Warga RT 05',
-                'desc' => 'Melayani perbaikan TV, Kipas Angin, Mesin Cuci dengan garansi...',
-                'category' => 'Jasa',
-            ],
-            [
-                'image' => '/images/umkm-3.jpg',
-                'name' => 'Kerajinan Anyaman Bambu Sari',
-                'price' => 'Rp 35.000',
-                'rt' => 'Warga RT 01',
-                'desc' => 'Kotak tisu dan wadah serbaguna dari anyaman bambu asli yang kuat.',
-                'category' => 'Kerajinan',
-            ],
-            [
-                'image' => '/images/umkm-4.jpg',
-                'name' => 'Warung Sayur & Sembako Makmur',
-                'price' => 'Bervariasi',
-                'rt' => 'Warga RT 04',
-                'desc' => 'Sedia sayuran segar tiap pagi, beras, minyak goreng, dan...',
-                'category' => 'Sembako',
-            ],
-        ];
+        $query = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'kategori_umkm', 'produk'])
+            ->where('status_verifikasi', 'Approved')
+            ->where('is_active', true);
 
-        return view('pages.umkm', compact('categories', 'products'));
+        if ($kategori && !in_array($kategori, ['Semua', 'Semua Kategori'])) {
+            $query->whereHas('kategori_umkm', function ($q) use ($kategori) {
+                $q->where('nama_kategori', $kategori);
+            });
+        }
+
+        if ($search !== '') {
+            $words = array_filter(preg_split('/[\s,]+/', $search));
+            if (!empty($words)) {
+                $query->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
+                        $q->orWhereRaw('LOWER(nama_usaha) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(alamat_usaha) LIKE ?', [$term]);
+                    }
+                });
+            }
+        }
+
+        $daftarUsaha = $query->latest()->paginate(9)->withQueryString();
+        $daftarKategoriUmkm = \App\Models\KategoriUmkm::all();
+
+        return view('pages.umkm', compact('daftarUsaha', 'daftarKategoriUmkm', 'search', 'kategori'));
+    }
+
+    public function detailUsaha(Request $request, $id = null)
+    {
+        $usaha = null;
+        if ($id) {
+            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk.kategori_produk', 'kategori_umkm', 'kategori_produk'])->find($id);
+        }
+
+        if (!$usaha) {
+            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk.kategori_produk', 'kategori_umkm', 'kategori_produk'])->first();
+        }
+
+        $query = UmkmProduk::with(['usaha.kategori_produk', 'usaha.kategori_umkm', 'kategori_produk']);
+
+        if ($usaha) {
+            $query->where('umkm_usaha_id', $usaha->id);
+        }
+
+        $query->where('status_produk', 'Aktif');
+
+        $search = trim((string) ($request->get('q') ?? $request->get('search')));
+        if ($search !== '') {
+            $words = array_filter(preg_split('/[\s,]+/', $search));
+            if (!empty($words)) {
+                $query->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
+                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term]);
+                    }
+                });
+            }
+        }
+
+        $kategori = $request->get('kategori');
+        if ($kategori && $kategori !== 'Semua Kategori') {
+            $query->whereHas('kategori_produk', function ($q) use ($kategori) {
+                $q->where('nama_kategori', $kategori);
+            });
+        }
+
+        $sort = $request->get('sort');
+        if ($sort === 'termahal') {
+            $query->orderBy('harga', 'desc');
+        } elseif ($sort === 'termurah') {
+            $query->orderBy('harga', 'asc');
+        } else {
+            $query->latest();
+        }
+
+        $produk = $query->paginate(8)->withQueryString();
+        $isDashboard = false;
+
+        return view('pages.detail_usaha', compact('usaha', 'produk', 'isDashboard', 'search', 'kategori', 'sort'));
+    }
+
+    public function detailProduk($id)
+    {
+        $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->find($id);
+
+        if (!$produk) {
+            $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->first();
+        }
+
+        if (!$produk) {
+            abort(404, 'Produk tidak ditemukan');
+        }
+
+        $produk->increment('jumlah_akses');
+
+        $usaha = $produk->usaha;
+        $isDashboard = false;
+
+        return view('pages.detail_produk', compact('produk', 'usaha', 'isDashboard'));
     }
 }

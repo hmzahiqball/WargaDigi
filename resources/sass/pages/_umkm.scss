@@ -1,0 +1,311 @@
+// ==========================================
+// WARGA UMKM MODULE STYLES
+// ==========================================
+
+// --- Hero & Banner Cards ---
+.umkm-hero-card {
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .umkm-hero-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 100%);
+        z-index: 1;
+    }
+
+    .umkm-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+}
+
+.usaha-banner-card {
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 360px;
+    padding: 32px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+    .banner-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%);
+        z-index: 1;
+    }
+
+    .banner-content {
+        position: relative;
+        z-index: 2;
+        max-width: 720px;
+    }
+}
+
+// --- Category & Feature Badges ---
+.badge-kuliner { background-color: #ff9800 !important; color: #fff; }
+.badge-fashion { background-color: #e91e63 !important; color: #fff; }
+.badge-kerajinan { background-color: #9c27b0 !important; color: #fff; }
+.badge-koperasi { background-color: #00bcd4 !important; color: #fff; }
+.badge-jasa { background-color: #607d8b !important; color: #fff; }
+.badge-featured {
+    background-color: #ff9800 !important;
+    color: #fff;
+    font-weight: 600;
+}
+
+// --- Product Cards (Galeri, Kelola, Showcase) ---
+.product-card {
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: #fff;
+    overflow: hidden;
+    transition: all 0.25s ease-in-out;
+
+    &:hover {
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        transform: translateY(-4px);
+
+        .product-img-wrapper img {
+            transform: scale(1.06);
+        }
+    }
+
+    &.out-of-stock {
+        border: 1.5px solid #fca5a5;
+    }
+
+    .product-img-wrapper {
+        position: relative;
+        height: 185px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+    }
+}
+
+.product-manage-card {
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #fff;
+    overflow: hidden;
+    transition: all 0.25s ease-in-out;
+
+    &:hover {
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        transform: translateY(-3px);
+    }
+
+    &.out-of-stock {
+        border: 1.5px solid #fca5a5;
+    }
+
+    .product-manage-img {
+        position: relative;
+        height: 190px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+}
+
+.product-showcase-card {
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: #fff;
+    overflow: hidden;
+    transition: all 0.25s ease-in-out;
+
+    &:hover {
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        transform: translateY(-3px);
+    }
+
+    .product-showcase-img {
+        position: relative;
+        height: 190px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+}
+
+.add-product-card {
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #fff;
+    text-align: center;
+    height: 100%;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+
+    &:hover {
+        border-color: #198754;
+        background-color: #f8fdf9;
+        transform: translateY(-3px);
+    }
+
+    .add-product-icon {
+        width: 56px;
+        height: 56px;
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+}
+
+// --- WhatsApp Buttons ---
+.btn-whatsapp {
+    background-color: #25D366;
+    color: #fff;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #20ba59;
+        color: #fff;
+    }
+}
+
+.btn-whatsapp-hero {
+    background-color: #25D366;
+    color: #fff;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #20ba59;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+}
+
+.btn-outline-whatsapp {
+    border: 1px solid #198754;
+    color: #198754;
+    background-color: transparent;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #198754;
+        color: #fff;
+    }
+}
+
+// --- Telegram Buttons ---
+.btn-telegram {
+    background-color: #24A1DE;
+    color: #fff;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #1d8bc0;
+        color: #fff;
+    }
+}
+
+.btn-telegram-hero {
+    background-color: #24A1DE;
+    color: #fff;
+    border: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #1d8bc0;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+}
+
+.btn-outline-telegram {
+    border: 1px solid #24A1DE;
+    color: #24A1DE;
+    background-color: transparent;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #24A1DE;
+        color: #fff;
+    }
+}
+
+// --- Filter Pills ---
+.filter-pill {
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &.active, &:hover {
+        background: #5b9b76;
+        border-color: #5b9b76;
+        color: #fff;
+    }
+}
+
+// --- Upload Dashed Box ---
+.upload-dashed-box {
+    border: 2px dashed #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #198754 !important;
+        background-color: #f8fdf9 !important;
+
+        i, span {
+            color: #198754 !important;
+        }
+    }
+}

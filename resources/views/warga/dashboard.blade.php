@@ -13,6 +13,31 @@
     </span>
 </div>
 
+{{-- Status Notifikasi Pendaftaran UMKM Pending --}}
+@if(isset($pendingUmkmList) && count($pendingUmkmList) > 0)
+    <div class="mb-4">
+        @foreach($pendingUmkmList as $pUmkm)
+            <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 rounded-3 mb-2 gap-3" style="background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.2); width: 44px; height: 44px;">
+                        <i class="bi bi-clock-history text-warning fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <h6 class="fw-bold mb-0 text-dark">Pendaftaran UMKM "{{ $pUmkm->nama_usaha }}" Sedang Ditinjau</h6>
+                            <span class="badge bg-warning text-dark px-2 py-1 rounded-pill small fw-bold">Pending</span>
+                        </div>
+                        <p class="text-muted small mb-0">Pendaftaran usaha Anda berhasil dikirim dan saat ini sedang menunggu peninjauan dan persetujuan dari Pengurus RW.</p>
+                    </div>
+                </div>
+                <a href="{{ route('warga.umkm.kelola') }}" class="btn btn-warning btn-sm text-dark fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+                    <i class="bi bi-shop me-1"></i> Cek Kelola UMKM
+                </a>
+            </div>
+        @endforeach
+    </div>
+@endif
+
 <!-- Quick Actions -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -40,7 +65,7 @@
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <a href="{{ route('warga.umkm.produk.index') }}" class="text-decoration-none text-dark">
+        <a href="{{ route('warga.umkm.kelola') }}" class="text-decoration-none text-dark">
             <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
                 <i class="bi bi-shop mb-2 fs-3 text-success"></i>
                 <span class="fw-semibold small">Kelola Produk<br>Saya (UMKM)</span>
@@ -163,7 +188,7 @@
         <h5 class="fw-bold mb-1">Pojok UMKM</h5>
         <p class="text-muted small mb-0">Dukung potensi usaha mandiri warga RW 21 Tanimulya</p>
     </div>
-    <a href="{{ route('warga.umkm.produk.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+    <a href="{{ route('warga.umkm.galeri') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua <i class="bi bi-arrow-right"></i></a>
 </div>
 
 <div class="row g-4">
@@ -174,8 +199,11 @@
             </div>
             <h6 class="fw-bold">Daftarkan UMKM Anda</h6>
             <p class="small text-muted mb-4">Promosikan produk kuliner, kriya, atau jasa Anda ke seluruh warga.</p>
-            <a href="{{ route('warga.umkm.produk.index') }}" class="btn btn-success px-4 py-2 small fw-semibold rounded-pill text-decoration-none text-white">Daftar Sekarang</a>
+            <a href="{{ route('warga.umkm.daftar') }}" class="btn btn-success px-4 py-2 small fw-semibold rounded-pill text-decoration-none text-white">Daftar Sekarang</a>
         </div>
     </div>
 </div>
+
+{{-- Footer Component --}}
+@include('warga.umkm.components.footerUmkm')
 @endsection

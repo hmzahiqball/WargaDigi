@@ -18,6 +18,24 @@
     </div>
 </div>
 
+{{-- UMKM Baru Notification Banner --}}
+@if(isset($pendingUmkmCount) && $pendingUmkmCount > 0)
+    <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.2); width: 44px; height: 44px;">
+                <i class="bi bi-shop text-warning fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Pemberitahuan UMKM Baru Menunggu Verifikasi</h6>
+                <p class="text-muted small mb-0">Terdapat <strong>{{ $pendingUmkmCount }}</strong> usaha warga baru yang telah didaftarkan dan menunggu peninjauan Anda.</p>
+            </div>
+        </div>
+        <a href="{{ route('rw.umkm.index') }}" class="btn btn-warning btn-sm text-dark fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+            <i class="bi bi-clipboard-check me-1"></i> Tinjau UMKM Sekarang
+        </a>
+    </div>
+@endif
+
 {{-- Stats Row --}}
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -41,14 +59,21 @@
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card card-custom p-3 h-100 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <small class="text-muted fw-bold">UMKM BARU</small>
-                <i class="bi bi-shop fs-4 text-success"></i>
+        <a href="{{ route('rw.umkm.index') }}" class="text-decoration-none">
+            <div class="card card-custom p-3 h-100 shadow-sm border-0 position-relative">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <small class="text-muted fw-bold">UMKM BARU</small>
+                    <i class="bi bi-shop fs-4 text-success"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">{{ $stats['umkm_baru']['total'] }}</h3>
+                <small class="{{ ($stats['umkm_baru']['total'] > 0) ? 'text-warning fw-bold' : 'text-muted' }}">
+                    @if($stats['umkm_baru']['total'] > 0)
+                        <i class="bi bi-exclamation-circle-fill me-1"></i>
+                    @endif
+                    {{ $stats['umkm_baru']['status'] }}
+                </small>
             </div>
-            <h3 class="fw-bold text-dark mb-1">{{ $stats['umkm_baru']['total'] }}</h3>
-            <small class="text-muted">{{ $stats['umkm_baru']['status'] }}</small>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
         <div class="card card-custom p-3 h-100 shadow-sm border-0">

@@ -15,14 +15,37 @@ class UmkmUsaha extends Model
     protected $fillable = [
         'nik',
         'nama_usaha',
-        'kategori',
+        'kategori_umkm_id',
         'deskripsi',
         'alamat_usaha',
         'no_wa',
         'foto_usaha',
         'status_verifikasi',
         'catatan_verifikasi',
+        'klikWA',
+        'is_active',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'klikWA' => 'integer',
+    ];
+
+    /**
+     * Relasi ke Kategori UMKM
+     */
+    public function kategori_umkm()
+    {
+        return $this->belongsTo(KategoriUmkm::class, 'kategori_umkm_id');
+    }
+
+    /**
+     * Relasi ke Kategori Produk milik UMKM ini
+     */
+    public function kategori_produk()
+    {
+        return $this->hasMany(KategoriProduk::class, 'umkm_usaha_id');
+    }
 
     /**
      * Relasi ke Pemilik (User berdasarkan NIK)
