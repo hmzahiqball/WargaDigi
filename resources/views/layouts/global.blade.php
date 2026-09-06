@@ -105,6 +105,50 @@
             sidebar?.classList.add('collapsed');
             mainContent?.classList.add('expanded');
         }
+
+        // Global Anti Double-Submit Handler
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            // Abaikan form dengan method GET (seperti form pencarian atau filter)
+            if (form.method && form.method.toUpperCase() === 'GET') {
+                return;
+            }
+
+            // Jika form sudah dalam proses kirim, hentikan pengiriman ganda
+            if (form.dataset.submitting === 'true') {
+                e.preventDefault();
+                return false;
+            }
+
+            // Tandai form sedang dalam pengiriman
+            form.dataset.submitting = 'true';
+
+            // Cari tombol submit dalam form
+            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('disabled', 'opacity-75');
+                if (submitBtn.tagName.toLowerCase() === 'button') {
+                    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memproses...';
+                }
+            }
+        }, true);
+
+        // Pulihkan tombol jika pengguna kembali melalui cache browser (bfcache)
+        window.addEventListener('pageshow', function(event) {
+            document.querySelectorAll('form[data-submitting="true"]').forEach(form => {
+                delete form.dataset.submitting;
+                const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('disabled', 'opacity-75');
+                    if (submitBtn.dataset.originalHtml) {
+                        submitBtn.innerHTML = submitBtn.dataset.originalHtml;
+                    }
+                }
+            });
+        });
     });
     </script>
 </body>

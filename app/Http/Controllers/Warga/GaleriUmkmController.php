@@ -286,6 +286,12 @@ class GaleriUmkmController extends Controller
             'foto_usaha' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
         ]);
 
+        $validated['nama_usaha'] = strip_tags($validated['nama_usaha']);
+        $validated['alamat_usaha'] = strip_tags($validated['alamat_usaha']);
+        if (!empty($validated['deskripsi'])) {
+            $validated['deskripsi'] = strip_tags($validated['deskripsi']);
+        }
+
         if (!$kategoriId) {
             $defaultKat = KategoriUmkm::firstOrCreate(['nama_kategori' => 'Lainnya']);
             $kategoriId = $defaultKat->id;

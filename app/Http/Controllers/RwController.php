@@ -154,7 +154,7 @@ class RwController extends Controller
     public function rejectUmkm(Request $request, $id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
-        $catatan = $request->input('catatan_verifikasi', 'Pendaftaran UMKM belum memenuhi persyaratan RW.');
+        $catatan = strip_tags($request->input('catatan_verifikasi', 'Pendaftaran UMKM belum memenuhi persyaratan RW.'));
         $usaha->update([
             'status_verifikasi' => 'Rejected',
             'is_active' => false,

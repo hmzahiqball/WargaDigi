@@ -109,8 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
             subtitleEl.innerText = options.subtitle || 'Anda yakin untuk menghapus produk ini?';
         }
 
-        if (btnAction && options.confirmButtonText) {
-            btnAction.innerText = options.confirmButtonText;
+        if (btnAction) {
+            btnAction.disabled = false;
+            btnAction.innerText = options.confirmButtonText || 'Hapus';
         }
 
         targetDeleteForm = options.formId ? document.getElementById(options.formId) : null;
@@ -120,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modalInstance.show();
     };
 
-    // Helper Global: Tampilkan Modal Berhasil
+    // Helper Global: Tampilkan Modal Berhasil (Aman dari DOM XSS)
     window.showSuccessModal = function(options = {}) {
         const modalEl = document.getElementById('modalAlertSuccess');
         if (!modalEl) return;
@@ -130,10 +131,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnAction = document.getElementById('btnAlertSuccessAction');
 
         if (titleEl) {
-            titleEl.innerHTML = options.title || 'Berhasil!';
+            titleEl.textContent = options.title || 'Berhasil!';
         }
         if (messageEl) {
-            messageEl.innerHTML = options.message || options.text || 'Data berhasil disimpan.';
+            messageEl.textContent = options.message || options.text || 'Data berhasil disimpan.';
         }
         if (btnAction && options.buttonText) {
             btnAction.innerText = options.buttonText;
@@ -143,10 +144,14 @@ document.addEventListener('DOMContentLoaded', function() {
         modalInstance.show();
     };
 
-    // Tombol Konfirmasi Hapus diklik
+    // Tombol Konfirmasi Hapus diklik (Anti Double-Click)
     const btnActionDelete = document.getElementById('btnConfirmDeleteAction');
     if (btnActionDelete) {
         btnActionDelete.addEventListener('click', function() {
+            if (btnActionDelete.disabled) return;
+            btnActionDelete.disabled = true;
+            btnActionDelete.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menghapus...';
+
             const modalEl = document.getElementById('modalConfirmDelete');
             const modalInstance = bootstrap.Modal.getInstance(modalEl);
             if (modalInstance) modalInstance.hide();

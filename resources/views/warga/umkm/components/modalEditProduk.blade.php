@@ -145,7 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
             modalEdit.querySelector('#editProdukHarga').value = harga ? Math.round(harga) : '';
             
             let cleanWa = wa ? wa.replace(/^(\+62|62|0)/, '') : '';
-            modalEdit.querySelector('#editProdukWa').value = cleanWa;
+            const editWaInput = modalEdit.querySelector('#editProdukWa');
+            if (editWaInput) {
+                editWaInput.value = cleanWa;
+            }
 
             modalEdit.querySelector('#editProdukDeskripsi').value = deskripsi || '';
             if (foto) {

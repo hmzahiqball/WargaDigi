@@ -138,6 +138,11 @@ class KelolaUmkmController extends Controller
     {
         $usaha = UmkmUsaha::findOrFail($id);
 
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik || $usaha->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah data profil usaha ini.');
+        }
+
         $kategoriId = $request->get('kategori_umkm_id');
         if ($kategoriId && !KategoriUmkm::where('id', $kategoriId)->exists()) {
             $kat = KategoriUmkm::firstOrCreate(['nama_kategori' => $kategoriId]);
@@ -153,6 +158,12 @@ class KelolaUmkmController extends Controller
             'no_wa' => 'required|string|max:20',
             'deskripsi' => 'nullable|string',
         ]);
+
+        $validated['nama_usaha'] = strip_tags($validated['nama_usaha']);
+        $validated['alamat_usaha'] = strip_tags($validated['alamat_usaha']);
+        if (!empty($validated['deskripsi'])) {
+            $validated['deskripsi'] = strip_tags($validated['deskripsi']);
+        }
 
         if ($kategoriId) {
             $validated['kategori_umkm_id'] = $kategoriId;
@@ -184,6 +195,11 @@ class KelolaUmkmController extends Controller
     {
         $usaha = UmkmUsaha::findOrFail($id);
 
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik || $usaha->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah foto sampul usaha ini.');
+        }
+
         $request->validate([
             'foto_sampul' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
         ]);
@@ -201,23 +217,26 @@ class KelolaUmkmController extends Controller
 
     public function storeProduk(Request $request)
     {
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik) {
+            return back()->with('error', 'Silakan login terlebih dahulu untuk menambah produk.');
+        }
+
         $selectedUsahaId = $request->get('umkm_usaha_id') ?? session('selected_umkm_usaha_id');
         $umkm = null;
         if ($selectedUsahaId) {
-            $umkm = UmkmUsaha::find($selectedUsahaId);
+            $umkm = UmkmUsaha::where('id', $selectedUsahaId)->where('nik', $userNik)->first();
         }
         if (!$umkm) {
-            $userNik = Auth::user()->nik ?? null;
-            if ($userNik) {
-                $umkm = UmkmUsaha::where('nik', $userNik)->first();
-            }
-        }
-        if (!$umkm) {
-            $umkm = UmkmUsaha::first();
+            $umkm = UmkmUsaha::where('nik', $userNik)->first();
         }
 
         if (!$umkm) {
             return back()->with('error', 'Silakan daftarkan usaha terlebih dahulu sebelum menambah produk.');
+        }
+
+        if ($umkm->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki izin untuk menambahkan produk pada usaha ini.');
         }
 
         if ($umkm->status_verifikasi === 'Pending') {
@@ -243,6 +262,11 @@ class KelolaUmkmController extends Controller
             'foto_produk' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
         ]);
 
+        $validated['nama_produk'] = strip_tags($validated['nama_produk']);
+        if (!empty($validated['deskripsi'])) {
+            $validated['deskripsi'] = strip_tags($validated['deskripsi']);
+        }
+
         $validated['kategori_produk_id'] = $kategoriProdukId;
         $validated['umkm_usaha_id'] = $umkm->id;
         $validated['status_produk'] = $request->get('status_produk', 'Aktif');
@@ -255,7 +279,7 @@ class KelolaUmkmController extends Controller
                 $validated['status_stok'] = 'tersedia';
             }
         } else {
-            $validated['status_stok'] = strtolower($validated['status_stok']);
+            $validated['status_stok'] = strtolower(strip_tags($validated['status_stok']));
         }
         unset($validated['stok']);
 
@@ -278,7 +302,12 @@ class KelolaUmkmController extends Controller
 
     public function updateProduk(Request $request, $id)
     {
-        $produk = UmkmProduk::findOrFail($id);
+        $produk = UmkmProduk::with('usaha')->findOrFail($id);
+
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik || !$produk->usaha || $produk->usaha->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah produk ini.');
+        }
 
         $kategoriProdukId = $request->get('kategori_produk_id');
         if ($kategoriProdukId && !KategoriProduk::where('id', $kategoriProdukId)->exists() && $produk->umkm_usaha_id) {
@@ -301,6 +330,11 @@ class KelolaUmkmController extends Controller
             'foto_produk' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
         ]);
 
+        $validated['nama_produk'] = strip_tags($validated['nama_produk']);
+        if (!empty($validated['deskripsi'])) {
+            $validated['deskripsi'] = strip_tags($validated['deskripsi']);
+        }
+
         if (isset($validated['status_produk']) && $validated['status_produk'] === 'Non-Aktif') {
             $validated['status_produk'] = 'Tidak Aktif';
         }
@@ -311,7 +345,7 @@ class KelolaUmkmController extends Controller
                 $validated['status_stok'] = $val <= 0 ? 'habis' : ($val <= 5 ? 'menipis' : 'tersedia');
             }
         } else {
-            $validated['status_stok'] = strtolower($validated['status_stok']);
+            $validated['status_stok'] = strtolower(strip_tags($validated['status_stok']));
         }
         unset($validated['stok']);
 
@@ -348,7 +382,13 @@ class KelolaUmkmController extends Controller
 
     public function destroyProduk($id)
     {
-        $produk = UmkmProduk::findOrFail($id);
+        $produk = UmkmProduk::with('usaha')->findOrFail($id);
+
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik || !$produk->usaha || $produk->usaha->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus produk ini.');
+        }
+
         $namaProduk = $produk->nama_produk;
         $produk->delete();
 
