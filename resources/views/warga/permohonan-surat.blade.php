@@ -86,9 +86,9 @@
                                 </td>
                                 <td class="bg-white py-3 text-center">
                                     @if($item->status === 'Selesai')
-                                        <a href="#" class="text-success fw-bold small text-decoration-none"><i class="bi bi-download me-1"></i>Detail</a>
+                                        <a href="{{ route('warga.surat.download', $item->id) }}" class="btn btn-sm btn-outline-success rounded-pill fw-bold small text-decoration-none shadow-sm"><i class="bi bi-download me-1"></i>Unduh PDF</a>
                                     @else
-                                        <a href="#" class="text-muted fw-bold small text-decoration-none"><i class="bi bi-clock-history me-1"></i>Detail</a>
+                                        <span class="text-muted small"><i class="bi bi-clock-history me-1"></i>Menunggu</span>
                                     @endif
                                 </td>
                             </tr>

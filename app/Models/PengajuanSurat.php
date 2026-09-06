@@ -23,6 +23,8 @@ class PengajuanSurat extends Model
         'file_surat_resmi',
         'tanggal_disetujui_rt',
         'tanggal_selesai',
+        'ttd_rw',
+        'stempel_rw',
     ];
 
     protected function casts(): array

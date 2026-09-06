@@ -45,6 +45,16 @@ Route::get('/login-warga', function () {
     return "User warga tidak ditemukan. Pastikan seeder sudah dijalankan.";
 });
 
+Route::get('/debug-php', function () {
+    return [
+        'upload_tmp_dir' => ini_get('upload_tmp_dir'),
+        'sys_temp_dir' => sys_get_temp_dir(),
+        'upload_max_filesize' => ini_get('upload_max_filesize'),
+        'post_max_size' => ini_get('post_max_size'),
+        'user' => get_current_user(),
+    ];
+});
+
 Route::get('/login-rt', function () {
     $user = \App\Models\User::where('nik', '3217010101010008')->first(); // NIK RT
     if ($user) {
@@ -114,6 +124,7 @@ Route::middleware(['auth'])->prefix('warga')->name('warga.')->group(function () 
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
+    Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
     Route::get('/umkm/daftar', [WargaUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/umkm/daftar', [WargaUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');
     Route::get('/umkm/produk', [WargaUmkmController::class, 'indexProduk'])->name('umkm.produk.index');

@@ -245,7 +245,7 @@
                         <span class="fw-bold small d-block">{{ $item->file_kk }}</span>
                         <span class="text-muted" style="font-size: 11px;">{{ $item->file_kk_size }}</span>
                         <div class="mt-2">
-                            <a href="#" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <a href="{{ $item->file_kk_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
                                 <i class="bi bi-eye me-1"></i>Lihat Dokumen
                             </a>
                         </div>
@@ -256,7 +256,7 @@
                         <span class="fw-bold small d-block">{{ $item->file_ktp }}</span>
                         <span class="text-muted" style="font-size: 11px;">{{ $item->file_ktp_size }}</span>
                         <div class="mt-2">
-                            <a href="#" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <a href="{{ $item->file_ktp_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
                                 <i class="bi bi-eye me-1"></i>Lihat Dokumen
                             </a>
                         </div>

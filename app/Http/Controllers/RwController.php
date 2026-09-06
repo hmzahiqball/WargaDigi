@@ -160,12 +160,42 @@ class RwController extends Controller
      */
     public function approveDokumen(Request $request, $id)
     {
+        \Illuminate\Support\Facades\Log::info('Approve RW Request:', $request->all());
+        
         $pengajuan = PengajuanSurat::findOrFail($id);
-        $pengajuan->update([
+        
+        $dataUpdate = [
             'status' => 'Selesai',
             'catatan_rw' => $request->input('catatan', null),
             'tanggal_selesai' => now(),
-        ]);
+        ];
+
+        // Proses stempel (file upload)
+        if ($request->hasFile('stempel')) {
+            $dataUpdate['stempel_rw'] = $request->file('stempel')->store('dokumen/stempel', 'public');
+        }
+
+        // Proses tanda tangan (base64)
+        if ($request->filled('signature')) {
+            $signature = $request->input('signature');
+            // Format base64: data:image/png;base64,iVBORw0KGgo...
+            if (preg_match('/^data:image\/(\w+);base64,/', $signature, $type)) {
+                $signature = substr($signature, strpos($signature, ',') + 1);
+                $type = strtolower($type[1]); // jpg, png, gif
+
+                if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
+                    $signature = base64_decode($signature);
+                    
+                    if ($signature !== false) {
+                        $fileName = 'dokumen/ttd/' . \Illuminate\Support\Str::random(40) . '.' . $type;
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $signature);
+                        $dataUpdate['ttd_rw'] = $fileName;
+                    }
+                }
+            }
+        }
+
+        $pengajuan->update($dataUpdate);
 
         return redirect()->route('rw.persetujuan-dokumen')
             ->with('success', 'Dokumen berhasil disahkan dan dikirim ke pemohon.');

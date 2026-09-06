@@ -85,4 +85,61 @@ class SuratController extends Controller
         return redirect()->route('warga.surat.index')
             ->with('success', 'Pengajuan surat berhasil dikirim! Silakan tunggu proses verifikasi oleh pengurus RT.');
     }
+
+    /**
+     * Download surat yang sudah selesai dalam format PDF.
+     */
+    public function downloadPdf($id, Request $request)
+    {
+        $user = $request->user();
+        $penduduk = Penduduk::where('nik', $user->nik)->first();
+
+        if (!$penduduk) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Cari pengajuan, pastikan milik warga tersebut (jika rolenya Warga)
+        $query = PengajuanSurat::with('penduduk.keluarga')->where('id', $id);
+        
+        if ($user->role == 'Warga') {
+            $query->where('penduduk_id', $penduduk->id);
+        }
+
+        $item = $query->firstOrFail();
+
+        if ($item->status !== 'Selesai') {
+            abort(403, 'Surat belum selesai diproses.');
+        }
+
+        $p = $item->penduduk;
+        $k = $p ? $p->keluarga : null;
+
+        // Tentukan singkatan surat untuk nomor
+        $singkatan = 'SK';
+        if ($item->tipe_surat == 'Surat Pengantar Domisili') $singkatan = 'SKD';
+        elseif ($item->tipe_surat == 'Surat Keterangan Usaha') $singkatan = 'SKU';
+        elseif ($item->tipe_surat == 'Surat Keterangan Tidak Mampu') $singkatan = 'SKTM';
+        elseif ($item->tipe_surat == 'Surat Keterangan Pindah') $singkatan = 'SKP';
+
+        $data = (object) [
+            'tipe_surat' => strtoupper($item->tipe_surat),
+            'nomor_surat' => '---/' . $singkatan . '/VIII/' . $item->updated_at->format('Y'),
+            'nama_kepala_desa' => 'Budi Santoso, S.Sos.',
+            'alamat_kepala_desa' => 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.',
+            'nama_pemohon_surat' => $p->nama_lengkap ?? '-',
+            'tempat_tgl_lahir_surat' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d F Y')) : '-',
+            'jenis_kelamin_surat' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+            'pekerjaan_surat' => $p->pekerjaan ?? '-',
+            'agama_surat' => $p->agama ?? '-',
+            'status_perkawinan_surat' => $p->status_perkawinan ?? '-',
+            'kewarganegaraan_surat' => 'Indonesia',
+            'alamat_surat' => $k->alamat ?? '-',
+            'tanggal_selesai' => $item->tanggal_selesai ?? $item->updated_at,
+            'ttd_rw' => $item->ttd_rw,
+            'stempel_rw' => $item->stempel_rw,
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.surat', compact('data'));
+        return $pdf->download(str_replace(' ', '_', $item->tipe_surat) . '_' . str_replace(' ', '_', $data->nama_pemohon_surat) . '.pdf');
+    }
 }

@@ -229,7 +229,7 @@
                             <span class="fw-bold small d-block">{{ $item->file_ktp }}</span>
                             <span class="text-muted" style="font-size: 11px;">{{ $item->file_ktp_size }}</span>
                             <div class="mt-2">
-                                <a href="#" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                <a href="{{ $item->file_ktp_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
                                     <i class="bi bi-eye me-1"></i>Lihat Dokumen
                                 </a>
                             </div>
@@ -241,7 +241,7 @@
                             <span class="fw-bold small d-block">{{ $item->file_kk }}</span>
                             <span class="text-muted" style="font-size: 11px;">{{ $item->file_kk_size }}</span>
                             <div class="mt-2">
-                                <a href="#" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                <a href="{{ $item->file_kk_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
                                     <i class="bi bi-eye me-1"></i>Lihat Dokumen
                                 </a>
                             </div>
@@ -257,18 +257,24 @@
             </div>
 
             <div class="modal-footer border-0 px-4 pb-4 pt-2 d-flex justify-content-center gap-2">
-                <button type="button" class="btn btn-outline-danger rounded-pill px-4"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalRejectRw{{ $item->id }}"
-                        data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Tolak & Beri Catatan
-                </button>
-                <button type="button" class="btn btn-outline-success rounded-pill px-4"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalPreviewRw{{ $item->id }}"
-                        data-bs-dismiss="modal">
-                    <i class="bi bi-check-circle me-1"></i>Setujui Dokumen
-                </button>
+                @if($item->status === 'Disetujui RT')
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-4"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalRejectRw{{ $item->id }}"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Tolak & Beri Catatan
+                    </button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalPreviewRw{{ $item->id }}"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-check-circle me-1"></i>Setujui Dokumen
+                    </button>
+                @else
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        Tutup
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -434,9 +440,10 @@
                 <p class="text-muted small mb-4">Surat sudah berhasil dibuat dan siap untuk dikirimkan ke pengaju.</p>
                 <div class="d-flex justify-content-center gap-2">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4 text-nowrap" data-bs-dismiss="modal">Kembali</button>
-                    <form action="{{ route('rw.surat.approve', $item->id) }}" method="POST" class="d-inline">
+                    <form id="formApprove{{ $item->id }}" action="{{ route('rw.surat.approve', $item->id) }}" method="POST" class="d-inline" enctype="multipart/form-data">
                         @csrf
-                        <button type="submit" class="btn btn-success rounded-pill px-4 text-nowrap">Setujui & Kirim</button>
+                        <input type="hidden" name="signature" id="hiddenSignature{{ $item->id }}">
+                        <button type="button" onclick="submitApprove({{ $item->id }})" class="btn btn-success rounded-pill px-4 text-nowrap">Setujui & Kirim</button>
                     </form>
                 </div>
             </div>
@@ -637,6 +644,29 @@ window.handleStempelUpload = function(input, id) {
         }
         reader.readAsDataURL(file);
     }
+};
+
+window.submitApprove = function(id) {
+    const form = document.getElementById('formApprove' + id);
+    
+    // Get signature base64
+    const canvas = document.getElementById('signatureCanvas' + id);
+    if (canvas) {
+        // Only set data if user actually drew something (not purely blank)
+        // A simple way is to always send it, but we can check if it's drawn if we tracked it.
+        // For now, we'll just send the canvas data.
+        const signatureData = canvas.toDataURL('image/png');
+        document.getElementById('hiddenSignature' + id).value = signatureData;
+    }
+    
+    // Move the stempel file input inside the form so it gets submitted
+    const fileInput = document.getElementById('stempelInput' + id);
+    if (fileInput) {
+        fileInput.name = 'stempel';
+        form.appendChild(fileInput);
+    }
+    
+    form.submit();
 };
 </script>
 @endpush
