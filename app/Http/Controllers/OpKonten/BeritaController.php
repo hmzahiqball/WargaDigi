@@ -23,7 +23,15 @@ class BeritaController extends Controller
 
         $berita = $query->latest()->paginate(10)->withQueryString();
 
-        return view('opKonten.berita.index', compact('berita'));
+        $stats = [
+            'draft' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Draft')->count(),
+            'pending_rw' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Review')->count(),
+            'revisi' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Revisi')->count(),
+            'published' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Publish')->count(),
+            'archive' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Archive')->count(),
+        ];
+
+        return view('opKonten.berita.index', compact('berita', 'stats'));
     }
 
     public function store(Request $request)

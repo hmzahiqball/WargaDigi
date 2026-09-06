@@ -113,11 +113,12 @@ return [
         'active' => ['rw/umkm*'],
     ],
     [
-        'title' => 'Agenda & Berita Approval',
-        'url'   => '#',
+        'title' => 'Pusat Informasi',
+        'route' => 'rw.pusat-informasi.index',
+        'url'   => '/rw/pusat-informasi',
         'icon'  => 'bi-chat-dots-fill',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/agenda*'],
+        'active' => ['rw/pusat-informasi*'],
     ],
     [
         'title' => 'Koperasi',

@@ -18,6 +18,8 @@ class Agenda extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'lokasi',
+        'latitude',
+        'longitude',
         'link_gmaps',
         'detail_pengumuman',
         'banner_flyer',
@@ -44,5 +46,10 @@ class Agenda extends Model
     public function approval()
     {
         return $this->belongsTo(User::class, 'approval_id');
+    }
+
+    public function galeriDokumentasi()
+    {
+        return $this->hasOne(GaleriDokumentasi::class, 'agenda_id');
     }
 }

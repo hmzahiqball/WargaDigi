@@ -189,6 +189,28 @@
     .btn-cancel-swal:hover {
         background-color: #F3F4F6 !important;
     }
+    .bento-card {
+        border-radius: 12px;
+        border: 1px solid #BFCABA;
+        background: #fff;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease-in-out;
+    }
+    .bento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .bento-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 @endpush
 
@@ -204,34 +226,99 @@
     </button>
 </div>
 
-{{-- Filters & Export --}}
-<div class="card card-custom p-4 shadow-sm border-0 mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-        <form action="" method="GET" class="d-flex flex-wrap align-items-center gap-3 flex-grow-1" id="filterForm">
-            <div class="input-group" style="max-width: 300px; flex-grow: 1;">
-                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                <input type="text" id="searchInput" name="search" class="form-control border-start-0 ps-0 py-2 fs-6" placeholder="Cari judul berita..." value="{{ request('search') }}" autocomplete="off">
+{{-- Status Workflow Bento --}}
+<div class="row row-cols-1 row-cols-md-5 g-3 mb-4">
+    <div class="col">
+        <div class="bento-card">
+            <div class="bento-icon" style="background: #EFEDED; color: #40493D;">
+                <i class="bi bi-file-earmark-text fs-5"></i>
             </div>
-            <select name="kategori" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 160px;" onchange="this.form.submit()">
-                <option value="">Semua Kategori</option>
-                <option value="Sosial" {{ request('kategori') == 'Sosial' ? 'selected' : '' }}>Sosial</option>
-                <option value="Infrastruktur" {{ request('kategori') == 'Infrastruktur' ? 'selected' : '' }}>Infrastruktur</option>
-                <option value="Hiburan" {{ request('kategori') == 'Hiburan' ? 'selected' : '' }}>Hiburan</option>
-                <option value="Kesehatan" {{ request('kategori') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
-                <option value="Keamanan" {{ request('kategori') == 'Keamanan' ? 'selected' : '' }}>Keamanan</option>
-            </select>
-            <select name="status" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 150px;" onchange="this.form.submit()">
-                <option value="">Semua Status</option>
-                <option value="Publish" {{ request('status') == 'Publish' ? 'selected' : '' }}>Terbit</option>
-                <option value="Review" {{ request('status') == 'Review' ? 'selected' : '' }}>Ditinjau</option>
-                <option value="Draft" {{ request('status') == 'Draft' ? 'selected' : '' }}>Draf</option>
-                <option value="Revisi" {{ request('status') == 'Revisi' ? 'selected' : '' }}>Revisi</option>
-                <option value="Archive" {{ request('status') == 'Archive' ? 'selected' : '' }}>Diarsipkan</option>
-            </select>
+            <div>
+                <div class="fw-medium text-uppercase mb-1" style="color: #40493D; font-size: 11px; letter-spacing: 0.6px;">DRAF</div>
+                <div class="fw-bold text-dark" style="font-size: 20px; line-height: 1;">{{ $stats['draft'] ?? 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="bento-card">
+            <div class="bento-icon" style="background: #FFDDB5; color: #2A1800;">
+                <i class="bi bi-hourglass-split fs-5"></i>
+            </div>
+            <div>
+                <div class="fw-medium text-uppercase mb-1" style="color: #40493D; font-size: 11px; letter-spacing: 0.6px;">DITINJAU</div>
+                <div class="fw-bold text-dark" style="font-size: 20px; line-height: 1;">{{ $stats['pending_rw'] ?? 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="bento-card">
+            <div class="bento-icon" style="background: #FEE2E2; color: #991B1B;">
+                <i class="bi bi-exclamation-triangle fs-5"></i>
+            </div>
+            <div>
+                <div class="fw-medium text-uppercase mb-1" style="color: #991B1B; font-size: 11px; letter-spacing: 0.6px;">REVISI</div>
+                <div class="fw-bold text-dark" style="font-size: 20px; line-height: 1;">{{ $stats['revisi'] ?? 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="bento-card">
+            <div class="bento-icon" style="background: rgba(46, 125, 50, 0.10); color: #007232;">
+                <i class="bi bi-megaphone fs-5"></i>
+            </div>
+            <div>
+                <div class="fw-medium text-uppercase mb-1" style="color: #40493D; font-size: 11px; letter-spacing: 0.6px;">TERBIT</div>
+                <div class="fw-bold text-dark" style="font-size: 20px; line-height: 1;">{{ $stats['published'] ?? 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="bento-card">
+            <div class="bento-icon" style="background: #F3F4F6; color: #4B5563;">
+                <i class="bi bi-archive fs-5"></i>
+            </div>
+            <div>
+                <div class="fw-medium text-uppercase mb-1" style="color: #40493D; font-size: 11px; letter-spacing: 0.6px;">ARSIP</div>
+                <div class="fw-bold text-dark" style="font-size: 20px; line-height: 1;">{{ $stats['archive'] ?? 0 }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Filters --}}
+<div class="card card-custom p-4 shadow-sm border-0 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+        <form action="" method="GET" class="d-flex flex-wrap align-items-end gap-3 flex-grow-1" id="filterForm">
+            <div style="max-width: 300px; flex-grow: 1;">
+                <label class="form-label text-muted small fw-medium mb-1">Cari Judul</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" name="search" class="form-control border-start-0 ps-0 py-2 fs-6" placeholder="Cari judul berita..." value="{{ request('search') }}" autocomplete="off">
+                </div>
+            </div>
+            <div>
+                <label class="form-label text-muted small fw-medium mb-1">Kategori</label>
+                <select name="kategori" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 160px;" onchange="this.form.submit()">
+                    <option value="">Semua Kategori</option>
+                    <option value="Sosial" {{ request('kategori') == 'Sosial' ? 'selected' : '' }}>Sosial</option>
+                    <option value="Infrastruktur" {{ request('kategori') == 'Infrastruktur' ? 'selected' : '' }}>Infrastruktur</option>
+                    <option value="Hiburan" {{ request('kategori') == 'Hiburan' ? 'selected' : '' }}>Hiburan</option>
+                    <option value="Kesehatan" {{ request('kategori') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
+                    <option value="Keamanan" {{ request('kategori') == 'Keamanan' ? 'selected' : '' }}>Keamanan</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label text-muted small fw-medium mb-1">Status</label>
+                <select name="status" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 150px;" onchange="this.form.submit()">
+                    <option value="">Semua Status</option>
+                    <option value="Publish" {{ request('status') == 'Publish' ? 'selected' : '' }}>Terbit</option>
+                    <option value="Review" {{ request('status') == 'Review' ? 'selected' : '' }}>Ditinjau</option>
+                    <option value="Draft" {{ request('status') == 'Draft' ? 'selected' : '' }}>Draf</option>
+                    <option value="Revisi" {{ request('status') == 'Revisi' ? 'selected' : '' }}>Revisi</option>
+                    <option value="Archive" {{ request('status') == 'Archive' ? 'selected' : '' }}>Diarsipkan</option>
+                </select>
+            </div>
         </form>
-        <button type="button" class="btn btn-sm rounded-2 px-3 py-2 fw-semibold shadow-sm" style="background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;">
-            <i class="bi bi-download me-1"></i> Ekspor
-        </button>
     </div>
 </div>
 
@@ -250,7 +337,7 @@
             <thead class="thead-green-gradient">
                 <tr class="text-uppercase text-xs fw-bold" style="letter-spacing: 0.5px;">
                     <th scope="col" class="py-3 px-3">Sampul</th>
-                    <th scope="col" class="py-3 px-3">Judul</th>
+                    <th scope="col" class="py-3 px-3">Judul Berita</th>
                     <th scope="col" class="py-3 px-3">Kategori</th>
                     <th scope="col" class="py-3 px-3">Penulis</th>
                     <th scope="col" class="py-3 px-3">Status</th>
@@ -289,7 +376,7 @@
                             <div class="fw-bold text-dark small">{{ $item->judul_berita }}</div>
                         </td>
                         <td class="py-3 px-3">
-                            <span class="badge rounded-1 px-2 py-1 fw-medium" style="font-size: 10px; background: #E5E7EB; color: #374151;">
+                            <span class="badge rounded-1 px-3 py-2 fw-medium" style="font-size: 12px; background: #E5E7EB; color: #374151;">
                                 {{ $item->kategori }}
                             </span>
                         </td>
@@ -358,6 +445,17 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                {{-- Notifikasi Catatan Revisi --}}
+                <div id="alertDetailCatatanRevisi" class="alert alert-danger mb-4 d-none border-0 shadow-sm" style="background-color: #FEF2F2; color: #991B1B; border-radius: 8px;">
+                    <div class="d-flex gap-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Catatan Revisi dari RW:</h6>
+                            <p id="teksDetailCatatanRevisi" class="mb-0 small" style="font-size: 14px;"></p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-4">
                     {{-- Left Column: Image & Info --}}
                     <div class="col-lg-4">
@@ -504,17 +602,17 @@
             <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
                 <div id="footerCreateActions" class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-dark fw-semibold px-4 btn-hover-gray" style="border-color: #D1D5DB; background: white;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" name="action" value="draft" class="btn btn-draft fw-semibold px-4" style="border: 1px solid #707A6C; color: #1B1C1C;">
+                    <button type="submit" class="btn btn-draft fw-semibold px-4" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="document.getElementById('actionInput').value='draft'">
                         Simpan sebagai Draft
                     </button>
-                    <button type="submit" name="action" value="review" class="btn fw-semibold px-4 text-white btn-gradient-green">
+                    <button type="submit" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="document.getElementById('actionInput').value='review'">
                         Ajukan Berita
                     </button>
                 </div>
 
                 <div id="footerEditActions" class="d-flex gap-2 d-none">
                     <button type="button" class="btn btn-outline-dark fw-semibold px-4 btn-hover-gray" style="border-color: #D1D5DB; background: white;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" name="action" value="draft" class="btn fw-semibold px-4 text-white btn-gradient-green">
+                    <button type="submit" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="document.getElementById('actionInput').value='draft'">
                         Simpan Perubahan
                     </button>
                 </div>
@@ -795,7 +893,32 @@
     // Sync Quill content before submit
     document.getElementById('formBuatBerita').addEventListener('submit', function(e) {
         document.getElementById('isiBeritaInput').value = quill.root.innerHTML;
-        allowModalClose = true; // allow modal to close since we are submitting
+        const action = document.getElementById('actionInput').value;
+        if (action === 'review') {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Ajukan berita ke Ketua RW?',
+                html: 'Berita akan masuk tahap review dan menunggu persetujuan Ketua RW.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, ajukan!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'custom-swal-popup',
+                    confirmButton: 'btn text-white btn-gradient-green fw-semibold w-100 m-0 mb-2',
+                    cancelButton: 'btn btn-cancel-swal fw-semibold w-100 m-0'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    allowModalClose = true;
+                    e.target.submit();
+                }
+            });
+        } else {
+            allowModalClose = true; // allow modal to close since we are submitting
+        }
     });
 
     function resetToCreate() {
@@ -862,6 +985,14 @@
         
         const dateStr = item.tanggal_publish ? new Date(item.tanggal_publish).toLocaleString('id-ID') : '-';
         document.getElementById('detailTanggal').textContent = dateStr;
+
+        const alertDetailRevisi = document.getElementById('alertDetailCatatanRevisi');
+        if (item.status === 'Revisi' && item.catatan_revisi) {
+            alertDetailRevisi.classList.remove('d-none');
+            document.getElementById('teksDetailCatatanRevisi').textContent = item.catatan_revisi;
+        } else {
+            alertDetailRevisi.classList.add('d-none');
+        }
 
         // Dynamic Footer Buttons
         const detailFooter = document.getElementById('detailFooterActions');

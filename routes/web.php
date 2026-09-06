@@ -56,10 +56,14 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->group(fu
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('rw.dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
     
-    // Berita Approval Routes
-    Route::get('/berita', [\App\Http\Controllers\Rw\BeritaController::class, 'index'])->name('rw.berita.index');
-    Route::put('/berita/{berita}/approve', [\App\Http\Controllers\Rw\BeritaController::class, 'approve'])->name('rw.berita.approve');
-    Route::put('/berita/{berita}/reject', [\App\Http\Controllers\Rw\BeritaController::class, 'reject'])->name('rw.berita.reject');
+    // Pusat Informasi (Berita & Agenda Approval)
+    Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('rw.pusat-informasi.index');
+    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('rw.pusat-informasi.berita.approve');
+    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('rw.pusat-informasi.berita.reject');
+    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('rw.pusat-informasi.agenda.approve');
+    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('rw.pusat-informasi.agenda.reject');
+    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('rw.pusat-informasi.pengumuman.approve');
+    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('rw.pusat-informasi.pengumuman.reject');
 });
 
 // RT Routes (Role: Ketua RT)
@@ -81,8 +85,22 @@ Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT'])->group(function ()
         Route::put('/berita/{berita}/unarchive', [OpKontenBeritaController::class, 'unarchive'])->name('berita.unarchive');
         Route::put('/berita/{berita}/revoke', [OpKontenBeritaController::class, 'revoke'])->name('berita.revoke');
         Route::get('/agenda', [OpKontenAgendaController::class, 'index'])->name('agenda.index');
+        Route::post('/agenda', [OpKontenAgendaController::class, 'store'])->name('agenda.store');
+        Route::put('/agenda/{agenda}', [OpKontenAgendaController::class, 'update'])->name('agenda.update');
+        Route::delete('/agenda/{agenda}', [OpKontenAgendaController::class, 'destroy'])->name('agenda.destroy');
+        Route::post('/agenda/{agenda}/submit', [OpKontenAgendaController::class, 'submitToReview'])->name('agenda.submitToReview');
+        Route::post('/agenda/{agenda}/revoke', [OpKontenAgendaController::class, 'revokeToDraft'])->name('agenda.revokeToDraft');
         Route::get('/galeri', [OpKontenGaleriController::class, 'index'])->name('galeri.index');
+        Route::get('/galeri/{id}', [OpKontenGaleriController::class, 'show'])->name('galeri.show');
+        Route::post('/galeri', [OpKontenGaleriController::class, 'store'])->name('galeri.store');
+        Route::put('/galeri/{id}', [OpKontenGaleriController::class, 'update'])->name('galeri.update');
+        Route::delete('/galeri/{id}', [OpKontenGaleriController::class, 'destroy'])->name('galeri.destroy');
         Route::get('/pengumuman', [OpKontenPengumumanController::class, 'index'])->name('pengumuman.index');
+        Route::post('/pengumuman', [OpKontenPengumumanController::class, 'store'])->name('pengumuman.store');
+        Route::put('/pengumuman/{id}', [OpKontenPengumumanController::class, 'update'])->name('pengumuman.update');
+        Route::delete('/pengumuman/{id}', [OpKontenPengumumanController::class, 'destroy'])->name('pengumuman.destroy');
+        Route::post('/pengumuman/{id}/submit', [OpKontenPengumumanController::class, 'submit'])->name('pengumuman.submit');
+        Route::post('/pengumuman/{id}/cancel-submit', [OpKontenPengumumanController::class, 'cancelSubmit'])->name('pengumuman.cancel-submit');
         Route::get('/', [OpKontenController::class, 'dashboard']);
     });
     Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
