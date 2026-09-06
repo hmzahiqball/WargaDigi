@@ -3,6 +3,70 @@
 @section('title', 'Galeri UMKM')
 
 @section('content')
+@php
+    $hero1 = isset($produkUnggulan) ? $produkUnggulan->get(0) : null;
+    $hero2 = isset($produkUnggulan) ? $produkUnggulan->get(1) : null;
+    $hero3 = isset($produkUnggulan) ? $produkUnggulan->get(2) : null;
+
+    $defaultImg = function($kat) {
+        return match(strtolower($kat ?? '')) {
+            'kuliner', 'makanan & minuman' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop',
+            'fashion', 'pakaian muslimah' => 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&auto=format&fit=crop',
+            'sembako', 'sembako warga', 'koperasi' => 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop',
+            'jasa', 'perawatan & servis' => 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop',
+            default => 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop'
+        };
+    };
+
+    $kat1 = $hero1->kategori_produk->nama_kategori ?? $hero1->usaha->kategori_umkm->nama_kategori ?? 'Kerajinan';
+    $bg1 = ($hero1 && !empty($hero1->foto_produk)) 
+        ? (str_starts_with($hero1->foto_produk, 'http') ? $hero1->foto_produk : asset('storage/' . $hero1->foto_produk)) 
+        : $defaultImg($kat1);
+    $badgeStyle1 = match(strtolower($kat1)) {
+        'kuliner', 'makanan & minuman' => 'badge-kuliner',
+        'fashion', 'pakaian muslimah' => 'badge-fashion',
+        'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
+        'jasa', 'perawatan & servis' => 'badge-jasa',
+        'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
+        default => 'badge-kerajinan'
+    };
+    $detailUrl1 = $hero1 ? route('produk.show', $hero1->id) : route('warga.umkm.usaha.show');
+    $noWa1 = preg_replace('/[^0-9]/', '', $hero1->usaha->no_wa ?? '628123456789');
+    if (str_starts_with($noWa1, '0')) { $noWa1 = '62' . substr($noWa1, 1); }
+    $hero1Message = 'Halo, saya tertarik dengan produk ' . ($hero1->nama_produk ?? 'Pahatan Kayu Jati Custom');
+    $linkDirectHero1 = \App\Services\Messaging\MessagingService::getDirectChatUrl($noWa1 ?: '628123456789', $hero1Message);
+    $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
+    $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
+    $messagingSolidBtn = \App\Services\Messaging\MessagingService::getSolidButtonClass();
+
+    $kat2 = $hero2->kategori_produk->nama_kategori ?? $hero2->usaha->kategori_umkm->nama_kategori ?? 'Kuliner';
+    $bg2 = ($hero2 && !empty($hero2->foto_produk)) 
+        ? (str_starts_with($hero2->foto_produk, 'http') ? $hero2->foto_produk : asset('storage/' . $hero2->foto_produk)) 
+        : $defaultImg($kat2);
+    $badgeStyle2 = match(strtolower($kat2)) {
+        'kuliner', 'makanan & minuman' => 'badge-kuliner',
+        'fashion', 'pakaian muslimah' => 'badge-fashion',
+        'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
+        'jasa', 'perawatan & servis' => 'badge-jasa',
+        'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
+        default => 'badge-kuliner'
+    };
+    $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('warga.umkm.usaha.show');
+
+    $kat3 = $hero3->kategori_produk->nama_kategori ?? $hero3->usaha->kategori_umkm->nama_kategori ?? 'Fashion';
+    $bg3 = ($hero3 && !empty($hero3->foto_produk)) 
+        ? (str_starts_with($hero3->foto_produk, 'http') ? $hero3->foto_produk : asset('storage/' . $hero3->foto_produk)) 
+        : $defaultImg($kat3);
+    $badgeStyle3 = match(strtolower($kat3)) {
+        'kuliner', 'makanan & minuman' => 'badge-kuliner',
+        'fashion', 'pakaian muslimah' => 'badge-fashion',
+        'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
+        'jasa', 'perawatan & servis' => 'badge-jasa',
+        'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
+        default => 'badge-fashion'
+    };
+    $detailUrl3 = $hero3 ? route('produk.show', $hero3->id) : route('warga.umkm.usaha.show');
+@endphp
 <div class="container-fluid px-0">
     <div class="row align-items-center mb-4 g-3">
         <div class="col-md-7">
@@ -38,70 +102,6 @@
     </div>
     @endif
 
-    @php
-        $hero1 = isset($produkUnggulan) ? $produkUnggulan->get(0) : null;
-        $hero2 = isset($produkUnggulan) ? $produkUnggulan->get(1) : null;
-        $hero3 = isset($produkUnggulan) ? $produkUnggulan->get(2) : null;
-
-        $defaultImg = function($kat) {
-            return match(strtolower($kat ?? '')) {
-                'kuliner', 'makanan & minuman' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop',
-                'fashion', 'pakaian muslimah' => 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&auto=format&fit=crop',
-                'sembako', 'sembako warga', 'koperasi' => 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop',
-                'jasa', 'perawatan & servis' => 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop',
-                default => 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop'
-            };
-        };
-
-        $kat1 = $hero1->kategori_produk->nama_kategori ?? $hero1->usaha->kategori_umkm->nama_kategori ?? 'Kerajinan';
-        $bg1 = ($hero1 && !empty($hero1->foto_produk)) 
-            ? (str_starts_with($hero1->foto_produk, 'http') ? $hero1->foto_produk : asset('storage/' . $hero1->foto_produk)) 
-            : $defaultImg($kat1);
-        $badgeStyle1 = match(strtolower($kat1)) {
-            'kuliner', 'makanan & minuman' => 'badge-kuliner',
-            'fashion', 'pakaian muslimah' => 'badge-fashion',
-            'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
-            'jasa', 'perawatan & servis' => 'badge-jasa',
-            'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
-            default => 'badge-kerajinan'
-        };
-        $detailUrl1 = $hero1 ? route('produk.show', $hero1->id) : route('warga.umkm.usaha.show');
-        $noWa1 = preg_replace('/[^0-9]/', '', $hero1->usaha->no_wa ?? '628123456789');
-        if (str_starts_with($noWa1, '0')) { $noWa1 = '62' . substr($noWa1, 1); }
-        $hero1Message = 'Halo, saya tertarik dengan produk ' . ($hero1->nama_produk ?? 'Pahatan Kayu Jati Custom');
-        $linkDirectHero1 = \App\Services\Messaging\MessagingService::getDirectChatUrl($noWa1 ?: '628123456789', $hero1Message);
-        $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
-        $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
-        $messagingSolidBtn = \App\Services\Messaging\MessagingService::getSolidButtonClass();
-
-        $kat2 = $hero2->kategori_produk->nama_kategori ?? $hero2->usaha->kategori_umkm->nama_kategori ?? 'Kuliner';
-        $bg2 = ($hero2 && !empty($hero2->foto_produk)) 
-            ? (str_starts_with($hero2->foto_produk, 'http') ? $hero2->foto_produk : asset('storage/' . $hero2->foto_produk)) 
-            : $defaultImg($kat2);
-        $badgeStyle2 = match(strtolower($kat2)) {
-            'kuliner', 'makanan & minuman' => 'badge-kuliner',
-            'fashion', 'pakaian muslimah' => 'badge-fashion',
-            'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
-            'jasa', 'perawatan & servis' => 'badge-jasa',
-            'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
-            default => 'badge-kuliner'
-        };
-        $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('warga.umkm.usaha.show');
-
-        $kat3 = $hero3->kategori_produk->nama_kategori ?? $hero3->usaha->kategori_umkm->nama_kategori ?? 'Fashion';
-        $bg3 = ($hero3 && !empty($hero3->foto_produk)) 
-            ? (str_starts_with($hero3->foto_produk, 'http') ? $hero3->foto_produk : asset('storage/' . $hero3->foto_produk)) 
-            : $defaultImg($kat3);
-        $badgeStyle3 = match(strtolower($kat3)) {
-            'kuliner', 'makanan & minuman' => 'badge-kuliner',
-            'fashion', 'pakaian muslimah' => 'badge-fashion',
-            'kerajinan', 'aksesoris & hiasan' => 'badge-kerajinan',
-            'jasa', 'perawatan & servis' => 'badge-jasa',
-            'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
-            default => 'badge-fashion'
-        };
-        $detailUrl3 = $hero3 ? route('produk.show', $hero3->id) : route('warga.umkm.usaha.show');
-    @endphp
 
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -179,37 +179,10 @@
             </div>
         </div>
 
-        <div class="carousel-products-wrapper position-relative">
-            <button type="button" 
-                    class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 start-0 translate-middle-y carousel-nav-btn ms-2 ms-md-3" 
-                    id="btnPrevTerbaru" 
-                    style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
-                    title="Geser Kiri"
-                    aria-label="Geser Kiri">
-                <i class="bi bi-chevron-left fs-5 text-dark"></i>
-            </button>
-
-            <div class="d-flex gap-3 overflow-x-auto py-2 px-1" id="trackProdukTerbaru" style="scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none;">
-                @foreach($produkTerbaru as $item)
-                    <div class="flex-shrink-0" style="width: 270px;">
-                        @include('warga.umkm.components.cardProduct', [
-                            'item' => $item, 
-                            'colClass' => false, 
-                            'showOwner' => true
-                        ])
-                    </div>
-                @endforeach
-            </div>
-
-            <button type="button" 
-                    class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 end-0 translate-middle-y carousel-nav-btn me-2 me-md-3" 
-                    id="btnNextTerbaru" 
-                    style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
-                    title="Geser Kanan"
-                    aria-label="Geser Kanan">
-                <i class="bi bi-chevron-right fs-5 text-dark"></i>
-            </button>
-        </div>
+        @include('warga.umkm.components.carouselProduct', [
+            'items' => $produkTerbaru,
+            'showOwner' => true
+        ])
     </div>
     @endif
 
@@ -337,20 +310,7 @@ function previewFileName(input, labelId) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const track = document.getElementById('trackProdukTerbaru');
-    const prevBtn = document.getElementById('btnPrevTerbaru');
-    const nextBtn = document.getElementById('btnNextTerbaru');
 
-    if (track && prevBtn && nextBtn) {
-        prevBtn.addEventListener('click', function() {
-            track.scrollBy({ left: -290, behavior: 'smooth' });
-        });
-        nextBtn.addEventListener('click', function() {
-            track.scrollBy({ left: 290, behavior: 'smooth' });
-        });
-    }
-});
 </script>
 @endpush
 @endsection

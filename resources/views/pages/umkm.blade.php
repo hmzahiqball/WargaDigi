@@ -4,7 +4,6 @@
 @section('meta_description', 'Pojok UMKM WargaDigi 21 — Dukung usaha tetangga. Temukan beragam toko, produk, dan jasa unggulan dari warga RW 21 Tanimulya.')
 
 @section('content')
-{{-- Page Hero --}}
 <section class="page-hero mb-4">
     <div class="container">
         <h1>Pojok UMKM</h1>
@@ -12,7 +11,6 @@
     </div>
 </section>
 
-{{-- Filter & Search Component --}}
 <section class="container mb-4">
     @include('warga.umkm.components.filterSearchBar', [
         'actionUrl' => route('pojok-umkm'),
@@ -22,7 +20,6 @@
     ])
 </section>
 
-{{-- Usaha / Toko Grid --}}
 <section class="container pb-5">
     <div class="row g-4">
         @forelse($daftarUsaha as $usaha)
@@ -46,7 +43,6 @@
         @endforelse
     </div>
 
-    {{-- Pagination Component --}}
     @include('components.pagination', ['paginator' => $daftarUsaha, 'label' => 'toko'])
 </section>
 @endsection

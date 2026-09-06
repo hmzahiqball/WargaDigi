@@ -181,19 +181,11 @@
     </div>
     <a href="{{ route('warga.umkm.galeri') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua <i class="bi bi-arrow-right"></i></a>
 </div>
-
-<div class="row g-4">
-    <div class="col-sm-6 col-md-3">
-        <div class="card card-custom p-4 text-center h-100 d-flex flex-column justify-content-center align-items-center shadow-sm border-dashed" style="border: 2px dashed #ced4da;">
-            <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
-                <i class="bi bi-shop fs-4"></i>
-            </div>
-            <h6 class="fw-bold">Daftarkan UMKM Anda</h6>
-            <p class="small text-muted mb-4">Promosikan produk kuliner, kriya, atau jasa Anda ke seluruh warga.</p>
-            <a href="{{ route('warga.umkm.daftar') }}" class="btn btn-success px-4 py-2 small fw-semibold rounded-pill text-decoration-none text-white">Daftar Sekarang</a>
-        </div>
-    </div>
-</div>
+@include('warga.umkm.components.carouselProduct', [
+    'items' => $daftarProdukTerbaru,
+    'showEmpty' => true,
+    'showOwner' => true
+])
 
 @include('warga.umkm.components.footerUmkm')
 @endsection
