@@ -67,13 +67,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Accessor for name attribute as an alias for username.
-     */
-    public function getNameAttribute(): string
-    {
-        return $this->username ?? '';
-    }
 
     /**
      * Relasi ke data penduduk berdasarkan NIK

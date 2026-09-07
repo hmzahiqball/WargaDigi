@@ -20,36 +20,10 @@ class GaleriUmkmController extends Controller
         $sort = $request->get('sort', 'terbaru');
 
         $query = UmkmProduk::with(['usaha.kategori_umkm', 'usaha.user.penduduk'])
-            ->where('status_produk', 'Aktif');
-
-        if ($kategori && !in_array($kategori, ['Semua', 'Semua Kategori'])) {
-            $query->whereHas('usaha.kategori_umkm', function ($q) use ($kategori) {
-                $q->where('nama_kategori', $kategori);
-            });
-        }
-
-        if ($search !== '') {
-            $words = array_filter(preg_split('/[\s,]+/', $search));
-            if (!empty($words)) {
-                $query->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
-                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
-                          ->orWhereHas('usaha', function ($sq) use ($term) {
-                              $sq->whereRaw('LOWER(nama_usaha) LIKE ?', [$term]);
-                          });
-                    }
-                });
-            }
-        }
-
-        if ($sort === 'termahal') {
-            $query->orderBy('harga', 'desc');
-        } elseif ($sort === 'termurah') {
-            $query->orderBy('harga', 'asc');
-        } else {
-            $query->latest();
-        }
+            ->where('status_produk', 'Aktif')
+            ->search($search)
+            ->filterCategory($kategori)
+            ->sortBy($sort);
 
         $produk = $query->paginate(8)->withQueryString();
         $daftarKategoriUmkm = KategoriUmkm::all();
@@ -119,39 +93,10 @@ class GaleriUmkmController extends Controller
             ->where('status_produk', 'Aktif')
             ->whereHas('usaha', function ($q) {
                 $q->where('status_verifikasi', 'Approved');
-            });
-
-        if ($kategori && !in_array($kategori, ['Semua', 'Semua Kategori'])) {
-            $query->whereHas('usaha.kategori_umkm', function ($q) use ($kategori) {
-                $q->where('nama_kategori', $kategori);
-            });
-        }
-
-        if ($search !== '') {
-            $words = array_filter(preg_split('/[\s,]+/', $search));
-            if (!empty($words)) {
-                $query->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
-                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
-                          ->orWhereHas('usaha', function ($sq) use ($term) {
-                              $sq->whereRaw('LOWER(nama_usaha) LIKE ?', [$term]);
-                          });
-                    }
-                });
-            }
-        }
-
-        if ($sort === 'terpopuler') {
-            $query->orderByDesc('jumlah_akses')->latest();
-        } elseif ($sort === 'termahal') {
-            $query->orderByDesc('harga');
-        } elseif ($sort === 'termurah') {
-            $query->orderBy('harga', 'asc');
-        } else {
-            // terbaru
-            $query->latest();
-        }
+            })
+            ->search($search)
+            ->filterCategory($kategori)
+            ->sortBy($sort);
 
         $produk = $query->paginate(12)->withQueryString();
         $daftarKategoriUmkm = KategoriUmkm::all();
@@ -199,34 +144,10 @@ class GaleriUmkmController extends Controller
                 ->where('status_produk', 'Aktif');
 
             $search = trim((string) ($request->get('q') ?? $request->get('search')));
-            if ($search !== '') {
-                $words = array_filter(preg_split('/[\s,]+/', $search));
-                if (!empty($words)) {
-                    $query->where(function ($q) use ($words) {
-                        foreach ($words as $word) {
-                            $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
-                            $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
-                              ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term]);
-                        }
-                    });
-                }
-            }
-
             $kategori = $request->get('kategori');
-            if ($kategori && $kategori !== 'Semua Kategori') {
-                $query->whereHas('kategori_produk', function ($q) use ($kategori) {
-                    $q->where('nama_kategori', $kategori);
-                });
-            }
-
             $sort = $request->get('sort');
-            if ($sort === 'termahal') {
-                $query->orderBy('harga', 'desc');
-            } elseif ($sort === 'termurah') {
-                $query->orderBy('harga', 'asc');
-            } else {
-                $query->latest();
-            }
+
+            $query->search($search)->filterCategory($kategori)->sortBy($sort);
 
             $produk = $query->paginate(8)->withQueryString();
         }
@@ -306,15 +227,7 @@ class GaleriUmkmController extends Controller
         $validated['status_verifikasi'] = 'Pending';
         $validated['is_active'] = false;
 
-
-        $cleanWa = preg_replace('/[^0-9]/', '', $validated['no_wa']);
-        if (str_starts_with($cleanWa, '0')) {
-            $cleanWa = '62' . substr($cleanWa, 1);
-        } elseif (!str_starts_with($cleanWa, '62') && !empty($cleanWa)) {
-            $cleanWa = '62' . $cleanWa;
-        }
-        $validated['no_wa'] = $cleanWa;
-
+        // no_wa otomatis diformat oleh mutator setNoWaAttribute di model UmkmUsaha
         
         $file = $request->file('foto_sampul') ?? $request->file('foto_usaha');
         if ($file) {

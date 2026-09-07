@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('foto_produk')->nullable();
             $table->enum('status_produk', ['Aktif', 'Tidak Aktif'])->default('Aktif');
             $table->unsignedBigInteger('jumlah_akses')->default(0);
-            $table->string('link_wa')->nullable();
+
             $table->timestamps();
         });
     }

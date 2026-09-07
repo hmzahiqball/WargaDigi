@@ -123,7 +123,7 @@
                             {{ Str::limit($hero1->deskripsi ?? 'Karya tangan Pak Budi, RT 03. Cocok untuk hiasan rumah atau hadiah eksklusif. Dibuat dengan dedikasi tinggi menggunakan kayu jati pilihan terbaik.', 120) }}
                         </p>
                         <div class="d-flex align-items-center justify-content-between">
-                            <span class="fs-4 fw-bold text-white">Rp {{ number_format($hero1->harga ?? 350000, 0, ',', '.') }}</span>
+                            <span class="fs-4 fw-bold text-white">{{ $hero1->harga_formatted ?? 'Rp 350.000' }}</span>
                             <div class="d-flex gap-2">
                                 <a href="{{ $linkDirectHero1 }}" target="_blank" onclick="event.stopPropagation();" class="btn {{ $messagingSolidBtn }} rounded-pill px-4 py-2 text-white text-decoration-none fw-semibold">
                                     <i class="{{ $messagingIcon }} me-1"></i> {{ $messagingLabel }}
@@ -142,7 +142,7 @@
                         <h5 class="fw-bold mb-1 text-white">
                             <a href="{{ $detailUrl2 }}" class="text-white text-decoration-none">{{ $hero2->nama_produk ?? 'Kue Tampah Ibu Sari' }}</a>
                         </h5>
-                        <span class="fw-semibold text-white">Rp {{ number_format($hero2->harga ?? 150000, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-white">{{ $hero2->harga_formatted ?? 'Rp 150.000' }}</span>
                     </div>
                 </div>
 
@@ -153,7 +153,7 @@
                         <h5 class="fw-bold mb-1 text-white">
                             <a href="{{ $detailUrl3 }}" class="text-white text-decoration-none">{{ $hero3->nama_produk ?? 'Batik Tulis Tanimulya' }}</a>
                         </h5>
-                        <span class="fw-semibold text-white">Rp {{ number_format($hero3->harga ?? 250000, 0, ',', '.') }}</span>
+                        <span class="fw-semibold text-white">{{ $hero3->harga_formatted ?? 'Rp 250.000' }}</span>
                     </div>
                 </div>
             </div>

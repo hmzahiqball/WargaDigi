@@ -37,7 +37,7 @@ Route::get('/pojok-umkm/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->n
 Route::get('/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
 Route::get('/produk/{id}', [UmkmController::class, 'detailProduk'])->name('produk.show');
 Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->name('public.umkm.produk.show');
-Route::get('/warga/galeri/produk/{id}', [UmkmController::class, 'detailProduk'])->name('warga.umkm.produk.detail');
+
 Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
 
 //Auth
@@ -191,13 +191,13 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/galeri/koleksi/{tipe?}', [GaleriUmkmController::class, 'koleksiProduk'])->name('umkm.koleksi');
     Route::get('/galeri/usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.usaha.show');
     Route::get('/galeri/detail-usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
+    Route::get('/galeri/produk/{id}', [GaleriUmkmController::class, 'detailProduk'])->name('umkm.produk.detail');
     Route::get('/galeri/daftar', [GaleriUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/galeri/daftar', [GaleriUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');
     
     Route::get('/galeri/kelola', [KelolaUmkmController::class, 'index'])->name('umkm.kelola');
     Route::put('/galeri/usaha/{id}', [KelolaUmkmController::class, 'updateUsaha'])->name('umkm.update-usaha');
     Route::post('/galeri/usaha/{id}/sampul', [KelolaUmkmController::class, 'updateSampulUsaha'])->name('umkm.update-sampul');
-    Route::get('/galeri/kelola/produk', [KelolaUmkmController::class, 'kelolaProduk'])->name('umkm.produk.index');
     Route::get('/galeri/kelola/produk/create', [KelolaUmkmController::class, 'createProduk'])->name('umkm.produk.create');
     Route::post('/galeri/kelola/produk', [KelolaUmkmController::class, 'storeProduk'])->name('umkm.produk.store');
     Route::put('/galeri/kelola/produk/{id}', [KelolaUmkmController::class, 'updateProduk'])->name('umkm.produk.update');

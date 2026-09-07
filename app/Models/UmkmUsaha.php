@@ -70,4 +70,34 @@ class UmkmUsaha extends Model
     {
         return $this->hasMany(UmkmProduk::class, 'umkm_usaha_id');
     }
+
+    /**
+     * Mutator untuk membersihkan dan memformat nomor WA sebelum disimpan ke database
+     */
+    public function setNoWaAttribute($value)
+    {
+        $cleanWa = preg_replace('/[^0-9]/', '', $value);
+        if (str_starts_with($cleanWa, '0')) {
+            $cleanWa = '62' . substr($cleanWa, 1);
+        } elseif (!str_starts_with($cleanWa, '62') && !empty($cleanWa)) {
+            $cleanWa = '62' . $cleanWa;
+        }
+        $this->attributes['no_wa'] = $cleanWa;
+    }
+
+    /**
+     * Accessor untuk mendapatkan format nomor WA (+62 xxx)
+     */
+    public function getNoWaFormattedAttribute()
+    {
+        if (empty($this->no_wa)) {
+            return '-';
+        }
+        
+        $wa = $this->no_wa;
+        if (str_starts_with($wa, '62')) {
+            return '+62 ' . substr($wa, 2);
+        }
+        return $wa;
+    }
 }

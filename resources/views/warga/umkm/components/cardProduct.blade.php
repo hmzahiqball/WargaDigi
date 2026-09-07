@@ -7,7 +7,7 @@
         ? asset('storage/' . $item->foto_produk) 
         : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop';
     $namaProduk = $item->nama_produk ?? 'Produk UMKM';
-    $harga = number_format($item->harga ?? 0, 0, ',', '.');
+    $harga = $item->harga_formatted;
     $kategoriNama = $item->usaha->kategori_umkm->nama_kategori 
         ?? 'UMKM';
     $usahaNama = $item->usaha->nama_usaha ?? 'Warga RW 12';
@@ -84,7 +84,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <small class="text-muted d-block" style="font-size: 14px;">Harga</small>
-                        <span class="fw-bold text-success fs-6">Rp {{ $harga }}</span>
+                        <h5 class="fw-bold mb-0 text-success" style="font-size: 15px;">{{ $harga }}</h5>
                     </div>
                     <div class="text-end">
                         <small class="text-muted d-block" style="font-size: 14px;">Status Stok</small>

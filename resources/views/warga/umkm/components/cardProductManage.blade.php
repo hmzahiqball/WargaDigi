@@ -7,7 +7,7 @@
         : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop';
     $namaProduk = $item->nama_produk ?? 'Produk';
     $deskripsi = $item->deskripsi ?? 'Tidak ada deskripsi produk.';
-    $harga = number_format($item->harga ?? 0, 0, ',', '.');
+    $harga = $item->harga_formatted;
     
     $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
     $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
@@ -61,7 +61,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <small class="text-muted d-block" style="font-size: 14px;">Harga</small>
-                        <span class="fw-bold text-success fs-6">Rp {{ $harga }}</span>
+                        <span class="fw-bold text-success fs-6">{{ $harga }}</span>
                     </div>
                     <div class="text-end">
                         <small class="text-muted d-block" style="font-size: 14px;">Status Stok</small>

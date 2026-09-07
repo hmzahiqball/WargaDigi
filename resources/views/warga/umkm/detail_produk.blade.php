@@ -20,7 +20,7 @@
             <div class="card-body p-4 d-flex flex-column">
                 <span class="badge bg-success bg-opacity-10 text-success mb-2 align-self-start">{{ $produk->usaha->kategori ?? 'UMKM' }}</span>
                 <h2 class="fw-bold text-dark mb-2">{{ $produk->nama_produk }}</h2>
-                <h4 class="fw-bold text-success mb-4">Rp {{ number_format($produk->harga, 0, ',', '.') }}</h4>
+                <h4 class="fw-bold text-success mb-4">{{ $produk->harga_formatted }}</h4>
 
                 <div class="mb-4">
                     <h6 class="fw-bold">Deskripsi Produk</h6>

@@ -74,37 +74,10 @@ class KelolaUmkmController extends Controller
         $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->usaha->kategori_umkm->nama_kategori ?? 'Lainnya')->count();
         $jumlahProdukStokMenipis = $allUsahaProduk->filter(fn($item) => strtolower($item->status_stok ?? '') === 'menipis')->count();
 
-        if ($search) {
-            $words = array_filter(preg_split('/[\s,]+/', trim($search)));
-            if (!empty($words)) {
-                $query->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
-                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term]);
-                    }
-                });
-            }
-        }
-
-        if ($kategori && $kategori !== 'Semua' && $kategori !== 'Semua Kategori') {
-            $query->whereHas('kategori_produk', function ($q) use ($kategori) {
-                $q->where('nama_kategori', $kategori);
-            });
-        }
-
-        if ($status === 'Aktif') {
-            $query->where('status_produk', 'Aktif');
-        } elseif ($status === 'Tidak Aktif' || $status === 'Non-Aktif') {
-            $query->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif']);
-        } elseif ($status === 'Pending') {
-            $query->where('status_produk', 'Pending');
-        } elseif ($status === 'Stok Habis' || $status === 'Habis') {
-            $query->where('status_stok', 'habis');
-        } elseif ($status === 'Stok Menipis' || $status === 'Menipis') {
-            $query->where('status_stok', 'menipis');
-        } elseif ($status === 'Stok Tersedia' || $status === 'Tersedia') {
-            $query->where('status_stok', 'tersedia');
-        }
+        // Menggunakan scope dari model UmkmProduk
+        $query->search($search)
+              ->filterCategory($kategori)
+              ->filterStatus($status);
 
         $produk = $query->latest()->paginate(8)->withQueryString();
 
@@ -169,23 +142,8 @@ class KelolaUmkmController extends Controller
             $validated['kategori_umkm_id'] = $kategoriId;
         }
 
-        $cleanWa = preg_replace('/[^0-9]/', '', $validated['no_wa']);
-        if (str_starts_with($cleanWa, '0')) {
-            $cleanWa = '62' . substr($cleanWa, 1);
-        } elseif (!str_starts_with($cleanWa, '62') && !empty($cleanWa)) {
-            $cleanWa = '62' . $cleanWa;
-        }
-        $validated['no_wa'] = $cleanWa;
-
+        // no_wa otomatis diformat oleh mutator setNoWaAttribute di model UmkmUsaha
         $usaha->update($validated);
-
-        if (!empty($cleanWa)) {
-            foreach ($usaha->produk as $prod) {
-                $prod->update([
-                    'link_wa' => 'https://wa.me/' . $cleanWa . '?text=' . urlencode('Halo, saya tertarik dengan produk ' . $prod->nama_produk),
-                ]);
-            }
-        }
 
         return redirect()->route('warga.umkm.kelola', ['usaha_id' => $usaha->id])
             ->with('success', 'Data profil UMKM berhasil diperbarui.');
@@ -282,10 +240,7 @@ class KelolaUmkmController extends Controller
             $validated['status_stok'] = strtolower(strip_tags($validated['status_stok']));
         }
         unset($validated['stok']);
-
-        if (empty($validated['link_wa']) && !empty($umkm->no_wa)) {
-            $validated['link_wa'] = 'https://wa.me/' . $umkm->no_wa . '?text=' . urlencode('Halo, saya tertarik dengan produk ' . $validated['nama_produk']);
-        }
+        unset($validated['link_wa']);
 
         if ($request->hasFile('foto_produk')) {
             $file = $request->file('foto_produk');
@@ -348,21 +303,8 @@ class KelolaUmkmController extends Controller
             $validated['status_stok'] = strtolower(strip_tags($validated['status_stok']));
         }
         unset($validated['stok']);
-
-        if ($request->filled('no_wa')) {
-            $cleanWa = preg_replace('/[^0-9]/', '', $request->no_wa);
-            if (str_starts_with($cleanWa, '0')) {
-                $cleanWa = '62' . substr($cleanWa, 1);
-            } elseif (!str_starts_with($cleanWa, '62') && !empty($cleanWa)) {
-                $cleanWa = '62' . $cleanWa;
-            }
-            if ($cleanWa) {
-                $validated['link_wa'] = 'https://wa.me/' . $cleanWa . '?text=' . urlencode('Halo, saya tertarik dengan produk ' . $validated['nama_produk']);
-            }
-        } elseif ($produk->usaha && !empty($produk->usaha->no_wa)) {
-            $validated['link_wa'] = 'https://wa.me/' . $produk->usaha->no_wa . '?text=' . urlencode('Halo, saya tertarik dengan produk ' . $validated['nama_produk']);
-        }
         unset($validated['no_wa']);
+        unset($validated['link_wa']);
 
         if (empty($validated['kategori_produk_id'])) {
             unset($validated['kategori_produk_id']);
@@ -395,92 +337,6 @@ class KelolaUmkmController extends Controller
         return back()->with('success', 'Produk "' . $namaProduk . '" berhasil dihapus.');
     }
 
-    public function kelolaProduk(Request $request)
-    {
-        $search = $request->get('q');
-        $kategori = $request->get('kategori');
-        $status = $request->get('status');
-
-        $userNik = Auth::user()->nik ?? null;
-        $selectedUsahaId = $request->get('usaha_id') ?? session('selected_umkm_usaha_id');
-
-        $daftarUsaha = collect();
-        if ($userNik) {
-            $daftarUsaha = UmkmUsaha::with(['kategori_umkm', 'user.penduduk.keluarga.rt'])
-                ->where('nik', $userNik)
-                ->get();
-        }
-
-        if ($daftarUsaha->isEmpty()) {
-            $daftarUsaha = UmkmUsaha::with(['kategori_umkm', 'user.penduduk.keluarga.rt'])->get();
-        }
-
-        $usaha = null;
-        if ($selectedUsahaId) {
-            $usaha = $daftarUsaha->firstWhere('id', $selectedUsahaId);
-        }
-        if (!$usaha) {
-            $usaha = $daftarUsaha->first();
-        }
-
-        if ($usaha) {
-            session(['selected_umkm_usaha_id' => $usaha->id]);
-        }
-
-        $query = UmkmProduk::with(['usaha.kategori_produk', 'usaha.kategori_umkm']);
-
-        if ($usaha) {
-            $query->where('umkm_usaha_id', $usaha->id);
-        } elseif ($userNik) {
-            $query->whereHas('usaha', function ($q) use ($userNik) {
-                $q->where('nik', $userNik);
-            });
-        }
-
-        if ($search) {
-            $words = array_filter(preg_split('/[\s,]+/', trim($search)));
-            if (!empty($words)) {
-                $query->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
-                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
-                          ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term]);
-                    }
-                });
-            }
-        }
-
-        if ($kategori && $kategori !== 'Semua' && $kategori !== 'Semua Kategori') {
-            $query->whereHas('kategori_produk', function ($q) use ($kategori) {
-                $q->where('nama_kategori', $kategori);
-            });
-        }
-
-        if ($status === 'Aktif') {
-            $query->where('status_produk', 'Aktif');
-        } elseif ($status === 'Tidak Aktif' || $status === 'Non-Aktif') {
-            $query->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif']);
-        } elseif ($status === 'Pending') {
-            $query->where('status_produk', 'Pending');
-        } elseif ($status === 'Stok Habis' || $status === 'Habis') {
-            $query->where('status_stok', 'habis');
-        } elseif ($status === 'Stok Menipis' || $status === 'Menipis') {
-            $query->where('status_stok', 'menipis');
-        } elseif ($status === 'Stok Tersedia' || $status === 'Tersedia') {
-            $query->where('status_stok', 'tersedia');
-        }
-
-        $produk = $query->latest()->paginate(8)->withQueryString();
-
-        return view('warga.umkm.kelola_produk', compact(
-            'produk', 
-            'search', 
-            'kategori', 
-            'status', 
-            'usaha', 
-            'daftarUsaha'
-        ));
-    }
 
     public function createProduk()
     {

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('pengajuan_surat', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('penduduk_id')->constrained('penduduk')->cascadeOnDelete();
+            $table->foreignUuid('penduduk_id')->constrained('penduduk')->cascadeOnDelete();
             $table->string('tipe_surat', 100); // e.g. 'Surat Keterangan Domisili (SKD)'
             $table->text('keterangan_tambahan')->nullable();
             $table->string('file_ktp')->nullable(); // path file scan KTP

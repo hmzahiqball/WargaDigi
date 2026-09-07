@@ -44,7 +44,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 158,
-                    'link_wa' => 'https://wa.me/' . $kriyaUsaha->no_wa . '?text=Saya%20tertarik%20dengan%20Patung%20Kayu%20Jati',
                 ],
                 [
                     'id' => '8a6f5e41-0123-4567-89ab-cdef01234562',
@@ -57,7 +56,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 65,
-                    'link_wa' => 'https://wa.me/' . $kriyaUsaha->no_wa . '?text=Saya%20tertarik%20dengan%20Panel%20Dinding',
                 ],
                 [
                     'id' => '8a6f5e41-0123-4567-89ab-cdef01234563',
@@ -70,7 +68,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 19,
-                    'link_wa' => 'https://wa.me/' . $kriyaUsaha->no_wa . '?text=Saya%20tertarik%20dengan%20Meja%20Kopi',
                 ],
                 [
                     'id' => '8a6f5e41-0123-4567-89ab-cdef01234564',
@@ -83,7 +80,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 25,
-                    'link_wa' => 'https://wa.me/' . $kriyaUsaha->no_wa . '?text=Saya%20tertarik%20dengan%20Asbak%20Jati',
                 ],
             ]);
         }
@@ -111,7 +107,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 112,
-                    'link_wa' => 'https://wa.me/' . $kulinerUsaha->no_wa . '?text=Saya%20mau%20pesan%20Nasi%20Timbel',
                 ],
                 [
                     'id' => '8a6f5e42-0123-4567-89ab-cdef01234562',
@@ -124,7 +119,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 38,
-                    'link_wa' => 'https://wa.me/' . $kulinerUsaha->no_wa . '?text=Saya%20mau%20pesan%20Es%20Cendol',
                 ],
             ]);
         }
@@ -152,7 +146,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 89,
-                    'link_wa' => 'https://wa.me/' . $fashionUsaha->no_wa . '?text=Tanya%20stok%20Gamis%20Modern',
                 ],
                 [
                     'id' => '8a6f5e43-0123-4567-89ab-cdef01234562',
@@ -165,7 +158,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 42,
-                    'link_wa' => 'https://wa.me/' . $fashionUsaha->no_wa . '?text=Tanya%20stok%20Hijab%20Segiempat',
                 ],
             ]);
         }
@@ -193,7 +185,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Tidak Aktif',
                     'jumlah_akses' => 12,
-                    'link_wa' => 'https://wa.me/' . $jasaUsaha->no_wa . '?text=Booking%20Jasa%20Cuci%20AC',
                 ],
                 [
                     'id' => '8a6f5e44-0123-4567-89ab-cdef01234562',
@@ -206,7 +197,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 28,
-                    'link_wa' => 'https://wa.me/' . $jasaUsaha->no_wa . '?text=Booking%20Servis%20Elektronik',
                 ],
             ]);
         }
@@ -234,7 +224,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 54,
-                    'link_wa' => 'https://wa.me/' . $koperasiUsaha->no_wa . '?text=Pesan%20Beras%20Medium',
                 ],
                 [
                     'id' => '8a6f5e45-0123-4567-89ab-cdef01234562',
@@ -247,7 +236,6 @@ class UmkmProdukSeeder extends Seeder
                     'foto_produk' => null,
                     'status_produk' => 'Aktif',
                     'jumlah_akses' => 31,
-                    'link_wa' => 'https://wa.me/' . $koperasiUsaha->no_wa . '?text=Pesan%20Minyak%20Goreng',
                 ],
             ]);
         }
