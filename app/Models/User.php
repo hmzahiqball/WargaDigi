@@ -40,6 +40,20 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the user's name (resolves from Penduduk if Warga, else username).
+     */
+    public function getNameAttribute()
+    {
+        if ($this->role === 'Warga') {
+            $penduduk = \App\Models\Penduduk::where('nik', $this->nik)->first();
+            if ($penduduk) {
+                return $penduduk->nama_lengkap;
+            }
+        }
+        return $this->username;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

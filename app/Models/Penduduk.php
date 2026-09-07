@@ -27,9 +27,12 @@ class Penduduk extends Model
         'file_ktp',
     ];
 
-    protected $casts = [
-        'tanggal_lahir' => 'date',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'tanggal_lahir' => 'date',
+        ];
+    }
 
     public function keluarga()
     {
@@ -39,5 +42,10 @@ class Penduduk extends Model
     public function user()
     {
         return $this->hasOne(User::class, 'nik', 'nik');
+    }
+
+    public function pengajuanSurat()
+    {
+        return $this->hasMany(PengajuanSurat::class);
     }
 }

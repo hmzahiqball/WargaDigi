@@ -42,6 +42,44 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
 
+// Temporary Magic Login for Testing
+Route::get('/login-warga', function () {
+    $user = \App\Models\User::where('nik', '3204xxxxxxxxx0001')->first();
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('warga.surat.index');
+    }
+    return "User warga tidak ditemukan. Pastikan seeder sudah dijalankan.";
+});
+
+Route::get('/debug-php', function () {
+    return [
+        'upload_tmp_dir' => ini_get('upload_tmp_dir'),
+        'sys_temp_dir' => sys_get_temp_dir(),
+        'upload_max_filesize' => ini_get('upload_max_filesize'),
+        'post_max_size' => ini_get('post_max_size'),
+        'user' => get_current_user(),
+    ];
+});
+
+Route::get('/login-rt', function () {
+    $user = \App\Models\User::where('nik', '3217010101010008')->first(); // NIK RT
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('rt.persetujuan-dokumen');
+    }
+    return "User RT tidak ditemukan.";
+});
+
+Route::get('/login-rw', function () {
+    $user = \App\Models\User::where('nik', '3217010101010002')->first(); // NIK RW
+    if ($user) {
+        \Illuminate\Support\Facades\Auth::login($user);
+        return redirect()->route('rw.persetujuan-dokumen');
+    }
+    return "User RW tidak ditemukan.";
+});
+
 // Admin Routes (Role: Admin Aplikasi)
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -65,12 +103,21 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->group(fu
     Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('rw.pusat-informasi.agenda.reject');
     Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('rw.pusat-informasi.pengumuman.approve');
     Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('rw.pusat-informasi.pengumuman.reject');
+
+    // Persetujuan Dokumen
+    Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('rw.persetujuan-dokumen');
+    Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('rw.surat.approve');
+    Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('rw.surat.reject');
+    Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('rw.surat.preview');
 });
 
 // RT Routes (Role: Ketua RT)
 Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
+    Route::get('/persetujuan-dokumen', [RtController::class, 'persetujuanDokumen'])->name('rt.persetujuan-dokumen');
+    Route::post('/surat/{id}/approve', [RtController::class, 'approveDokumen'])->name('rt.surat.approve');
+    Route::post('/surat/{id}/reject', [RtController::class, 'rejectDokumen'])->name('rt.surat.reject');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
@@ -124,9 +171,9 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
-    Route::get('/surat/create', [SuratController::class, 'create'])->name('surat.create');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
     Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
+    Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
     Route::get('/umkm/galeri', [WargaUmkmController::class, 'indexGaleri'])->name('umkm.galeri');
     Route::get('/umkm/kelola', [WargaUmkmController::class, 'kelolaProduk'])->name('umkm.kelola');
     Route::get('/umkm/daftar', [WargaUmkmController::class, 'createUsaha'])->name('umkm.daftar');
