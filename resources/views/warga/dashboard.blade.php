@@ -1,4 +1,4 @@
-@extends('layouts.warga')
+@extends('layouts.global')
 
 @section('title', 'Dashboard Warga')
 

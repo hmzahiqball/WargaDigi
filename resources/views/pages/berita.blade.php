@@ -32,56 +32,64 @@
     <div class="bento-grid">
         {{-- Item 1: Left column --}}
         <div class="bento-item">
-            @if($articles[0]['image'])
-            <img src="{{ asset($articles[0]['image']) }}" class="bento-img" alt="{{ $articles[0]['title'] }}">
-            @endif
-            <div class="bento-body">
-                <div class="mb-2">
-                    <span class="card-category cat-{{ strtolower($articles[0]['category']) }}">{{ strtoupper($articles[0]['category']) }}</span>
-                    <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[0]['date'] }}</span>
+            <a href="{{ route('berita.show', 0) }}" class="text-decoration-none text-dark d-block h-100">
+                @if($articles[0]['image'])
+                <img src="{{ asset($articles[0]['image']) }}" class="bento-img" alt="{{ $articles[0]['title'] }}">
+                @endif
+                <div class="bento-body">
+                    <div class="mb-2">
+                        <span class="card-category cat-{{ strtolower($articles[0]['category']) }}">{{ strtoupper($articles[0]['category']) }}</span>
+                        <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[0]['date'] }}</span>
+                    </div>
+                    <h5 class="card-title">{{ $articles[0]['title'] }}</h5>
+                    <p class="card-text">{{ $articles[0]['excerpt'] }}</p>
                 </div>
-                <h5 class="card-title">{{ $articles[0]['title'] }}</h5>
-                <p class="card-text">{{ $articles[0]['excerpt'] }}</p>
-            </div>
+            </a>
         </div>
 
         {{-- Item 2: Center tall --}}
         <div class="bento-item bento-tall">
-            @if($articles[1]['image'])
-            <img src="{{ asset($articles[1]['image']) }}" class="bento-img" style="height: 260px;" alt="{{ $articles[1]['title'] }}">
-            @endif
-            <div class="bento-body">
-                <div class="mb-2">
-                    <span class="card-category cat-{{ strtolower($articles[1]['category']) }}">{{ strtoupper($articles[1]['category']) }}</span>
-                    <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[1]['date'] }}</span>
+            <a href="{{ route('berita.show', 1) }}" class="text-decoration-none text-dark d-block h-100">
+                @if($articles[1]['image'])
+                <img src="{{ asset($articles[1]['image']) }}" class="bento-img" style="height: 260px;" alt="{{ $articles[1]['title'] }}">
+                @endif
+                <div class="bento-body">
+                    <div class="mb-2">
+                        <span class="card-category cat-{{ strtolower($articles[1]['category']) }}">{{ strtoupper($articles[1]['category']) }}</span>
+                        <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[1]['date'] }}</span>
+                    </div>
+                    <h5 class="card-title">{{ $articles[1]['title'] }}</h5>
+                    <p class="card-text">{{ $articles[1]['excerpt'] }}</p>
                 </div>
-                <h5 class="card-title">{{ $articles[1]['title'] }}</h5>
-                <p class="card-text">{{ $articles[1]['excerpt'] }}</p>
-            </div>
+            </a>
         </div>
 
         {{-- Item 3: Right column (no image) --}}
         <div class="bento-item" style="background: #f8faf8;">
-            <div class="bento-body">
-                <div class="mb-2">
-                    <span class="card-category cat-{{ strtolower($articles[2]['category']) }}">{{ strtoupper($articles[2]['category']) }}</span>
-                    <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[2]['date'] }}</span>
+            <a href="{{ route('berita.show', 2) }}" class="text-decoration-none text-dark d-block h-100">
+                <div class="bento-body">
+                    <div class="mb-2">
+                        <span class="card-category cat-{{ strtolower($articles[2]['category']) }}">{{ strtoupper($articles[2]['category']) }}</span>
+                        <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[2]['date'] }}</span>
+                    </div>
+                    <h5 class="card-title">{{ $articles[2]['title'] }}</h5>
+                    <p class="card-text">{{ $articles[2]['excerpt'] }}</p>
                 </div>
-                <h5 class="card-title">{{ $articles[2]['title'] }}</h5>
-                <p class="card-text">{{ $articles[2]['excerpt'] }}</p>
-            </div>
+            </a>
         </div>
 
         {{-- Item 4: Bottom left (no image) --}}
         <div class="bento-item" style="background: #fff8e1;">
-            <div class="bento-body">
-                <div class="mb-2">
-                    <span class="card-category cat-{{ strtolower($articles[3]['category']) }}">{{ strtoupper($articles[3]['category']) }}</span>
-                    <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[3]['date'] }}</span>
+            <a href="{{ route('berita.show', 3) }}" class="text-decoration-none text-dark d-block h-100">
+                <div class="bento-body">
+                    <div class="mb-2">
+                        <span class="card-category cat-{{ strtolower($articles[3]['category']) }}">{{ strtoupper($articles[3]['category']) }}</span>
+                        <span class="text-muted ms-2" style="font-size: 0.8rem;">{{ $articles[3]['date'] }}</span>
+                    </div>
+                    <h5 class="card-title">{{ $articles[3]['title'] }}</h5>
+                    <p class="card-text">{{ $articles[3]['excerpt'] }}</p>
                 </div>
-                <h5 class="card-title">{{ $articles[3]['title'] }}</h5>
-                <p class="card-text">{{ $articles[3]['excerpt'] }}</p>
-            </div>
+            </a>
         </div>
     </div>
 </section>

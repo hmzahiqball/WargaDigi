@@ -99,7 +99,7 @@
                 </div>
                 <h6>{{ $report['title'] }}</h6>
                 <div class="report-period">{{ $report['period'] }}</div>
-                <a href="#" class="report-download">
+                <a href="{{ route('transparansi.download-pdf', $loop->index) }}" class="report-download">
                     <i class="bi bi-download"></i> Unduh PDF ({{ $report['size'] }})
                 </a>
             </div>

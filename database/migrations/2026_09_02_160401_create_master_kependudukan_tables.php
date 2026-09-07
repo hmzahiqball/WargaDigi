@@ -10,28 +10,28 @@ return new class extends Migration
     {
         // 1. Master Data RT
         Schema::create('master_rt', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('kode_rt', 10)->unique();
             $table->string('nama_rt', 50);
             $table->timestamps();
         });
 
-        // 2. Data Profil Keluarga (KK)[cite: 1]
+        // 2. Data Profil Keluarga (KK)
         Schema::create('keluarga', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('no_kk', 16)->unique();
             $table->string('nik_kepala_keluarga', 16);
             $table->text('alamat');
-            $table->foreignId('rt_id')->constrained('master_rt')->restrictOnDelete();
+            $table->foreignUuid('rt_id')->constrained('master_rt')->restrictOnDelete();
             $table->string('no_wa', 15)->nullable();
             $table->enum('status_aktivasi', ['Unverified', 'Active'])->default('Unverified');
             $table->timestamps();
         });
 
-        // 3. Data Kependudukan (Warga)[cite: 1]
+        // 3. Data Kependudukan (Warga)
         Schema::create('penduduk', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('keluarga_id')->constrained('keluarga')->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('keluarga_id')->constrained('keluarga')->cascadeOnDelete();
             $table->string('nik', 16)->unique();
             $table->string('nama_lengkap', 100);
             $table->enum('jenis_kelamin', ['L', 'P']);
