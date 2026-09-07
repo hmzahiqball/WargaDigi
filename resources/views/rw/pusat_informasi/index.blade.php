@@ -250,108 +250,120 @@
     </div>
 
     {{-- Details Column (Hidden by default) --}}
-    <div class="col-lg-7 d-none" id="detailCol">
-        <div class="detail-panel" id="detailPanel">
+    <div class="col-12 d-none fade-in" id="detailCol">
+        
+        {{-- Breadcrumb Navigation for Detail --}}
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-light border btn-sm me-3 text-muted rounded-circle d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;" onclick="closeDetail()" title="Kembali ke daftar">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </button>
+            <nav aria-label="breadcrumb" class="mb-0">
+                <ol class="breadcrumb mb-0" style="font-size: 14px; font-weight: 500;">
+                    <li class="breadcrumb-item"><a href="#" onclick="closeDetail(); return false;" class="text-decoration-none text-success">Pusat Informasi</a></li>
+                    <li class="breadcrumb-item text-secondary" id="breadcrumbType">Kategori</li>
+                    <li class="breadcrumb-item active text-dark text-truncate" id="breadcrumbTitle" aria-current="page" style="max-width: 250px;">Judul Konten</li>
+                </ol>
+            </nav>
+        </div>
+
+        <div class="detail-panel border-0 shadow-sm" id="detailPanel" style="height: auto; min-height: calc(100vh - 200px);">
             {{-- Content State --}}
             <div id="detailContent" class="h-100 d-flex flex-column">
-                <div class="detail-header">
+                <div class="detail-header" style="border-radius: 16px 16px 0 0;">
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <span class="type-badge" id="detailTypeBadge"></span>
-                            <h6 class="fw-bold mb-0 text-dark" style="font-size: 15px;">Detail Pengajuan</h6>
+                            <div id="detailStatusBadgeContainer">
+                                <!-- Status Badge -->
+                            </div>
                         </div>
-                        <div class="small text-muted" id="detailId" style="font-family: monospace; font-size: 11px;">ID: -</div>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        <div id="detailStatusBadgeContainer">
-                            <!-- Status Badge -->
-                        </div>
-                        <button class="btn btn-sm btn-light border ms-2 rounded-circle" onclick="closeDetail()" title="Tutup Detail">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
+                        <div class="small text-muted mt-2" id="detailId" style="font-family: monospace; font-size: 11px;">ID: -</div>
                     </div>
                 </div>
 
-                <div class="detail-body">
-                    <h3 class="fw-bold text-dark mb-2" id="detailTitle" style="line-height: 1.4; font-size: 1.4rem;"></h3>
-                    <div class="d-flex align-items-center gap-2 mb-4">
-                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 32px; height: 32px;">
-                            <i class="bi bi-person text-secondary"></i>
+                <div class="detail-body px-4 px-md-5 py-4">
+                    <h3 class="fw-bold text-dark mb-3" id="detailTitle" style="line-height: 1.4; font-size: 1.8rem;"></h3>
+                    <div class="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 45px; height: 45px;">
+                            <i class="bi bi-person fs-5 text-secondary"></i>
                         </div>
-                        <p class="text-muted small mb-0">Oleh <span class="fw-semibold text-dark" id="detailAuthor"></span> • <span id="detailTimeAgo"></span></p>
+                        <div>
+                            <p class="text-muted small mb-0">Diajukan oleh <span class="fw-bold text-dark" id="detailAuthor"></span></p>
+                            <p class="text-muted small mb-0"><i class="bi bi-clock"></i> Diperbarui <span id="detailTimeAgo"></span></p>
+                        </div>
                     </div>
 
-                    <div class="p-3 rounded-4 mb-4 d-flex flex-wrap gap-4" style="background: #F9FAFB; border: 1px solid #E5E7EB;">
-                        <div class="flex-grow-1">
+                    <div class="row g-3 mb-4 p-3 rounded-4" style="background: #F9FAFB; border: 1px solid #E5E7EB;">
+                        <div class="col-md-4">
                             <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Waktu & Tanggal</span>
-                            <div class="fw-bold text-dark mt-1 fs-6 d-flex align-items-center gap-2">
+                            <div class="fw-bold text-dark mt-1 d-flex align-items-center gap-2" style="font-size: 14.5px;">
                                 <i class="bi bi-calendar-event text-success"></i> <span id="detailDate"></span>
                             </div>
                         </div>
-                        <div class="flex-grow-1" id="detailLocationBox">
+                        <div class="col-md-4" id="detailLocationBox">
                             <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Lokasi</span>
-                            <div class="fw-bold text-dark mt-1 fs-6 d-flex align-items-center gap-2">
+                            <div class="fw-bold text-dark mt-1 d-flex align-items-center gap-2" style="font-size: 14.5px;">
                                 <i class="bi bi-geo-alt text-danger"></i> <span id="detailLocation"></span>
                             </div>
                         </div>
-                        <div class="flex-grow-1">
+                        <div class="col-md-4">
                             <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Kategori</span>
                             <div class="mt-1">
-                                <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background: white; color: #374151; font-size: 11.5px; border: 1px solid #D1D5DB; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" id="detailKategori"></span>
+                                <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="detailKategori"></span>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Deskripsi Konten</h6>
-                        <div class="p-4 rounded-4 text-dark bg-white" style="border: 1px solid #E5E7EB; min-height: 100px; font-size: 14.5px; line-height: 1.7;" id="detailRawContent">
                         </div>
                     </div>
 
                     <div class="mb-4 d-none" id="detailImageBox">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Poster / Thumbnail</h6>
-                        <div class="rounded-4 overflow-hidden border bg-light text-center p-2">
-                            <img id="detailImage" src="" alt="Poster" class="img-fluid rounded-3 shadow-sm" style="max-height: 300px; object-fit: contain;">
+                        <div class="rounded-4 overflow-hidden border bg-light text-center">
+                            <img id="detailImage" src="" alt="Poster" class="img-fluid" style="max-height: 400px; width: 100%; object-fit: contain;">
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase;">Isi Konten</h6>
+                        <div class="p-4 rounded-4 text-dark bg-white shadow-sm" style="border: 1px solid #E5E7EB; min-height: 200px; font-size: 15px; line-height: 1.8;" id="detailRawContent">
                         </div>
                     </div>
 
                     {{-- Form Penolakan (Hanya muncul jika butuh review) --}}
-                    <div id="rejectionBox" class="mb-2 d-none">
-                        <hr class="my-4 text-muted opacity-25">
-                        <h6 class="fw-bold text-danger mb-2" style="font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;"><i class="bi bi-x-circle me-1"></i> Catatan Revisi</h6>
-                        <p class="small text-muted mb-2">Jika Anda menolak pengajuan ini, pilih atau ketik alasan di bawah ini.</p>
-                        
-                        {{-- Quick Pills --}}
-                        <div class="mb-2" id="quickPillsBox">
-                            <!-- Injected by JS -->
-                        </div>
+                    <div id="rejectionBox" class="mb-4 d-none">
+                        <div class="p-4 rounded-4 border" style="background-color: #FAFAFA;">
+                            <h6 class="fw-bold text-danger mb-2" style="font-size: 14px;"><i class="bi bi-x-circle me-1"></i> Catatan Revisi</h6>
+                            <p class="small text-muted mb-3">Pilih atau ketik alasan penolakan jika Anda meminta revisi untuk pengajuan ini.</p>
+                            
+                            {{-- Quick Pills --}}
+                            <div class="mb-3" id="quickPillsBox">
+                                <!-- Injected by JS -->
+                            </div>
 
-                        <textarea id="catatanRevisi" class="form-control bg-light" rows="3" placeholder="Ketik catatan perbaikan secara detail..." style="border-radius: 12px; font-size: 14px; border: 1px solid #D1D5DB; padding: 12px;"></textarea>
-                        <div class="invalid-feedback fw-medium small mt-1">Catatan perbaikan wajib diisi jika Anda menolak.</div>
+                            <textarea id="catatanRevisi" class="form-control bg-white" rows="4" placeholder="Ketik catatan perbaikan secara detail..." style="border-radius: 12px; font-size: 14.5px; padding: 14px;"></textarea>
+                            <div class="invalid-feedback fw-medium small mt-2">Catatan perbaikan wajib diisi jika Anda menolak.</div>
+                        </div>
                     </div>
                     
                     {{-- Catatan Penolakan Lama (Jika status = Revisi) --}}
-                    <div id="pastRejectionBox" class="mb-2 d-none">
+                    <div id="pastRejectionBox" class="mb-4 d-none">
                         <div class="alert alert-danger mb-0 border-0 shadow-sm p-4" style="background-color: #FEF2F2; color: #991B1B; border-radius: 16px;">
                             <div class="d-flex gap-3">
-                                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px; flex-shrink: 0;">
-                                    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                    <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-2" style="font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">Catatan Revisi Terakhir</h6>
-                                    <p id="pastCatatanRevisi" class="mb-0" style="font-size: 14px; line-height: 1.5;"></p>
+                                    <h6 class="fw-bold mb-2" style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Catatan Revisi Terakhir</h6>
+                                    <p id="pastCatatanRevisi" class="mb-0" style="font-size: 14.5px; line-height: 1.6;"></p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="detail-footer" id="detailFooterActions">
-                    <button type="button" class="btn fw-bold px-4 rounded-pill text-dark" style="border: 1px solid #D1D5DB; background: white; font-size: 14px;" id="btnReject" onclick="handleReject()">
+                <div class="detail-footer" id="detailFooterActions" style="border-radius: 0 0 16px 16px; background: #F9FAFB;">
+                    <button type="button" class="btn fw-bold px-4 rounded-pill text-danger" style="border: 1px solid #FCA5A5; background: white; font-size: 14.5px;" id="btnReject" onclick="handleReject()">
                         Tolak & Revisi
                     </button>
-                    <button type="button" class="btn fw-bold px-4 rounded-pill btn-gradient-green" style="font-size: 14px;" id="btnApprove" onclick="handleApprove()">
-                        <i class="bi bi-check-lg me-1"></i> Setujui
+                    <button type="button" class="btn fw-bold px-5 rounded-pill btn-gradient-green shadow-sm" style="font-size: 14.5px;" id="btnApprove" onclick="handleApprove()">
+                        <i class="bi bi-check-lg me-1"></i> Setujui Pengajuan
                     </button>
                 </div>
             </div>
@@ -464,7 +476,7 @@
             if(isSelected) wrapperStyle = `background: rgba(25, 135, 84, 0.15); color: #198754;`;
 
             html += `
-                <div class="list-item-card ${isSelected ? 'selected fade-in' : ''}" onclick="selectItemById(${item.id}, '${item.type}')">
+                <div class="list-item-card ${isSelected ? 'selected fade-in' : ''}" onclick="selectItemById('${item.id}', '${item.type}')">
                     <div class="item-icon-wrapper" style="${wrapperStyle}">
                         ${iconHtml}
                     </div>
@@ -517,91 +529,119 @@
         const listCol = document.getElementById('listCol');
         const detailCol = document.getElementById('detailCol');
         
-        listCol.classList.remove('col-lg-5');
-        listCol.classList.add('col-12');
+        listCol.classList.remove('d-none');
         detailCol.classList.add('d-none');
         
         renderList();
     }
 
     function selectItemById(id, type) {
-        const item = semuaData.find(x => x.id === id && x.type === type);
-        if (item) selectItem(item);
+        try {
+            const item = semuaData.find(x => x.id == id && x.type == type);
+            if (item) {
+                selectItem(item);
+            } else {
+                console.error("Item not found:", id, type);
+            }
+        } catch (e) {
+            console.error("Error in selectItemById:", e);
+        }
     }
 
     function selectItem(item) {
-        selectedItem = item;
-        renderList(); 
-
-        const listCol = document.getElementById('listCol');
-        const detailCol = document.getElementById('detailCol');
-        const detailContent = document.getElementById('detailContent');
-        
-        if (!item) {
-            closeDetail();
-            return;
-        }
-
-        // Change layout to split pane
-        listCol.classList.remove('col-12');
-        listCol.classList.add('col-lg-5');
-        detailCol.classList.remove('d-none');
-        
-        detailContent.classList.remove('fade-in');
-        void detailContent.offsetWidth; 
-        detailContent.classList.add('fade-in');
-
-        document.getElementById('detailId').textContent = `ID: ${item.type.toUpperCase()}-${new Date().getFullYear()}-${item.id.toString().padStart(4, '0')}`;
-        document.getElementById('detailTypeBadge').textContent = item.type;
-        document.getElementById('detailStatusBadgeContainer').innerHTML = generateStatusBadge(item.status);
-        document.getElementById('detailTitle').textContent = item.title;
-        document.getElementById('detailAuthor').textContent = item.author;
-        document.getElementById('detailTimeAgo').textContent = item.time_ago;
-        document.getElementById('detailDate').textContent = item.date;
-        document.getElementById('detailKategori').textContent = item.kategori;
-        document.getElementById('detailRawContent').innerHTML = item.raw_content || '<i class="text-muted">Tidak ada konten</i>';
-
-        if (item.location) {
-            document.getElementById('detailLocationBox').classList.remove('d-none');
-            document.getElementById('detailLocation').textContent = item.location;
-        } else {
-            document.getElementById('detailLocationBox').classList.add('d-none');
-        }
-
-        const imageBox = document.getElementById('detailImageBox');
-        if (item.image) {
-            imageBox.classList.remove('d-none');
-            document.getElementById('detailImage').src = item.image;
-        } else {
-            imageBox.classList.add('d-none');
-        }
-
-        const footerActions = document.getElementById('detailFooterActions');
-        const rejectionBox = document.getElementById('rejectionBox');
-        const pastRejectionBox = document.getElementById('pastRejectionBox');
-        const inputCatatan = document.getElementById('catatanRevisi');
-        
-        inputCatatan.value = '';
-        inputCatatan.classList.remove('is-invalid');
-
-        if (item.status === 'Review') {
-            footerActions.classList.remove('d-none');
-            rejectionBox.classList.remove('d-none');
-            pastRejectionBox.classList.add('d-none');
-            renderQuickReasons();
-        } else {
-            footerActions.classList.add('d-none');
-            rejectionBox.classList.add('d-none');
+        try {
+            selectedItem = item;
             
-            if (item.status === 'Revisi' && item.reject_note) {
-                pastRejectionBox.classList.remove('d-none');
-                document.getElementById('pastCatatanRevisi').textContent = item.reject_note;
-            } else {
-                pastRejectionBox.classList.add('d-none');
+            if (!item) {
+                closeDetail();
+                return;
             }
+
+            const listCol = document.getElementById('listCol');
+            const detailCol = document.getElementById('detailCol');
+            const detailContent = document.getElementById('detailContent');
+
+            // Change layout to full page detail
+            listCol.classList.add('d-none');
+            detailCol.classList.remove('d-none');
+            
+            detailContent.classList.remove('fade-in');
+            void detailContent.offsetWidth; 
+            detailContent.classList.add('fade-in');
+
+            // Update Breadcrumb
+            document.getElementById('breadcrumbType').textContent = item.type || '-';
+            document.getElementById('breadcrumbTitle').textContent = item.title || '-';
+
+            const itemIdText = item.id ? item.id.toString().padStart(4, '0') : '0000';
+            document.getElementById('detailId').textContent = `ID: ${item.type.toUpperCase()}-${new Date().getFullYear()}-${itemIdText}`;
+            document.getElementById('detailTypeBadge').textContent = item.type || '';
+            document.getElementById('detailStatusBadgeContainer').innerHTML = generateStatusBadge(item.status);
+            document.getElementById('detailTitle').textContent = item.title || '';
+            document.getElementById('detailAuthor').textContent = item.author || '';
+            document.getElementById('detailTimeAgo').textContent = item.time_ago || '';
+            document.getElementById('detailDate').textContent = item.date || '';
+            
+            const detailKategori = document.getElementById('detailKategori');
+            if(detailKategori) detailKategori.textContent = item.kategori || '-';
+            
+            const detailRawContent = document.getElementById('detailRawContent');
+            if(detailRawContent) detailRawContent.innerHTML = item.raw_content || '<i class="text-muted">Tidak ada konten</i>';
+
+            const detailLocationBox = document.getElementById('detailLocationBox');
+            if (detailLocationBox) {
+                if (item.location) {
+                    detailLocationBox.classList.remove('d-none');
+                    document.getElementById('detailLocation').textContent = item.location;
+                } else {
+                    detailLocationBox.classList.add('d-none');
+                }
+            }
+
+            const imageBox = document.getElementById('detailImageBox');
+            if (imageBox) {
+                if (item.image) {
+                    imageBox.classList.remove('d-none');
+                    document.getElementById('detailImage').src = item.image;
+                } else {
+                    imageBox.classList.add('d-none');
+                }
+            }
+
+            const footerActions = document.getElementById('detailFooterActions');
+            const rejectionBox = document.getElementById('rejectionBox');
+            const pastRejectionBox = document.getElementById('pastRejectionBox');
+            const inputCatatan = document.getElementById('catatanRevisi');
+            
+            if (inputCatatan) {
+                inputCatatan.value = '';
+                inputCatatan.classList.remove('is-invalid');
+            }
+
+            if (item.status === 'Review') {
+                if(footerActions) footerActions.classList.remove('d-none');
+                if(rejectionBox) rejectionBox.classList.remove('d-none');
+                if(pastRejectionBox) pastRejectionBox.classList.add('d-none');
+                renderQuickReasons();
+            } else {
+                if(footerActions) footerActions.classList.add('d-none');
+                if(rejectionBox) rejectionBox.classList.add('d-none');
+                
+                if (item.status === 'Revisi' && item.reject_note) {
+                    if(pastRejectionBox) pastRejectionBox.classList.remove('d-none');
+                    const pastCatatan = document.getElementById('pastCatatanRevisi');
+                    if(pastCatatan) pastCatatan.textContent = item.reject_note;
+                } else {
+                    if(pastRejectionBox) pastRejectionBox.classList.add('d-none');
+                }
+            }
+            
+            const detailBody = document.querySelector('.detail-body');
+            if(detailBody) detailBody.scrollTop = 0;
+            
+        } catch (e) {
+            console.error("Error in selectItem:", e);
         }
-        
-        document.querySelector('.detail-body').scrollTop = 0;
     }
 
     function handleApprove() {

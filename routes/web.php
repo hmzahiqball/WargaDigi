@@ -10,6 +10,7 @@ use App\Http\Controllers\LayananController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Warga\DashboardController;
+use App\Http\Controllers\Warga\BeritaController as WargaBeritaController;
 use App\Http\Controllers\Warga\KeluargaController;
 use App\Http\Controllers\Warga\SuratController;
 use App\Http\Controllers\Warga\UmkmController as WargaUmkmController;
@@ -118,6 +119,7 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM'])->group(fun
 // Warga Routes (Role: Warga)
 Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/berita', [WargaBeritaController::class, 'index'])->name('berita.index');
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');

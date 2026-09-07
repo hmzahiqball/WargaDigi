@@ -243,11 +243,11 @@ return [
     ],
     [
         'title' => 'Berita',
-        'route' => 'berita',
-        'url'   => '/berita',
+        'route' => 'warga.berita.index',
+        'url'   => '/warga/berita',
         'icon'  => 'bi-newspaper',
         'roles' => ['Warga'],
-        'active' => ['berita*'],
+        'active' => ['warga.berita*'],
     ],
     [
         'title' => 'Permohonan Surat',
