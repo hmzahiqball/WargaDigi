@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Warga;
 
 use App\Http\Controllers\Controller;
+use App\Models\KategoriUmkm;
+use App\Models\KategoriProduk;
+use App\Models\UmkmUsaha;
+use App\Models\UmkmProduk;
 use Illuminate\Http\Request;
 use App\Models\Penduduk;
 
@@ -56,6 +60,29 @@ class DashboardController extends Controller
             ]
         ];
 
-        return view('warga.dashboard', compact('user', 'stats', 'anggotaKeluarga', 'updatesTerkini', 'agendaList'));
+        $pendingUmkmList = [];
+        if ($user && $user->nik) {
+            $pendingUmkmList = UmkmUsaha::where('nik', $user->nik)
+                ->where('status_verifikasi', 'Pending')
+                ->latest()
+                ->get();
+        }
+
+        $daftarProdukTerbaru = UmkmProduk::with(['usaha.kategori_umkm', 'kategori_produk', 'usaha.user.penduduk'])
+            ->where('status_produk', 'Aktif')
+            ->whereHas('usaha', function($q) {
+                $q->whereIn('status_verifikasi', ['Approved', 'approved']);
+            })
+            ->latest()
+            ->limit(8)
+            ->get();
+        return view('warga.dashboard', compact(
+            'user', 
+            'stats', 
+            'anggotaKeluarga', 
+            'updatesTerkini', 
+            'agendaList',
+            'pendingUmkmList', 
+            'daftarProdukTerbaru'));
     }
 }

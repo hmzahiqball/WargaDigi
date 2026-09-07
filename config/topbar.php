@@ -1,15 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Topbar Configurations Per Role
-    |--------------------------------------------------------------------------
-    |
-    | Defines topbar options, notification lists, search placeholders, settings
-    | route/URL, and role display names for each role in WargaDigi.
-    |
-    */
 
     'Admin Aplikasi' => [
         'search_placeholder' => 'Search settings...',
