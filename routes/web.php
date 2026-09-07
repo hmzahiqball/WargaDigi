@@ -67,6 +67,9 @@ Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
 // Operator Keuangan Routes
 Route::prefix('op-keuangan')->group(function () {
     Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
+    Route::get('/transaksi', [OpKeuanganController::class, 'transaksi'])->name('opkeuangan.transaksi');
+    Route::post('/transaksi', [OpKeuanganController::class, 'storeTransaksi'])->name('opkeuangan.transaksi.store');
+    Route::get('/laporan', [OpKeuanganController::class, 'laporan'])->name('opkeuangan.laporan');
     Route::get('/', [OpKeuanganController::class, 'dashboard']);
 });
 Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);

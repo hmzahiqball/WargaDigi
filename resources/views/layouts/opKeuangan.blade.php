@@ -27,19 +27,19 @@
         <nav class="sidebar-nav">
             <ul class="sidebar-menu">
                 <li class="sidebar-item">
-                    <a href="{{ route('opkeuangan.dashboard') }}" class="sidebar-link @if(request()->routeIs('opkeuangan.dashboard') || request()->is('op-keuangan*') || request()->is('opkeuangan*')) active @endif">
+                    <a href="{{ route('opkeuangan.dashboard') }}" class="sidebar-link @if(request()->routeIs('opkeuangan.dashboard')) active @endif">
                         <i class="bi bi-grid-1x2-fill"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="#" class="sidebar-link @if(request()->is('opkeuangan/transaksi*')) active @endif">
+                    <a href="{{ route('opkeuangan.transaksi') }}" class="sidebar-link @if(request()->routeIs('opkeuangan.transaksi')) active @endif">
                         <i class="bi bi-receipt"></i>
                         <span>Catat Transaksi</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a href="#" class="sidebar-link @if(request()->is('opkeuangan/laporan*')) active @endif">
+                    <a href="{{ route('opkeuangan.laporan') }}" class="sidebar-link @if(request()->routeIs('opkeuangan.laporan')) active @endif">
                         <i class="bi bi-clipboard-data"></i>
                         <span>Laporan Keuangan</span>
                     </a>
@@ -89,10 +89,10 @@
                 </a>
                 <div class="topbar-avatar" id="avatarDropdown">
                     <div class="avatar-circle">
-                        <span>{{ substr(Auth::user()->name ?? 'K', 0, 1) }}</span>
+                        <span>{{ substr(Auth::user()?->username ?? 'K', 0, 1) }}</span>
                     </div>
                 </div>
-                <span class="fw-bold text-dark small ms-1">{{ Auth::user()->name ?? 'OP Keuangan' }}</span>
+                <span class="fw-bold text-dark small ms-1">{{ Auth::user()?->username ?? 'OP Keuangan' }}</span>
             </div>
         </header>
 
