@@ -454,13 +454,73 @@
             <div id="detailContentHtml" class="content-html text-dark" style="font-size: 1.1rem; line-height: 1.8;">
                 <!-- Content injected here -->
             </div>
+            
+            <div id="detailExtraInfoBox" class="mt-5 d-none">
+                <hr class="mb-4" style="border-color: #E5E7EB;">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-people-fill text-success me-2 fs-5"></i>
+                                <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                            </div>
+                            <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
+                        </div>
+                    </div>
+                    <div class="col-12" id="detailMapContainer" style="display: none;">
+                        <span class="d-block text-muted mb-2" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Titik Lokasi Peta</span>
+                        <div class="rounded-3 overflow-hidden border" style="border-color: #E5E7EB; height: 300px;" id="mapDetailAgenda"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+
+<style>
+    .content-html p {
+        margin-bottom: 1rem;
+        line-height: 1.8;
+    }
+    .content-html blockquote {
+        border-left: 4px solid #10B981;
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        font-style: italic;
+        background-color: #F9FAFB;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    .content-html ul, .content-html ol {
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    .content-html li {
+        margin-bottom: 0.5rem;
+    }
+    .content-html h1, .content-html h2, .content-html h3, .content-html h4, .content-html h5, .content-html h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    .content-html img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+</style>
+
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@endpush
+
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     const semuaData = @json($semua);
     let currentTab = 'Semua';
@@ -568,6 +628,45 @@
         }
 
         document.getElementById('detailContentHtml').innerHTML = item.raw_content || '<i class="text-muted">Tidak ada konten deskripsi yang tersedia.</i>';
+
+        // Extra Info Box (RSVP + Map)
+        const extraInfoBox = document.getElementById('detailExtraInfoBox');
+        if (item.type === 'Agenda') {
+            extraInfoBox.classList.remove('d-none');
+            
+            // RSVP
+            const rsvpStatus = document.getElementById('detailRsvpStatus');
+            if (item.is_rsvp_enabled == 1) {
+                rsvpStatus.textContent = 'Aktif - Anda dapat mengonfirmasi kehadiran';
+                rsvpStatus.className = 'd-block text-success fw-medium';
+            } else {
+                rsvpStatus.textContent = 'Tidak Aktif';
+                rsvpStatus.className = 'd-block text-muted';
+            }
+            
+            // Map
+            const mapContainer = document.getElementById('detailMapContainer');
+            if (item.latitude && item.longitude) {
+                mapContainer.style.display = 'block';
+                setTimeout(() => {
+                    if (!window.detailMap) {
+                        window.detailMap = L.map('mapDetailAgenda').setView([item.latitude, item.longitude], 15);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }).addTo(window.detailMap);
+                        window.detailMarker = L.marker([item.latitude, item.longitude]).addTo(window.detailMap);
+                    } else {
+                        window.detailMap.setView([item.latitude, item.longitude], 15);
+                        window.detailMarker.setLatLng([item.latitude, item.longitude]);
+                        window.detailMap.invalidateSize();
+                    }
+                }, 300);
+            } else {
+                mapContainer.style.display = 'none';
+            }
+        } else {
+            extraInfoBox.classList.add('d-none');
+        }
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }

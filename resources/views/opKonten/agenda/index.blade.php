@@ -322,8 +322,13 @@
                             </span>
                         </td>
                         <td class="py-4 px-3 text-center">
-                            <div class="fw-semibold" style="color: #1B1C1C;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d M Y') }}</div>
-                            <div class="text-muted" style="font-size: 13px;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('H:i') }} WIB</div>
+                            @if(\Carbon\Carbon::parse($item->tanggal_mulai)->format('Y-m-d') !== \Carbon\Carbon::parse($item->tanggal_selesai)->format('Y-m-d'))
+                                <div class="fw-semibold" style="color: #1B1C1C; font-size: 13.5px;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d M Y') }} - {{ \Carbon\Carbon::parse($item->tanggal_selesai)->translatedFormat('d M Y') }}</div>
+                                <div class="text-muted mt-1" style="font-size: 12.5px;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('H:i') }} WIB</div>
+                            @else
+                                <div class="fw-semibold" style="color: #1B1C1C;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d M Y') }}</div>
+                                <div class="text-muted" style="font-size: 13px;">{{ \Carbon\Carbon::parse($item->tanggal_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($item->tanggal_selesai)->format('H:i') }} WIB</div>
+                            @endif
                         </td>
                         <td class="py-4 px-3 text-center" style="color: #1B1C1C; font-size: 14px;">
                             <i class="bi bi-geo-alt me-1 text-muted"></i> {{ $item->lokasi }}
@@ -428,9 +433,21 @@
                             </select>
                         </div>
                         
+                        <div class="col-12 mb-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_multi_day" id="isMultiDay" value="1">
+                                <label class="form-check-label text-dark fw-medium" for="isMultiDay" style="font-size: 14px;">Agenda Lebih Dari Satu Hari</label>
+                            </div>
+                        </div>
+
                         <div class="col-md-6">
-                            <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tanggal</label>
+                            <label class="form-label fw-medium text-dark" id="labelTanggalMulai" style="font-size: 14px;">Tanggal</label>
                             <input type="date" name="tanggal" id="tanggalAgenda" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6" id="containerTanggalAkhir" style="display: none;">
+                            <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tanggal Akhir</label>
+                            <input type="date" name="tanggal_akhir" id="tanggalAkhir" class="form-control">
                         </div>
                         
                         <div class="col-md-6">
@@ -640,8 +657,13 @@
             </div>
             
             <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
-                <div id="detailFooterActions" class="w-100 d-flex justify-content-end gap-2">
-                    <!-- Actions will be injected via JS -->
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewAgendaAsWarga()">
+                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+                    </button>
+                    <div id="detailFooterActions" class="d-flex gap-2">
+                        <!-- Actions will be injected via JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -659,6 +681,8 @@
         </div>
     </div>
 </div>
+
+@include('components.warga-preview-modal')
 
 @endsection
 
@@ -700,6 +724,25 @@
     let confirmModal = null;
 
     document.addEventListener('DOMContentLoaded', function() {
+        const isMultiDayCheckbox = document.getElementById('isMultiDay');
+        const containerTanggalAkhir = document.getElementById('containerTanggalAkhir');
+        const tanggalAkhirInput = document.getElementById('tanggalAkhir');
+        const labelTanggalMulai = document.getElementById('labelTanggalMulai');
+
+        if(isMultiDayCheckbox) {
+            isMultiDayCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    containerTanggalAkhir.style.display = 'block';
+                    tanggalAkhirInput.required = true;
+                    labelTanggalMulai.textContent = 'Tanggal Mulai';
+                } else {
+                    containerTanggalAkhir.style.display = 'none';
+                    tanggalAkhirInput.required = false;
+                    tanggalAkhirInput.value = '';
+                    labelTanggalMulai.textContent = 'Tanggal';
+                }
+            });
+        }
         // Hapus manual backdrop static agar hide.bs.modal terpanggil saat backdrop di-klik
         document.getElementById('modalBuatAgenda').setAttribute('data-bs-backdrop', 'true');
 
@@ -949,6 +992,7 @@
         document.getElementById('kategoriAgenda').value = agenda.kategori;
         document.getElementById('lokasiAgenda').value = agenda.lokasi;
         quill.root.innerHTML = agenda.detail_pengumuman;
+        document.getElementById('quillValidation').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
         
         const dateObj = new Date(agenda.tanggal_mulai);
         const yyyy = dateObj.getFullYear();
@@ -964,6 +1008,25 @@
         const hhSelesai = String(endObj.getHours()).padStart(2, '0');
         const minSelesai = String(endObj.getMinutes()).padStart(2, '0');
         document.getElementById('waktuSelesai').value = `${hhSelesai}:${minSelesai}`;
+        
+        const endYyyy = endObj.getFullYear();
+        const endMm = String(endObj.getMonth() + 1).padStart(2, '0');
+        const endDd = String(endObj.getDate()).padStart(2, '0');
+        const endDayStr = `${endYyyy}-${endMm}-${endDd}`;
+        
+        if (`${yyyy}-${mm}-${dd}` !== endDayStr) {
+            document.getElementById('isMultiDay').checked = true;
+            document.getElementById('containerTanggalAkhir').style.display = 'block';
+            document.getElementById('tanggalAkhir').required = true;
+            document.getElementById('tanggalAkhir').value = endDayStr;
+            document.getElementById('labelTanggalMulai').textContent = 'Tanggal Mulai';
+        } else {
+            document.getElementById('isMultiDay').checked = false;
+            document.getElementById('containerTanggalAkhir').style.display = 'none';
+            document.getElementById('tanggalAkhir').required = false;
+            document.getElementById('tanggalAkhir').value = '';
+            document.getElementById('labelTanggalMulai').textContent = 'Tanggal';
+        }
 
         // Handle Image
         const dropZone = document.getElementById('dropZone');
@@ -1022,11 +1085,49 @@
     }
 
     // Modal Detail Logic
+    let currentDetailItem = null;
+
+    function previewAgendaAsWarga() {
+        if (!currentDetailItem) return;
+        const item = currentDetailItem;
+
+        const startObj = new Date(item.tanggal_mulai);
+        const endObj = new Date(item.tanggal_selesai);
+        const startDate = startObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const endDate = endObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStart = startObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const timeEnd = endObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        let dateStr = '';
+        if (startDate !== endDate) {
+            dateStr = startDate + ', ' + timeStart + ' - ' + endDate + ', ' + timeEnd + ' WIB';
+        } else {
+            dateStr = startDate + ', ' + timeStart + ' - ' + timeEnd + ' WIB';
+        }
+
+        const imgSrc = item.banner_flyer ? (item.banner_flyer.startsWith('http') ? item.banner_flyer : (item.banner_flyer.startsWith('/') ? item.banner_flyer : '/' + item.banner_flyer)) : null;
+
+        openPreviewWarga({
+            type: 'Agenda',
+            title: item.judul_agenda,
+            author: item.operator ? item.operator.username : 'Operator',
+            date: dateStr,
+            location: item.lokasi,
+            image: imgSrc,
+            content: item.detail_pengumuman || '',
+            latitude: item.latitude,
+            longitude: item.longitude,
+            is_rsvp_enabled: item.is_rsvp_enabled,
+            id: item.id
+        });
+    }
+
     const dummyAgendaData = @json($agenda->items());
 
     function openDetailModal(id) {
         const item = dummyAgendaData.find(a => a.id == id);
         if (!item) return;
+        currentDetailItem = item;
 
         // Populate Image
         const detailImgContainer = document.getElementById('detailImageContainer');
@@ -1095,11 +1196,20 @@
 
         // Date and Time
         if (item.tanggal_mulai && item.tanggal_selesai) {
-            const dateStr = new Date(item.tanggal_mulai).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            // Format as YYYY-MM-DD for input date, or just display DD/MM/YYYY
-            document.getElementById('detailTanggal').value = dateStr;
-            const timeStart = new Date(item.tanggal_mulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            const timeEnd = new Date(item.tanggal_selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const startObj = new Date(item.tanggal_mulai);
+            const endObj = new Date(item.tanggal_selesai);
+            
+            const startStr = startObj.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const endStr = endObj.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            
+            if (startStr !== endStr) {
+                document.getElementById('detailTanggal').value = `${startStr} - ${endStr}`;
+            } else {
+                document.getElementById('detailTanggal').value = startStr;
+            }
+            
+            const timeStart = startObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const timeEnd = endObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             document.getElementById('detailWaktu').value = `${timeStart} - ${timeEnd} WIB`;
         }
 
