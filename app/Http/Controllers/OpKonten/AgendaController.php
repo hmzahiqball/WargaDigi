@@ -46,6 +46,7 @@ class AgendaController extends Controller
             'tanggal' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i',
+            'tanggal_akhir' => 'nullable|required_if:is_multi_day,1|date|after_or_equal:tanggal',
             'lokasi' => 'required|string|max:255',
             'latitude' => 'nullable|string|max:255',
             'longitude' => 'nullable|string|max:255',
@@ -57,7 +58,11 @@ class AgendaController extends Controller
         $data = $request->only(['judul_agenda', 'kategori', 'lokasi', 'latitude', 'longitude', 'detail_pengumuman']);
         $data['is_rsvp_enabled'] = $request->has('is_rsvp_enabled') ? 1 : 0;
         $data['tanggal_mulai'] = $request->tanggal . ' ' . $request->waktu_mulai . ':00';
-        $data['tanggal_selesai'] = $request->tanggal . ' ' . $request->waktu_selesai . ':00';
+        if ($request->has('is_multi_day') && $request->is_multi_day == '1') {
+            $data['tanggal_selesai'] = $request->tanggal_akhir . ' ' . $request->waktu_selesai . ':00';
+        } else {
+            $data['tanggal_selesai'] = $request->tanggal . ' ' . $request->waktu_selesai . ':00';
+        }
         $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
         $data['operator_id'] = auth()->id();
 
@@ -86,6 +91,7 @@ class AgendaController extends Controller
             'tanggal' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i',
+            'tanggal_akhir' => 'nullable|required_if:is_multi_day,1|date|after_or_equal:tanggal',
             'lokasi' => 'required|string|max:255',
             'latitude' => 'nullable|string|max:255',
             'longitude' => 'nullable|string|max:255',
@@ -97,7 +103,11 @@ class AgendaController extends Controller
         $data = $request->only(['judul_agenda', 'kategori', 'lokasi', 'latitude', 'longitude', 'detail_pengumuman']);
         $data['is_rsvp_enabled'] = $request->has('is_rsvp_enabled') ? 1 : 0;
         $data['tanggal_mulai'] = $request->tanggal . ' ' . $request->waktu_mulai . ':00';
-        $data['tanggal_selesai'] = $request->tanggal . ' ' . $request->waktu_selesai . ':00';
+        if ($request->has('is_multi_day') && $request->is_multi_day == '1') {
+            $data['tanggal_selesai'] = $request->tanggal_akhir . ' ' . $request->waktu_selesai . ':00';
+        } else {
+            $data['tanggal_selesai'] = $request->tanggal . ' ' . $request->waktu_selesai . ':00';
+        }
         
         if (in_array($agenda->status, ['Draft', 'Revisi'])) {
             $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';

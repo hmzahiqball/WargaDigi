@@ -47,8 +47,13 @@ class BeritaController extends Controller
                     'title' => $item->judul_agenda,
                     'description' => strip_tags($item->detail_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
-                    'date' => Carbon::parse($item->tanggal_mulai)->format('d M Y, H:i') . ' WIB',
+                    'date' => Carbon::parse($item->tanggal_mulai)->format('Y-m-d') !== Carbon::parse($item->tanggal_selesai)->format('Y-m-d') 
+                        ? Carbon::parse($item->tanggal_mulai)->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->format('d M Y, H:i') . ' WIB'
+                        : Carbon::parse($item->tanggal_mulai)->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->format('H:i') . ' WIB',
                     'location' => $item->lokasi,
+                    'latitude' => $item->latitude,
+                    'longitude' => $item->longitude,
+                    'is_rsvp_enabled' => $item->is_rsvp_enabled,
                     'image' => $item->banner_flyer ? asset($item->banner_flyer) : null,
                     'raw_content' => $item->detail_pengumuman,
                     'kategori' => $item->kategori,

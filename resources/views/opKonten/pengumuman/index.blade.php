@@ -745,23 +745,24 @@
                     </button>
                 </form>
             `;
-            if (item.status === 'Draft') {
-                actionsHtml += `
-                    <form action="/op-konten/pengumuman/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <button type="button" class="btn btn-outline-danger fw-semibold px-4" onclick="confirmDelete('${item.id}')">
-                            <i class="bi bi-trash"></i> Hapus
-                        </button>
-                    </form>
-                `;
-            }
         } else if (item.status === 'Review') {
             actionsHtml += `
                 <form action="/op-konten/pengumuman/${item.id}/cancel-submit" method="POST" class="d-inline" id="formCancelSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <button type="button" class="btn btn-outline-warning fw-semibold px-4" onclick="confirmCancelSubmit('${item.id}')">
                         <i class="bi bi-arrow-return-left"></i> Batalkan Pengajuan
+                    </button>
+                </form>
+            `;
+        }
+        
+        if (item.status !== 'Review') {
+            actionsHtml += `
+                <form action="/op-konten/pengumuman/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="button" class="btn btn-outline-danger fw-semibold px-4" onclick="confirmDelete('${item.id}')">
+                        <i class="bi bi-trash"></i> Hapus
                     </button>
                 </form>
             `;

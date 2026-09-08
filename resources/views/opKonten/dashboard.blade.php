@@ -466,7 +466,7 @@
             <hr class="border-secondary border-opacity-25 mb-4">
 
             {{-- Agenda Terdekat List --}}
-            <h6 class="fw-bold text-dark mb-3">Agenda Terdekat Lainnya</h6>
+            <h6 class="fw-bold text-dark mb-3">Agenda Terdekat (7 Hari Kedepan)</h6>
             <div id="upcoming-agenda-list" class="d-flex flex-column gap-3">
                 <!-- Dynamically populated by JS -->
             </div>
@@ -607,12 +607,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderUpcomingAgendas() {
         upcomingListContainer.innerHTML = '';
         
-        // Find next 4 agendas that are >= today and NOT on selectedDateStr
+        // Find next 4 agendas that are >= today and <= 7 days from today, and NOT on selectedDateStr
         let count = 0;
         const sortedDates = Object.keys(agendaMap).sort();
         
+        const nextWeekDate = new Date();
+        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        const nextWeekStr = nextWeekDate.getFullYear() + '-' + String(nextWeekDate.getMonth()+1).padStart(2, '0') + '-' + String(nextWeekDate.getDate()).padStart(2, '0');
+        
         for (const dateStr of sortedDates) {
-            if (dateStr >= todayStr && dateStr !== selectedDateStr) {
+            if (dateStr >= todayStr && dateStr <= nextWeekStr && dateStr !== selectedDateStr) {
                 agendaMap[dateStr].forEach(agenda => {
                     if (count >= 4) return;
                     
