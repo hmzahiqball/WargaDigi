@@ -524,8 +524,15 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer px-4 py-3 bg-light border-top" id="detailFooterActions">
-                <!-- Action buttons will be injected dynamically based on status -->
+            <div class="modal-footer px-4 py-3 bg-light border-top">
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewBeritaAsWarga()">
+                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+                    </button>
+                    <div id="detailFooterActions" class="d-flex flex-wrap gap-2">
+                        <!-- Action buttons will be injected dynamically based on status -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -932,11 +939,39 @@
     }
 
     // Modal Detail Berita Logic
+    let currentDetailBeritaItem = null;
+
+    function previewBeritaAsWarga() {
+        if (!currentDetailBeritaItem) return;
+        const item = currentDetailBeritaItem;
+
+        const dateStr = item.tanggal_publish 
+            ? new Date(item.tanggal_publish).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : new Date(item.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        const imgSrc = item.featured_image ? (item.featured_image.startsWith('http') ? item.featured_image : (item.featured_image.startsWith('/') ? item.featured_image : '/' + item.featured_image)) : null;
+
+        openPreviewWarga({
+            type: 'Berita',
+            title: item.judul_berita,
+            author: item.operator ? item.operator.username : 'Operator',
+            date: dateStr,
+            location: null,
+            image: imgSrc,
+            content: item.isi_berita || '',
+            latitude: null,
+            longitude: null,
+            is_rsvp_enabled: 0,
+            id: item.id
+        });
+    }
+
     const dummyBeritaData = @json($berita->items());
 
     function openDetailModal(id) {
         const item = dummyBeritaData.find(b => b.id == id);
         if (!item) return;
+        currentDetailBeritaItem = item;
 
         // Populate elements
         if (item.featured_image) {
@@ -1234,4 +1269,6 @@
     });
 </script>
 @endpush
+@include('components.warga-preview-modal')
+
 @endsection

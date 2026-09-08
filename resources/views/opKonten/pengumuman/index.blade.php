@@ -514,13 +514,20 @@
             </div>
             
             <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
-                <div id="detailFooterActions" class="w-100 d-flex justify-content-end gap-2">
-                    <!-- Actions will be injected via JS -->
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewPengumumanAsWarga()">
+                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+                    </button>
+                    <div id="detailFooterActions" class="d-flex gap-2">
+                        <!-- Actions will be injected via JS -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@include('components.warga-preview-modal')
 
 @endsection
 
@@ -529,6 +536,31 @@
 <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
     // Data from Laravel to JS
+    let currentDetailPengumumanItem = null;
+
+    function previewPengumumanAsWarga() {
+        if (!currentDetailPengumumanItem) return;
+        const item = currentDetailPengumumanItem;
+
+        const dateStr = item.tanggal_publish 
+            ? new Date(item.tanggal_publish).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : new Date(item.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        openPreviewWarga({
+            type: 'Pengumuman',
+            title: item.judul_pengumuman,
+            author: item.operator ? item.operator.username : 'Operator',
+            date: dateStr,
+            location: null,
+            image: null,
+            content: item.isi_pengumuman || '',
+            latitude: null,
+            longitude: null,
+            is_rsvp_enabled: 0,
+            id: item.id
+        });
+    }
+
     const dummyPengumumanData = @json($pengumuman->items());
     
     let formDirty = false;
@@ -683,6 +715,7 @@
     function openDetailModal(id) {
         const item = dummyPengumumanData.find(a => a.id == id);
         if (!item) return;
+        currentDetailPengumumanItem = item;
 
         // Status
         const statusBadge = document.getElementById('detailStatus');

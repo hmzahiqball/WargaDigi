@@ -657,8 +657,13 @@
             </div>
             
             <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
-                <div id="detailFooterActions" class="w-100 d-flex justify-content-end gap-2">
-                    <!-- Actions will be injected via JS -->
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewAgendaAsWarga()">
+                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+                    </button>
+                    <div id="detailFooterActions" class="d-flex gap-2">
+                        <!-- Actions will be injected via JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -676,6 +681,8 @@
         </div>
     </div>
 </div>
+
+@include('components.warga-preview-modal')
 
 @endsection
 
@@ -1078,11 +1085,49 @@
     }
 
     // Modal Detail Logic
+    let currentDetailItem = null;
+
+    function previewAgendaAsWarga() {
+        if (!currentDetailItem) return;
+        const item = currentDetailItem;
+
+        const startObj = new Date(item.tanggal_mulai);
+        const endObj = new Date(item.tanggal_selesai);
+        const startDate = startObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const endDate = endObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const timeStart = startObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const timeEnd = endObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        let dateStr = '';
+        if (startDate !== endDate) {
+            dateStr = startDate + ', ' + timeStart + ' - ' + endDate + ', ' + timeEnd + ' WIB';
+        } else {
+            dateStr = startDate + ', ' + timeStart + ' - ' + timeEnd + ' WIB';
+        }
+
+        const imgSrc = item.banner_flyer ? (item.banner_flyer.startsWith('http') ? item.banner_flyer : (item.banner_flyer.startsWith('/') ? item.banner_flyer : '/' + item.banner_flyer)) : null;
+
+        openPreviewWarga({
+            type: 'Agenda',
+            title: item.judul_agenda,
+            author: item.operator ? item.operator.username : 'Operator',
+            date: dateStr,
+            location: item.lokasi,
+            image: imgSrc,
+            content: item.detail_pengumuman || '',
+            latitude: item.latitude,
+            longitude: item.longitude,
+            is_rsvp_enabled: item.is_rsvp_enabled,
+            id: item.id
+        });
+    }
+
     const dummyAgendaData = @json($agenda->items());
 
     function openDetailModal(id) {
         const item = dummyAgendaData.find(a => a.id == id);
         if (!item) return;
+        currentDetailItem = item;
 
         // Populate Image
         const detailImgContainer = document.getElementById('detailImageContainer');

@@ -477,6 +477,42 @@
     </div>
 </div>
 
+
+<style>
+    .content-html p {
+        margin-bottom: 1rem;
+        line-height: 1.8;
+    }
+    .content-html blockquote {
+        border-left: 4px solid #10B981;
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        font-style: italic;
+        background-color: #F9FAFB;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    .content-html ul, .content-html ol {
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    .content-html li {
+        margin-bottom: 0.5rem;
+    }
+    .content-html h1, .content-html h2, .content-html h3, .content-html h4, .content-html h5, .content-html h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    .content-html img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+</style>
+
 @endsection
 
 @push('styles')
