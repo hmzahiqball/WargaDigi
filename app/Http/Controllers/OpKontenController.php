@@ -96,10 +96,10 @@ class OpKontenController extends Controller
             ->orderBy('tanggal_mulai', 'asc')
             ->get(['id', 'judul_agenda', 'tanggal_mulai', 'lokasi'])
             ->map(function($agenda) {
-                $agenda->date_str = \Carbon\Carbon::parse($agenda->tanggal_mulai)->format('Y-m-d');
-                $agenda->time_str = \Carbon\Carbon::parse($agenda->tanggal_mulai)->format('H:i');
+                $agenda->date_str = \Carbon\Carbon::parse($agenda->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('Y-m-d');
+                $agenda->time_str = \Carbon\Carbon::parse($agenda->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('H:i');
                 $agenda->month_short = \Carbon\Carbon::parse($agenda->tanggal_mulai)->translatedFormat('M');
-                $agenda->day_num = \Carbon\Carbon::parse($agenda->tanggal_mulai)->format('d');
+                $agenda->day_num = \Carbon\Carbon::parse($agenda->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('d');
                 return $agenda;
             });
 

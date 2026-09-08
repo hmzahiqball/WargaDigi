@@ -557,6 +557,7 @@
             latitude: null,
             longitude: null,
             is_rsvp_enabled: 0,
+            kategori: 'Pengumuman Warga',
             id: item.id
         });
     }

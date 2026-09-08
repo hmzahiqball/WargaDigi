@@ -26,7 +26,7 @@ class BeritaController extends Controller
                     'title' => $item->judul_berita,
                     'description' => strip_tags($item->isi_berita),
                     'author' => $item->operator->username ?? 'Unknown',
-                    'date' => Carbon::parse($item->tanggal_publish ?? $item->created_at)->format('d M Y, H:i'),
+                    'date' => Carbon::parse($item->tanggal_publish ?? $item->created_at)->setTimezone('Asia/Jakarta')->format('d M Y, H:i'),
                     'location' => null,
                     'image' => $item->featured_image ? asset($item->featured_image) : null,
                     'raw_content' => $item->isi_berita,
@@ -47,9 +47,9 @@ class BeritaController extends Controller
                     'title' => $item->judul_agenda,
                     'description' => strip_tags($item->detail_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
-                    'date' => Carbon::parse($item->tanggal_mulai)->format('Y-m-d') !== Carbon::parse($item->tanggal_selesai)->format('Y-m-d') 
-                        ? Carbon::parse($item->tanggal_mulai)->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->format('d M Y, H:i') . ' WIB'
-                        : Carbon::parse($item->tanggal_mulai)->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->format('H:i') . ' WIB',
+                    'date' => Carbon::parse($item->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('Y-m-d') !== Carbon::parse($item->tanggal_selesai)->setTimezone('Asia/Jakarta')->format('Y-m-d') 
+                        ? Carbon::parse($item->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB'
+                        : Carbon::parse($item->tanggal_mulai)->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' - ' . Carbon::parse($item->tanggal_selesai)->setTimezone('Asia/Jakarta')->format('H:i') . ' WIB',
                     'location' => $item->lokasi,
                     'latitude' => $item->latitude,
                     'longitude' => $item->longitude,
@@ -73,7 +73,7 @@ class BeritaController extends Controller
                     'title' => $item->judul_pengumuman,
                     'description' => strip_tags($item->isi_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
-                    'date' => Carbon::parse($item->tanggal_publish ?? $item->created_at)->format('d M Y, H:i'),
+                    'date' => Carbon::parse($item->tanggal_publish ?? $item->created_at)->setTimezone('Asia/Jakarta')->format('d M Y, H:i'),
                     'location' => null,
                     'image' => null,
                     'raw_content' => $item->isi_pengumuman,
@@ -104,7 +104,7 @@ class BeritaController extends Controller
                     'title' => $item->nama_produk,
                     'description' => strip_tags($item->deskripsi ?? ''),
                     'author' => $item->usaha->nama_usaha ?? 'Unknown',
-                    'date' => Carbon::parse($item->created_at)->format('d M Y, H:i'),
+                    'date' => Carbon::parse($item->created_at)->setTimezone('Asia/Jakarta')->format('d M Y, H:i'),
                     'location' => null,
                     'image' => $imageUrl,
                     'raw_content' => $item->deskripsi,

@@ -269,80 +269,70 @@
         <div class="detail-panel border-0 shadow-sm" id="detailPanel" style="height: auto; min-height: calc(100vh - 200px);">
             {{-- Content State --}}
             <div id="detailContent" class="h-100 d-flex flex-column">
-                <div class="detail-header" style="border-radius: 16px 16px 0 0;">
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="type-badge" id="detailTypeBadge"></span>
-                            <div id="detailStatusBadgeContainer">
-                                <!-- Status Badge -->
-                            </div>
-                        </div>
-                        <div class="small text-muted mt-2" id="detailId" style="font-family: monospace; font-size: 11px;">ID: -</div>
-                    </div>
+                {{-- Hero Image --}}
+                <div id="detailHeroContainer" style="height: 350px; position: relative; background: #000; display: none; border-radius: 16px 16px 0 0; overflow: hidden;">
+                    <img id="detailHeroImage" src="" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')">
                 </div>
 
                 <div class="detail-body px-4 px-md-5 py-4">
-                    <h3 class="fw-bold text-dark mb-3" id="detailTitle" style="line-height: 1.4; font-size: 1.8rem;"></h3>
-                    <div class="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom">
-                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 45px; height: 45px;">
-                            <i class="bi bi-person fs-5 text-secondary"></i>
+                    {{-- Badge & Status --}}
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="detailTypeBadge" style="font-size: 0.85rem;"></span>
+                            <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="detailKategori"></span>
+                            <div id="detailStatusBadgeContainer"></div>
                         </div>
-                        <div>
-                            <p class="text-muted small mb-0">Diajukan oleh <span class="fw-bold text-dark" id="detailAuthor"></span></p>
-                            <p class="text-muted small mb-0"><i class="bi bi-clock"></i> Diperbarui <span id="detailTimeAgo"></span></p>
+                        <span class="text-muted small" style="font-family: monospace;" id="detailId">ID: -</span>
+                    </div>
+
+                    {{-- Title --}}
+                    <h3 class="fw-bold text-dark mb-4" id="detailTitle" style="font-size: 2.2rem; line-height: 1.3;"></h3>
+
+                    {{-- Meta Info Sebaris --}}
+                    <div class="d-flex flex-wrap align-items-center gap-4 mb-5 pb-4 border-bottom">
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="bi bi-person-circle fs-4"></i>
+                            <span class="fw-semibold text-dark" id="detailAuthor"></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="bi bi-calendar3"></i>
+                            <span id="detailDate"></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-muted d-none" id="detailLocationBox">
+                            <i class="bi bi-geo-alt-fill text-danger"></i>
+                            <span id="detailLocation"></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="bi bi-clock"></i>
+                            <span>Diperbarui <span id="detailTimeAgo"></span></span>
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-4 p-3 rounded-4" style="background: #F9FAFB; border: 1px solid #E5E7EB;">
-                        <div class="col-md-4">
-                            <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Waktu & Tanggal</span>
-                            <div class="fw-bold text-dark mt-1 d-flex align-items-center gap-2" style="font-size: 14.5px;">
-                                <i class="bi bi-calendar-event text-success"></i> <span id="detailDate"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4" id="detailLocationBox">
-                            <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Lokasi</span>
-                            <div class="fw-bold text-dark mt-1 d-flex align-items-center gap-2" style="font-size: 14.5px;">
-                                <i class="bi bi-geo-alt text-danger"></i> <span id="detailLocation"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <span class="d-block text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Kategori</span>
-                            <div class="mt-1">
-                                <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="detailKategori"></span>
-                            </div>
-                        </div>
+                    {{-- Content --}}
+                    <div id="detailRawContent" class="content-html text-dark" style="font-size: 1.1rem; line-height: 1.8; min-height: 100px;">
                     </div>
 
-                    <div class="row mb-4 d-none" id="detailExtraInfoBox">
-                        <div class="col-12 mb-3">
-                            <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="bi bi-people-fill text-success me-2 fs-5"></i>
-                                    <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                    {{-- Extra Info (Agenda Only: RSVP + Map) --}}
+                    <div id="detailExtraInfoBox" class="mt-5 d-none">
+                        <hr class="mb-4" style="border-color: #E5E7EB;">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="bi bi-people-fill text-success me-2 fs-5"></i>
+                                        <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                                    </div>
+                                    <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
                                 </div>
-                                <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
+                            </div>
+                            <div class="col-12" id="detailMapContainer" style="display: none;">
+                                <span class="d-block text-muted mb-2" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Titik Lokasi Peta</span>
+                                <div class="rounded-3 overflow-hidden border" style="border-color: #E5E7EB; height: 300px;" id="mapDetailAgenda"></div>
                             </div>
                         </div>
-                        <div class="col-12" id="detailMapContainer" style="display: none;">
-                            <span class="d-block text-muted mb-2" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Titik Lokasi Peta</span>
-                            <div class="rounded-3 overflow-hidden border" style="border-color: #E5E7EB; height: 250px;" id="mapDetailAgenda"></div>
-                        </div>
                     </div>
 
-                    <span class="d-block text-muted mb-2 fw-semibold" style="font-size: 13px;">Lampiran Flyer/Poster/Gambar</span>
-                    <div class="mb-4" id="detailImageBox">
-                        <div class="rounded-4 overflow-hidden border bg-light text-center p-3">
-                            <img id="detailImage" src="" alt="Poster" class="img-fluid" style="max-height: 400px; width: 100%; object-fit: contain; display: none; cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')">
-                            <span id="detailImageEmpty" class="text-muted small">Tidak ada lampiran</span>
-                        </div>
-                    </div>
-
-                    <div class="mb-5">
-                        <h6 class="fw-bold text-dark mb-3" style="font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase;">Isi Konten</h6>
-                        <div class="p-4 rounded-4 text-dark bg-white shadow-sm" style="border: 1px solid #E5E7EB; min-height: 200px; font-size: 15px; line-height: 1.8;" id="detailRawContent">
-                        </div>
-                    </div>
+                    <hr class="my-5" style="border-color: #E5E7EB;">
 
                     {{-- Form Penolakan (Hanya muncul jika butuh review) --}}
                     <div id="rejectionBox" class="mb-4 d-none">
@@ -696,16 +686,15 @@
                 }
             }
 
-            const detailImg = document.getElementById('detailImage');
-            const detailImgEmpty = document.getElementById('detailImageEmpty');
+            // Hero Image
+            const heroContainer = document.getElementById('detailHeroContainer');
+            const heroImg = document.getElementById('detailHeroImage');
             if (item.image) {
-                detailImg.src = item.image;
-                detailImg.style.display = 'inline-block';
-                detailImgEmpty.style.display = 'none';
+                heroContainer.style.display = 'block';
+                heroImg.src = item.image;
             } else {
-                detailImg.src = '';
-                detailImg.style.display = 'none';
-                detailImgEmpty.style.display = 'inline-block';
+                heroContainer.style.display = 'none';
+                heroImg.src = '';
             }
 
             const footerActions = document.getElementById('detailFooterActions');

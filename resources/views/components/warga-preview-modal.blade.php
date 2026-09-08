@@ -43,7 +43,10 @@
                         <div class="card-body p-4 p-md-5">
                             {{-- Badge & ID --}}
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="pvBadgeType" style="font-size: 0.85rem;"></span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="pvBadgeType" style="font-size: 0.85rem;"></span>
+                                    <span class="badge rounded-pill px-3 py-1 fw-semibold d-none" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="pvBadgeKategori"></span>
+                                </div>
                                 <span class="text-muted small" style="font-family: monospace;" id="pvIdText"></span>
                             </div>
 
@@ -152,8 +155,15 @@
             heroContainer.style.display = 'none';
         }
 
-        // Badge & ID
+        // Badge, Kategori & ID
         document.getElementById('pvBadgeType').textContent = data.type || '';
+        const pvCatBadge = document.getElementById('pvBadgeKategori');
+        if (data.kategori) {
+            pvCatBadge.textContent = data.kategori;
+            pvCatBadge.classList.remove('d-none');
+        } else {
+            pvCatBadge.classList.add('d-none');
+        }
         document.getElementById('pvIdText').textContent = 'REF: ' + (data.id || '').toString().substring(0, 8).toUpperCase();
 
         // Title

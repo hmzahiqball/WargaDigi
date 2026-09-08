@@ -962,6 +962,7 @@
             latitude: null,
             longitude: null,
             is_rsvp_enabled: 0,
+            kategori: item.kategori || '',
             id: item.id
         });
     }

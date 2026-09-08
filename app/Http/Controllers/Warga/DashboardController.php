@@ -9,6 +9,9 @@ use App\Models\UmkmUsaha;
 use App\Models\UmkmProduk;
 use Illuminate\Http\Request;
 use App\Models\Penduduk;
+use App\Models\Pengumuman;
+use App\Models\Berita;
+use App\Models\Agenda;
 
 class DashboardController extends Controller
 {
@@ -42,15 +45,10 @@ class DashboardController extends Controller
             ],
         ];
 
-        $updatesTerkini = [
-            [
-                'title' => 'Pembersihan Saluran Air Lingkungan RW 21',
-                'desc' => 'Kegiatan gotong royong warga bersama pengurus RT dan RW untuk mengantisipasi musim hujan...',
-                'category' => 'GOTONG ROYONG',
-                'location' => 'RW 21 Tanimulya',
-                'date' => 'Hari ini',
-            ]
-        ];
+        $beritaTerkini = Berita::where('status', 'Publish')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
         $agendaList = [
             [
@@ -76,11 +74,32 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
             
+        $pengumumanPin = Pengumuman::where('status', 'Publish')
+            ->orderBy('is_priority', 'desc')
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $semuaAgenda = Agenda::where('status', 'Publish')
+            ->orderBy('tanggal_mulai', 'asc')
+            ->get()
+            ->map(function ($item) {
+                // Konversi tanggal untuk frontend JS (seperti format OP Konten)
+                $dt = \Carbon\Carbon::parse($item->tanggal_mulai)->setTimezone('Asia/Jakarta');
+                $item->date_str = $dt->format('Y-m-d');
+                $item->time_str = $dt->format('H:i');
+                $item->month_short = $dt->translatedFormat('M');
+                $item->day_num = $dt->format('d');
+                return $item;
+            });
+
         return view('warga.dashboard', compact(
+            'pengumumanPin',
+            'semuaAgenda',
             'user', 
             'stats', 
             'anggotaKeluarga', 
-            'updatesTerkini', 
+            'beritaTerkini', 
             'agendaList',
             'pendingUmkmListCount', 
             'daftarProdukTerbaru'));

@@ -1118,6 +1118,7 @@
             latitude: item.latitude,
             longitude: item.longitude,
             is_rsvp_enabled: item.is_rsvp_enabled,
+            kategori: item.kategori || '',
             id: item.id
         });
     }

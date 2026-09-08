@@ -1,6 +1,6 @@
 @extends('layouts.global')
 
-@section('title', 'Berita & Pusat Informasi')
+@section('title', 'Pusat Informasi')
 
 @push('styles')
 <style>
@@ -300,7 +300,7 @@
 @section('content')
 <div id="listView">
     <div class="page-title-section">
-        <h1 class="fw-bold text-success mb-1" style="font-size: 2.2rem;">Berita</h1>
+        <h1 class="fw-bold text-success mb-1" style="font-size: 2.2rem;">Pusat Informasi</h1>
         <p class="text-muted fs-5">Ikuti terus perkembangan terkini di komunitas kami.</p>
     </div>
 
@@ -416,7 +416,7 @@
         </button>
         <nav aria-label="breadcrumb" class="mb-0">
             <ol class="breadcrumb mb-0" style="font-size: 15px; font-weight: 500;">
-                <li class="breadcrumb-item"><a href="#" onclick="closeDetail(); return false;" class="text-decoration-none text-success">Berita</a></li>
+                <li class="breadcrumb-item"><a href="#" onclick="closeDetail(); return false;" class="text-decoration-none text-success">Pusat Informasi</a></li>
                 <li class="breadcrumb-item text-secondary" id="detailBreadcrumbType">Kategori</li>
                 <li class="breadcrumb-item active text-dark text-truncate" id="detailBreadcrumbTitle" aria-current="page" style="max-width: 250px;">Judul</li>
             </ol>
@@ -430,7 +430,10 @@
         
         <div class="card-body p-4 p-md-5">
             <div class="d-flex justify-content-between align-items-start mb-3">
-                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="detailBadgeType" style="font-size: 0.85rem;"></span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="detailBadgeType" style="font-size: 0.85rem;"></span>
+                    <span class="badge rounded-pill px-3 py-1 fw-semibold d-none" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="detailKategoriBadge"></span>
+                </div>
                 <span class="text-muted small" style="font-family: monospace;" id="detailIdText"></span>
             </div>
             
@@ -614,6 +617,13 @@
         }
 
         document.getElementById('detailBadgeType').textContent = item.type;
+        const wargaCatBadge = document.getElementById('detailKategoriBadge');
+        if (item.kategori) {
+            wargaCatBadge.textContent = item.kategori;
+            wargaCatBadge.classList.remove('d-none');
+        } else {
+            wargaCatBadge.classList.add('d-none');
+        }
         document.getElementById('detailIdText').textContent = `REF: ${item.id.toString().substring(0,8).toUpperCase()}`;
         document.getElementById('detailFullTitle').textContent = item.title;
         document.getElementById('detailAuthorName').textContent = item.author;
@@ -685,6 +695,32 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+        // Auto-switch tab based on URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const openParam = urlParams.get('open');
+        const typeParam = urlParams.get('type');
+        if (openParam && typeParam) {
+            setTimeout(() => {
+                openDetail(openParam, typeParam);
+                // Clean URL without reloading page
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({path:newUrl}, '', newUrl);
+            }, 100);
+        }
+
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            // Capitalize first letter (e.g., 'pengumuman' -> 'Pengumuman')
+            const tabName = tabParam.charAt(0).toUpperCase() + tabParam.slice(1);
+            if (['Semua', 'Berita', 'Pengumuman', 'UMKM News'].includes(tabName)) {
+                switchTab(tabName);
+                
+                // Clean URL without reloading page
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({path:newUrl}, '', newUrl);
+            }
+        }
+
         renderGrid();
     });
 </script>

@@ -264,10 +264,10 @@ return [
         'url'   => '/warga/dashboard',
         'icon'  => 'bi-grid-1x2-fill',
         'roles' => ['Warga'],
-        'active' => ['warga.dashboard'],
+        'active' => ['warga.dashboard', 'warga/dashboard*'],
     ],
     [
-        'title' => 'Berita',
+        'title' => 'Pusat Informasi',
         'route' => 'warga.berita.index',
         'url'   => '/warga/berita',
         'icon'  => 'bi-newspaper',
@@ -292,11 +292,11 @@ return [
     ],
     [
         'title' => 'Agenda Warga',
-        'route' => 'informasi',
-        'url'   => '/informasi',
+        'route' => 'warga.agenda.index',
+        'url'   => '/warga/agenda',
         'icon'  => 'bi-calendar-event-fill',
         'roles' => ['Warga'],
-        'active' => ['informasi*'],
+        'active' => ['warga.agenda*'],
     ],
     [
         'title' => 'Pengaturan Keluarga',
