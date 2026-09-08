@@ -146,7 +146,7 @@ class SuratController extends Controller
             'bulan_romawi' => $bulanRomawi,
             'tahun' => $tanggalSelesai->format('y'),
             'nama_lengkap' => $p->nama_lengkap ?? '-',
-            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->translatedFormat('d F Y')) : '-',
+            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
             'alamat' => $k->alamat ?? '-',
             'no_kk' => $k->no_kk ?? '-',
             'nik' => $p->nik ?? '-',
@@ -156,7 +156,7 @@ class SuratController extends Controller
             'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
             'pekerjaan' => $p->pekerjaan ?? '-',
             'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
-            'tanggal_surat' => $tanggalSelesai->translatedFormat('l, d F Y'),
+            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
             'nama_ketua_rt' => $namaKetuaRt,
             'nama_ketua_rw' => $namaKetuaRw,
             'ttd_rt' => $item->ttd_rt,
@@ -170,3 +170,4 @@ class SuratController extends Controller
         return $pdf->download('Surat_Pengantar_' . str_replace(' ', '_', $data->nama_lengkap) . '.pdf');
     }
 }
+

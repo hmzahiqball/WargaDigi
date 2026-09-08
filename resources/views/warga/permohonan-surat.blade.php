@@ -78,7 +78,7 @@
                 <select class="form-select bg-white border" id="jenisSuratSelect">
                     <option value="">Pilih jenis surat yang ingin diajukan...</option>
                     @foreach($tipeSurat as $i => $surat)
-                        <option value="{{ $surat }}">{{ ($i+1) }}. {{ $surat }}</option>
+                        <option value="{{ $surat }}">{{ $surat }}</option>
                     @endforeach
                 </select>
             </div>
@@ -283,3 +283,4 @@ function resetForm() {
 }
 </script>
 @endpush
+

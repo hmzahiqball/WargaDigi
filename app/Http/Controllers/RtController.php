@@ -57,6 +57,10 @@ class RtController extends Controller
                 'status_perkawinan' => $p->status_perkawinan ?? '-',
                 'file_ktp_url' => $ktpPath ? asset('storage/' . $ktpPath) : null,
                 'file_kk_url' => $kkPath ? asset('storage/' . $kkPath) : null,
+                'pendidikan' => $p->pendidikan ?? '-',
+                'kewarganegaraan' => 'WNI',
+                'nama_orang_tua' => '-',
+                'kode_rt' => $k && $k->rt_id ? (\App\Models\MasterRt::find($k->rt_id)->kode_rt ?? '01') : '01',
             ];
         });
 
@@ -121,5 +125,52 @@ class RtController extends Controller
         if ($bytes >= 1048576) return round($bytes / 1048576, 1) . ' MB';
         if ($bytes >= 1024) return round($bytes / 1024, 0) . ' KB';
         return $bytes . ' B';
+    }
+
+    public function previewSurat($id)
+    {
+        $item = \App\Models\PengajuanSurat::with('penduduk.keluarga')->findOrFail($id);
+        $p = $item->penduduk;
+        $k = $p ? $p->keluarga : null;
+
+        $kodeRt = '01';
+        if ($k && $k->rt_id) {
+            $rt = \App\Models\MasterRt::find($k->rt_id);
+            if ($rt) $kodeRt = $rt->kode_rt;
+        }
+
+        $namaKetuaRt = \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '..........................';
+        $namaKetuaRw = \App\Models\User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
+
+        $tanggalSelesai = $item->updated_at;
+        $bulanRomawi = \App\Models\PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
+
+        $data = (object) [
+            'tipe_surat' => $item->tipe_surat,
+            'kode_rt' => $kodeRt,
+            'bulan_romawi' => $bulanRomawi,
+            'tahun' => $tanggalSelesai->format('y'),
+            'nama_lengkap' => $p->nama_lengkap ?? '-',
+            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
+            'alamat' => $k->alamat ?? '-',
+            'no_kk' => $k->no_kk ?? '-',
+            'nik' => $p->nik ?? '-',
+            'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+            'agama' => $p->agama ?? '-',
+            'status_perkawinan' => $p->status_perkawinan ?? '-',
+            'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
+            'pekerjaan' => $p->pekerjaan ?? '-',
+            'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
+            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
+            'nama_ketua_rt' => $namaKetuaRt,
+            'nama_ketua_rw' => $namaKetuaRw,
+            'ttd_rt' => null,
+            'stempel_rt' => null,
+            'ttd_rw' => null,
+            'stempel_rw' => null,
+            'is_preview' => true,
+        ];
+
+        return view('pdf.surat', compact('data'));
     }
 }

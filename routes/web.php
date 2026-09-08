@@ -152,6 +152,7 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/persetujuan-dokumen', [RtController::class, 'persetujuanDokumen'])->name('rt.persetujuan-dokumen');
     Route::post('/surat/{id}/approve', [RtController::class, 'approveDokumen'])->name('rt.surat.approve');
     Route::post('/surat/{id}/reject', [RtController::class, 'rejectDokumen'])->name('rt.surat.reject');
+    Route::get('/surat/{id}/preview', [RtController::class, 'previewSurat'])->name('rt.surat.preview');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)

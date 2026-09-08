@@ -60,6 +60,9 @@ class RwController extends Controller
                 'status_perkawinan' => $p->status_perkawinan ?? '-',
                 'file_ktp_url' => $ktpPath ? asset('storage/' . $ktpPath) : null,
                 'file_kk_url' => $kkPath ? asset('storage/' . $kkPath) : null,
+                'pendidikan' => $p->pendidikan ?? '-',
+                'kewarganegaraan' => 'WNI',
+                'kode_rt' => $k && $k->rt_id ? (\App\Models\MasterRt::find($k->rt_id)->kode_rt ?? '01') : '01',
                 'ttd_rt_url' => $item->ttd_rt ? asset('storage/' . $item->ttd_rt) : null,
                 'stempel_rt_url' => $item->stempel_rt ? asset('storage/' . $item->stempel_rt) : null,
                 // Data surat untuk preview
@@ -72,6 +75,7 @@ class RwController extends Controller
                 'status_perkawinan_surat' => $p->status_perkawinan ?? '-',
                 'alamat_surat' => $k->alamat ?? '-',
                 'no_kk' => $k->no_kk ?? '-',
+                'nama_ketua_rt' => \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '.............................',
             ];
         });
 
@@ -126,7 +130,52 @@ class RwController extends Controller
             ->with('success', 'Catatan penolakan telah dikirim.');
     }
 
-    public function previewSurat($id) { return response()->json(['success' => true]); }
+        public function previewSurat($id)
+    {
+        $item = PengajuanSurat::with('penduduk.keluarga')->findOrFail($id);
+        $p = $item->penduduk;
+        $k = $p ? $p->keluarga : null;
+
+        $kodeRt = '01';
+        if ($k && $k->rt_id) {
+            $rt = \App\Models\MasterRt::find($k->rt_id);
+            if ($rt) $kodeRt = $rt->kode_rt;
+        }
+
+        $namaKetuaRt = \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '..........................';
+        $namaKetuaRw = \App\Models\User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
+
+        $tanggalSelesai = $item->tanggal_selesai ?? $item->updated_at;
+        $bulanRomawi = PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
+
+        $data = (object) [
+            'tipe_surat' => $item->tipe_surat,
+            'kode_rt' => $kodeRt,
+            'bulan_romawi' => $bulanRomawi,
+            'tahun' => $tanggalSelesai->format('y'),
+            'nama_lengkap' => $p->nama_lengkap ?? '-',
+            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
+            'alamat' => $k->alamat ?? '-',
+            'no_kk' => $k->no_kk ?? '-',
+            'nik' => $p->nik ?? '-',
+            'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
+            'agama' => $p->agama ?? '-',
+            'status_perkawinan' => $p->status_perkawinan ?? '-',
+            'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
+            'pekerjaan' => $p->pekerjaan ?? '-',
+            'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
+            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
+            'nama_ketua_rt' => $namaKetuaRt,
+            'nama_ketua_rw' => $namaKetuaRw,
+            'ttd_rt' => $item->ttd_rt,
+            'stempel_rt' => $item->stempel_rt,
+            'ttd_rw' => null, // Hide RW signature for preview
+            'stempel_rw' => null, // Hide RW stamp for preview
+            'is_preview' => true,
+        ];
+
+        return view('pdf.surat', compact('data'));
+    }
 
     // UMKM methods
     public function umkm()
@@ -165,3 +214,5 @@ class RwController extends Controller
         return $bytes . ' B';
     }
 }
+
+
