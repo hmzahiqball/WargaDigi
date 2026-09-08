@@ -126,7 +126,7 @@ class DatabaseSeeder extends Seeder
 
         // 12. Membuat Akun Warga (Budi Santoso) — untuk demo pengajuan surat
         $wargaUser = User::create([
-            'nik' => '3204xxxxxxxx0001',
+            'nik' => '3204111122220002',
             'username' => 'budisantoso',
             'password' => Hash::make('warga_pass'),
             'role' => 'Warga',
@@ -137,7 +137,7 @@ class DatabaseSeeder extends Seeder
         // Data Keluarga (KK) milik Budi Santoso
         $keluarga = \App\Models\Keluarga::create([
             'no_kk' => '3204xxxxxxxx0001',
-            'nik_kepala_keluarga' => '3204xxxxxxxx0001',
+            'nik_kepala_keluarga' => '3204111122220002',
             'alamat' => 'Jl. Merdeka Barat No. 45, RT 03 / RW 05, Kelurahan Sukamaju',
             'rt_id' => MasterRt::where('kode_rt', '01')->first()->id ?? 1, // RT 01 / RW 21
             'no_wa' => '081234567890',
@@ -147,7 +147,7 @@ class DatabaseSeeder extends Seeder
         // Anggota Keluarga: Kepala Keluarga
         \App\Models\Penduduk::create([
             'keluarga_id' => $keluarga->id,
-            'nik' => '3204xxxxxxxx0001',
+            'nik' => '3204111122220002',
             'nama_lengkap' => 'Budi Santoso',
             'jenis_kelamin' => 'L',
             'tempat_lahir' => 'Jakarta',

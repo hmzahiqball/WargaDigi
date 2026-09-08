@@ -191,5 +191,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }, 150);
     @endif
+
+    // Otomatis Munculkan Notifikasi Error jika ada flash session('error') dari Laravel
+    @if(session('error'))
+        setTimeout(function() {
+            if (typeof window.showAdminToast === 'function') {
+                window.showAdminToast("{{ addslashes(session('error')) }}", 'error');
+            } else {
+                alert("{{ addslashes(session('error')) }}");
+            }
+        }, 150);
+    @endif
 });
 </script>
