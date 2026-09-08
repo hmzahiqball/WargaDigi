@@ -12,7 +12,7 @@
 </section>
 
 <section class="container mb-4">
-    @include('warga.umkm.components.filterSearchBar', [
+    @include('components.filterSearchBar', [
         'actionUrl' => route('pojok-umkm'),
         'placeholder' => 'Cari Toko / Usaha UMKM Berdasarkan Nama...',
         'daftarKategoriUmkm' => $daftarKategoriUmkm ?? null,
@@ -23,7 +23,7 @@
 <section class="container pb-5">
     <div class="row g-4">
         @forelse($daftarUsaha as $usaha)
-            @include('warga.umkm.components.cardUsaha', [
+            @include('components.cardUsaha', [
                 'usaha' => $usaha, 
                 'colClass' => 'col-lg-4 col-md-6 fade-on-scroll'
             ])

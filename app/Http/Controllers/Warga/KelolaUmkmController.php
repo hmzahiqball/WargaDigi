@@ -71,7 +71,7 @@ class KelolaUmkmController extends Controller
         $jumlahProdukAktif = $allUsahaProduk->where('status_produk', 'Aktif')->count();
         $jumlahProdukTidakAktif = $allUsahaProduk->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif'])->count();
         $jumlahProdukPending = $jumlahProdukTidakAktif;
-        $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->usaha->kategori_umkm->nama_kategori ?? 'Lainnya')->count();
+        $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->kategori_produk->nama_kategori ?? 'Lainnya')->count();
         $jumlahProdukStokMenipis = $allUsahaProduk->filter(fn($item) => strtolower($item->status_stok ?? '') === 'menipis')->count();
 
         // Menggunakan scope dari model UmkmProduk

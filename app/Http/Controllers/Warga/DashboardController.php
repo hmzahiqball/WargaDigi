@@ -60,12 +60,11 @@ class DashboardController extends Controller
             ]
         ];
 
-        $pendingUmkmList = [];
         if ($user && $user->nik) {
-            $pendingUmkmList = UmkmUsaha::where('nik', $user->nik)
+            $pendingUmkmListCount = UmkmUsaha::where('nik', $user->nik)
                 ->where('status_verifikasi', 'Pending')
                 ->latest()
-                ->get();
+                ->count();
         }
 
         $daftarProdukTerbaru = UmkmProduk::with(['usaha.kategori_umkm', 'kategori_produk', 'usaha.user.penduduk'])
@@ -76,13 +75,14 @@ class DashboardController extends Controller
             ->latest()
             ->limit(8)
             ->get();
+            
         return view('warga.dashboard', compact(
             'user', 
             'stats', 
             'anggotaKeluarga', 
             'updatesTerkini', 
             'agendaList',
-            'pendingUmkmList', 
+            'pendingUmkmListCount', 
             'daftarProdukTerbaru'));
     }
 }

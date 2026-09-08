@@ -1,9 +1,7 @@
-@extends('layouts.global')
-
-@section('title', 'Galeri UMKM')
-
-@section('content')
 @php
+    $isDashboard = isset($isDashboard) ? (bool)$isDashboard : Auth::check();
+    $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
+
     $hero1 = isset($produkUnggulan) ? $produkUnggulan->get(0) : null;
     $hero2 = isset($produkUnggulan) ? $produkUnggulan->get(1) : null;
     $hero3 = isset($produkUnggulan) ? $produkUnggulan->get(2) : null;
@@ -30,7 +28,7 @@
         'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
         default => 'badge-kerajinan'
     };
-    $detailUrl1 = $hero1 ? route('produk.show', $hero1->id) : route('warga.umkm.usaha.show');
+    $detailUrl1 = $hero1 ? route('produk.show', $hero1->id) : route('umkm.usaha.show');
     $noWa1 = preg_replace('/[^0-9]/', '', $hero1->usaha->no_wa ?? '628123456789');
     if (str_starts_with($noWa1, '0')) { $noWa1 = '62' . substr($noWa1, 1); }
     $hero1Message = 'Halo, saya tertarik dengan produk ' . ($hero1->nama_produk ?? 'Pahatan Kayu Jati Custom');
@@ -51,7 +49,7 @@
         'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
         default => 'badge-kuliner'
     };
-    $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('warga.umkm.usaha.show');
+    $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('umkm.usaha.show');
 
     $kat3 = $hero3->kategori_produk->nama_kategori ?? $hero3->usaha->kategori_umkm->nama_kategori ?? 'Fashion';
     $bg3 = ($hero3 && !empty($hero3->foto_produk)) 
@@ -65,9 +63,15 @@
         'sembako', 'sembako warga', 'koperasi' => 'badge-koperasi',
         default => 'badge-fashion'
     };
-    $detailUrl3 = $hero3 ? route('produk.show', $hero3->id) : route('warga.umkm.usaha.show');
+    $detailUrl3 = $hero3 ? route('produk.show', $hero3->id) : route('umkm.usaha.show');
 @endphp
-<div class="container-fluid px-0">
+
+@extends($layout)
+
+@section('title', 'Galeri UMKM')
+
+@section('content')
+<div class="{{ $isDashboard ? 'container-fluid px-0' : 'container py-4' }}">
     <div class="row align-items-center mb-4 g-3">
         <div class="col-md-7">
             <h2 class="fw-bold text-success mb-2">Galeri UMKM</h2>
@@ -75,6 +79,7 @@
                 Dukung usaha tetangga, majukan ekonomi lokal RW 21 Tanimulya. Temukan berbagai produk dan jasa terbaik dari komunitas kita.
             </p>
         </div>
+        @if(Auth::check() && Auth::user()->role === 'Warga')
         <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
             <button type="button" class="btn btn-success fw-semibold px-3 py-2 rounded-3 text-white shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDaftarUsaha">
                 <i class="bi bi-plus-circle me-1"></i> Daftarkan Usaha Anda
@@ -83,10 +88,11 @@
                 <i class="bi bi-shop me-1"></i> Kelola UMKM Anda
             </a>
         </div>
+        @endif
     </div>
 
-    @if(isset($pendingUsahaCount) && $pendingUsahaCount > 0)
-    <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
+    @if(Auth::check() && Auth::user()->role === 'Warga' && isset($pendingUsahaCount) && $pendingUsahaCount > 0)
+    <div class="alert alert-warning border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #ffffff;">
         <div class="d-flex align-items-center gap-3">
             <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.2); width: 42px; height: 42px;">
                 <i class="bi bi-clock-history text-warning fs-5"></i>
@@ -96,7 +102,7 @@
                 <p class="text-muted small mb-0">Terdapat <strong>{{ $pendingUsahaCount }}</strong> usaha yang Anda daftarkan berstatus Pending dan menunggu verifikasi dari Pengurus RW.</p>
             </div>
         </div>
-        <a href="{{ route('warga.umkm.kelola') }}" class="btn btn-warning btn-sm text-dark fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+        <a href="{{ route('warga.umkm.kelola') }}" class="btn btn-warning btn-sm text-light fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
             <i class="bi bi-shop me-1"></i> Cek di Kelola UMKM
         </a>
     </div>
@@ -106,7 +112,7 @@
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-dark mb-0">Produk Unggulan RW 21</h5>
-            <a href="{{ route('warga.umkm.koleksi', 'unggulan') }}" class="text-success text-decoration-none small fw-semibold">
+            <a href="{{ route('umkm.koleksi', 'unggulan') }}" class="text-success text-decoration-none small fw-semibold">
                 Lihat Semua <i class="bi bi-arrow-right"></i>
             </a>
         </div>
@@ -165,15 +171,12 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h5 class="fw-bold text-dark mb-1">
-                    Produk Terbaru Masuk Sistem
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small ms-2 fw-semibold" style="font-size: 11px;">
-                        Baru
-                    </span>
+                    Produk Terbaru WargaDigi
                 </h5>
                 <p class="text-muted small mb-0">Koleksi produk teranyar yang baru didaftarkan oleh warga RW 21.</p>
             </div>
             <div>
-                <a href="{{ route('warga.umkm.koleksi', 'terbaru') }}" class="text-success text-decoration-none small fw-semibold text-nowrap d-inline-flex align-items-center gap-1">
+                <a href="{{ route('umkm.koleksi', 'terbaru') }}" class="text-success text-decoration-none small fw-semibold text-nowrap d-inline-flex align-items-center gap-1">
                     Lihat Semua <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -186,8 +189,8 @@
     </div>
     @endif
 
-    @include('warga.umkm.components.filterSearchBar', [
-        'actionUrl' => route('warga.umkm.galeri'),
+    @include('components.filterSearchBar', [
+        'actionUrl' => route('umkm.galeri'),
         'placeholder' => 'Cari Toko / Produk Berdasarkan Nama',
         'produk' => $produk ?? null,
         'showStatus' => false

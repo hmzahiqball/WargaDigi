@@ -1,4 +1,4 @@
-@extends('layouts.rt')
+@extends('layouts.global')
 
 @section('title', 'Persetujuan Dokumen')
 

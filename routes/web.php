@@ -25,20 +25,42 @@ use App\Http\Controllers\OpKonten\GaleriController as OpKontenGaleriController;
 use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
 use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanController;
 
-//LandingPage
+// LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/informasi', [InformasiController::class, 'index'])->name('informasi');
 Route::get('/transparansi', [TransparansiController::class, 'index'])->name('transparansi');
 Route::get('/transparansi/{id}/pdf', [TransparansiController::class, 'downloadPdf'])->name('transparansi.download-pdf');
 Route::get('/berita', [BeritaController::class, 'index'])->name('berita');
 Route::get('/berita/{id}', [BeritaController::class, 'show'])->name('berita.show');
+Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
+
+// Shared Domain: UMKM (Galeri, Koleksi, Usaha, Produk)
+Route::get('/galeri', [GaleriUmkmController::class, 'index'])->name('umkm.galeri');
+Route::get('/galeri/koleksi/{tipe?}', [GaleriUmkmController::class, 'koleksiProduk'])->name('umkm.koleksi');
+Route::get('/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('umkm.usaha.show');
+Route::get('/produk/{id}', [UmkmController::class, 'detailProduk'])->name('produk.show');
+
 Route::get('/pojok-umkm', [UmkmController::class, 'index'])->name('pojok-umkm');
 Route::get('/pojok-umkm/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('pojok-umkm.detail_usaha');
-Route::get('/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
-Route::get('/produk/{id}', [UmkmController::class, 'detailProduk'])->name('produk.show');
+Route::get('/public/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
 Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->name('public.umkm.produk.show');
+Route::get('/galeri/detail-usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
 
-Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
+// Redirect /warga/galeri routes
+Route::redirect('/warga/galeri', '/galeri')->name('warga.umkm.galeri');
+Route::get('/warga/galeri/koleksi/{tipe?}', function($tipe = null) {
+    return redirect()->route('umkm.koleksi', $tipe ? ['tipe' => $tipe] : []);
+})->name('warga.umkm.koleksi');
+Route::get('/warga/galeri/usaha/{id?}', function($id = null) {
+    return redirect()->route('umkm.usaha.show', $id ? ['id' => $id] : []);
+})->name('warga.umkm.usaha.show');
+Route::get('/warga/galeri/detail-usaha/{id?}', function($id = null) {
+    return redirect()->route('umkm.usaha.show', $id ? ['id' => $id] : []);
+})->name('warga.umkm.detail_usaha');
+Route::get('/warga/galeri/produk/{id}', function($id) {
+    return redirect()->route('produk.show', ['id' => $id]);
+})->name('warga.umkm.produk.detail');
+Route::redirect('/galeri/kelola', '/warga/galeri/kelola');
 
 //Auth
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -97,27 +119,28 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
 });
 
 // RW (Role: Admin RW, Pimpinan RW)
-Route::middleware(['auth', 'role:Admin RW,Pimpinan RW'])->prefix('rw')->name('rw.')->group(function () {
+Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')->name('rw.')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
     
     // Pusat Informasi (Berita & Agenda Approval)
-    Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('rw.pusat-informasi.index');
-    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('rw.pusat-informasi.berita.approve');
-    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('rw.pusat-informasi.berita.reject');
-    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('rw.pusat-informasi.agenda.approve');
-    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('rw.pusat-informasi.agenda.reject');
-    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('rw.pusat-informasi.pengumuman.approve');
-    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('rw.pusat-informasi.pengumuman.reject');
+    Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('pusat-informasi.index');
+    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('pusat-informasi.berita.approve');
+    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('pusat-informasi.berita.reject');
+    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('pusat-informasi.agenda.approve');
+    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('pusat-informasi.agenda.reject');
+    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('pusat-informasi.pengumuman.approve');
+    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('pusat-informasi.pengumuman.reject');
 
     // Persetujuan Dokumen
-    Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('rw.persetujuan-dokumen');
+    Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('persetujuan-dokumen');
     Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('rw.surat.approve');
     Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('rw.surat.reject');
     Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('rw.surat.preview');
 
     // UMKM
     Route::get('/umkm', [RwController::class, 'umkm'])->name('umkm.index');
+    Route::get('/umkm/usaha/{id}', [RwController::class, 'detailUsahaUmkm'])->name('umkm.usaha.detail');
     Route::post('/umkm/{id}/approve', [RwController::class, 'approveUmkm'])->name('umkm.approve');
     Route::post('/umkm/{id}/reject', [RwController::class, 'rejectUmkm'])->name('umkm.reject');
 });
@@ -132,7 +155,7 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
-Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT,Op. Konten RW,Op. Konten RT'])->group(function () {
+Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT,Op. Konten RW,Op. Konten RT,Op Konten RW,Op Konten RT'])->group(function () {
     Route::prefix('op-konten')->name('opkonten.')->group(function () {
         Route::get('/dashboard', [OpKontenController::class, 'dashboard'])->name('dashboard');
         Route::get('/berita', [OpKontenBeritaController::class, 'index'])->name('berita.index');
@@ -166,7 +189,7 @@ Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT,Op. Konten RW,Op. Kon
 });
 
 // Operator Keuangan Routes (Role: Op. Keuangan RW, Op. Keuangan RT, DKM)
-Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan RW,Op. Keuangan RT'])->group(function () {
+Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan RW,Op. Keuangan RT,Op Keuangan RW,Op Keuangan RT'])->group(function () {
     Route::prefix('op-keuangan')->group(function () {
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
         Route::get('/', [OpKeuanganController::class, 'dashboard']);
@@ -174,7 +197,7 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
 });
 
-//Warga
+// Warga
 Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/berita', [WargaBeritaController::class, 'index'])->name('berita.index');
@@ -187,10 +210,6 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
     
     // UMKM Galeri Baru
-    Route::get('/galeri', [GaleriUmkmController::class, 'index'])->name('umkm.galeri');
-    Route::get('/galeri/koleksi/{tipe?}', [GaleriUmkmController::class, 'koleksiProduk'])->name('umkm.koleksi');
-    Route::get('/galeri/usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.usaha.show');
-    Route::get('/galeri/detail-usaha/{id?}', [GaleriUmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
     Route::get('/galeri/produk/{id}', [GaleriUmkmController::class, 'detailProduk'])->name('umkm.produk.detail');
     Route::get('/galeri/daftar', [GaleriUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/galeri/daftar', [GaleriUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');

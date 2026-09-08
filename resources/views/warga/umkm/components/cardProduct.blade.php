@@ -90,15 +90,15 @@
                         <small class="text-muted d-block" style="font-size: 14px;">Status Stok</small>
                         @if($statusStok === 'habis')
                             <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-x-circle me-1"></i> Habis
+                                Habis
                             </span>
                         @elseif($statusStok === 'menipis')
                             <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-exclamation-triangle me-1"></i> Menipis
+                                 Menipis
                             </span>
                         @else
                             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-check-circle me-1"></i> Tersedia
+                                 Tersedia
                             </span>
                         @endif
                     </div>

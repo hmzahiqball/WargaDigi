@@ -37,7 +37,7 @@ return [
         'search_placeholder' => 'Cari di WargaDigi...',
         'notif_title'        => 'Notifikasi RW',
         'notif_badge'        => '3',
-        'default_name'       => 'Ketua RW',
+        'default_name'       => 'Admin RW',
         'settings_url'       => '#',
         'notifications'      => [
             [
@@ -204,22 +204,6 @@ return [
         'default_name'       => 'Warga',
         'settings_route'     => 'warga.keluarga.index',
         'settings_url'       => '/warga/keluarga',
-        'notifications'      => [
-            [
-                'type'   => 'success',
-                'icon'   => 'bi-check-circle-fill',
-                'text'   => 'Pengajuan surat keterangan telah disetujui',
-                'time'   => '10 menit yang lalu',
-                'unread' => true,
-            ],
-            [
-                'type'   => 'info',
-                'icon'   => 'bi-info-circle-fill',
-                'text'   => 'Jadwal kerja bakti minggu ini telah diperbarui',
-                'time'   => '2 jam yang lalu',
-                'unread' => true,
-            ],
-        ],
     ],
 
     'default' => [

@@ -2,10 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\MasterRt;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -187,6 +184,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            RoleSeeder::class,
+            MasterRtSeeder::class,
+            UserSeeder::class,
+            KeluargaSeeder::class,
+            PendudukSeeder::class,
+            BeritaSeeder::class,
             KategoriUmkmSeeder::class,
             UmkmUsahaSeeder::class,
             KategoriProdukSeeder::class,

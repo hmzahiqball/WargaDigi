@@ -201,7 +201,6 @@ class UmkmProdukSeeder extends Seeder
             ]);
         }
 
-        // 5. Koperasi Unit Desa Tanimulya (Koperasi)
         if ($koperasiUsaha) {
             $bahanPokokKat = KategoriProduk::updateOrCreate(
                 ['id' => 'c16f5e45-0001-4567-89ab-cdef01234561'],
@@ -247,7 +246,6 @@ class UmkmProdukSeeder extends Seeder
             );
         }
 
-        // Hapus kategori produk yang tidak terhubung dengan produk mana pun
         KategoriProduk::doesntHave('produk')->delete();
     }
 }

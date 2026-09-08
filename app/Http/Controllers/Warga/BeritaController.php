@@ -80,7 +80,7 @@ class BeritaController extends Controller
         // Get UMKM News
         $umkmProduk = UmkmProduk::with('usaha')
             ->where('status_produk', 'Aktif')
-            ->where('is_tersedia', true)
+            ->where('status_stok', '!=', 'habis')
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get()

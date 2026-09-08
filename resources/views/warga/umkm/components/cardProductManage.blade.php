@@ -7,15 +7,16 @@
         : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop';
     $namaProduk = $item->nama_produk ?? 'Produk';
     $deskripsi = $item->deskripsi ?? 'Tidak ada deskripsi produk.';
-    $harga = $item->harga_formatted;
+    $harga = number_format($item->harga ?? 0, 0, ',', '.');
+    $usahaNama = $item->usaha->nama_usaha ?? 'Warga RW 12';
     
     $messagingLabel = \App\Services\Messaging\MessagingService::getLabel();
     $messagingIcon = \App\Services\Messaging\MessagingService::getIcon();
     $messagingDriverName = \App\Services\Messaging\MessagingService::getName();
     $messagingColor = ($messagingDriverName === 'telegram') ? '#24A1DE' : '#16a34a';
-    $rawWa = $item->usaha->no_wa ?? '628123456789';
-    $directMsg = "Halo, saya tertarik dengan produk {$namaProduk} di WargaDigi.";
-    $linkMessaging = \App\Services\Messaging\MessagingService::getDirectChatUrl($rawWa, $directMsg);
+    $productDetailUrl = route('produk.show', $item->id);
+    $shareText = "Lihat produk {$namaProduk} seharga Rp {$harga} dari {$usahaNama} di WargaDigi RW 21:";
+    $linkMessaging = \App\Services\Messaging\MessagingService::getShareUrl($shareText, $productDetailUrl);
 
     $statusClass = $item->status_produk;
     $statusText = $item->status_produk;
@@ -67,15 +68,15 @@
                         <small class="text-muted d-block" style="font-size: 14px;">Status Stok</small>
                         @if($statusStok === 'habis')
                             <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-x-circle me-1"></i> Habis
+                                 Habis
                             </span>
                         @elseif($statusStok === 'menipis')
                             <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-exclamation-triangle me-1"></i> Menipis
+                                 Menipis
                             </span>
                         @else
                             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 fw-semibold" style="font-size: 14px;">
-                                <i class="bi bi-check-circle me-1"></i> Tersedia
+                                 Tersedia
                             </span>
                         @endif
                     </div>
@@ -83,11 +84,9 @@
             </div>
 
             <div class="d-flex justify-content-end align-items-center gap-3 pt-1">
-                {{--
                 <a href="{{ $linkMessaging }}" target="_blank" class="text-decoration-none" style="color: {{ $messagingColor }};" title="Hubungi via {{ $messagingLabel }}">
                     <i class="{{ $messagingIcon }} fs-5"></i>
                 </a>
-                --}}
                 <button type="button" 
                         class="btn btn-link p-0 text-secondary text-decoration-none" 
                         title="Edit Produk"

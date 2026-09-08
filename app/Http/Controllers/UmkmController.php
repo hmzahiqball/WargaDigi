@@ -94,7 +94,7 @@ class UmkmController extends Controller
         }
 
         $produk = $query->paginate(8)->withQueryString();
-        $isDashboard = false;
+        $isDashboard = auth()->check();
 
         return view('pages.detail_usaha', compact('usaha', 'produk', 'isDashboard', 'search', 'kategori', 'sort'));
     }

@@ -1,9 +1,14 @@
-@extends('layouts.global')
+@php
+    $isDashboard = isset($isDashboard) ? (bool)$isDashboard : Auth::check();
+    $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
+@endphp
+
+@extends($layout)
 
 @section('title', $pageTitle ?? 'Koleksi Produk UMKM')
 
 @section('content')
-<div class="container-fluid px-0">
+<div class="{{ $isDashboard ? 'container-fluid px-0' : 'container py-4' }}">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
@@ -25,26 +30,26 @@
 
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <div class="d-flex align-items-center p-1 bg-white rounded-pill border shadow-sm">
-                <a href="{{ route('warga.umkm.koleksi', 'unggulan') }}" 
+                <a href="{{ route('umkm.koleksi', 'unggulan') }}" 
                    class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-decoration-none transition {{ $tipe === 'unggulan' ? 'btn-success text-white shadow-sm' : 'text-muted' }}" 
                    style="{{ $tipe === 'unggulan' ? 'background-color: #2E7D32;' : '' }}">
                     <i class="bi bi-fire me-1"></i> Unggulan
                 </a>
-                <a href="{{ route('warga.umkm.koleksi', 'terbaru') }}" 
+                <a href="{{ route('umkm.koleksi', 'terbaru') }}" 
                    class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-decoration-none transition {{ $tipe === 'terbaru' ? 'btn-success text-white shadow-sm' : 'text-muted' }}" 
                    style="{{ $tipe === 'terbaru' ? 'background-color: #2E7D32;' : '' }}">
                     <i class="bi bi-stars me-1"></i> Terbaru
                 </a>
             </div>
 
-            <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
-                <i class="bi bi-arrow-left"></i> Kembali ke Galeri
+            <a href="{{ route('umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
+                Kembali ke Galeri
             </a>
         </div>
     </div>
 
-    @include('warga.umkm.components.filterSearchBar', [
-        'actionUrl' => route('warga.umkm.koleksi', $tipe),
+    @include('components.filterSearchBar', [
+        'actionUrl' => route('umkm.koleksi', $tipe),
         'placeholder' => 'Cari ' . strtolower($pageTitle) . '...',
         'produk' => $produk ?? null,
         'showStatus' => false

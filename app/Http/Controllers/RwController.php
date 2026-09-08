@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\PengajuanSurat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\UmkmUsaha;
+use App\Models\UmkmProduk;
+use App\Models\KategoriProduk;
+use App\Models\KategoriUmkm;
 
 class RwController extends Controller
 {
@@ -54,7 +59,6 @@ class RwController extends Controller
 
         $activities = [];
 
-        // Prepend pending UMKM activities if any
         $recentPendingUmkm = \App\Models\UmkmUsaha::with(['pemilik.penduduk'])
             ->where('status_verifikasi', 'Pending')
             ->latest()
@@ -122,22 +126,198 @@ class RwController extends Controller
         return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs', 'pendingUmkmCount'));
     }
 
-    /**
-     * Halaman Pusat Manajemen UMKM untuk Admin RW
-     */
-    public function umkm()
+    public function umkm(Request $request)
     {
-        $pendingUsaha = \App\Models\UmkmUsaha::where('status_verifikasi', 'Pending')
+        $search = trim((string)($request->get('q') ?? $request->get('q_terdaftar') ?? $request->get('search')));
+        $kategori = $request->get('kategori');
+        $status = $request->get('status');
+
+        // Otomatis tetap di tab 'terdaftar' jika user melakukan pencarian atau filter
+        $tab = $request->get('tab');
+        if (!$tab) {
+            if ($request->has('terdaftar_page') || $request->has('q') || $request->has('kategori') || $request->has('status') || $request->has('q_terdaftar') || $request->has('search')) {
+                $tab = 'terdaftar';
+            } elseif ($request->has('approval_page')) {
+                $tab = 'persetujuan';
+            } else {
+                $tab = 'persetujuan';
+            }
+        }
+
+        $isPimpinan = in_array(Auth::user()->role ?? '', ['Pimpinan RW', 'Pimpinan']);
+
+        $pendingUsaha = UmkmUsaha::where('status_verifikasi', 'Pending')
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
             ->latest()
-            ->get();
+            ->paginate(4, ['*'], 'approval_page')
+            ->withQueryString();
+        $pendingUsaha->appends(['tab' => 'persetujuan']);
 
-        return view('rw.umkm', compact('pendingUsaha'));
+        // Data untuk Pimpinan RW (History yang sedang pending dan sudah diapprove) - 4 per pagination
+        $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved'])
+            ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
+            ->latest()
+            ->paginate(4, ['*'], 'approval_page')
+            ->withQueryString();
+        $historyUsaha->appends(['tab' => 'persetujuan']);
+
+        $daftarKategoriUmkm = KategoriUmkm::all();
+
+        $queryTerdaftar = UmkmUsaha::where('status_verifikasi', 'Approved')
+            ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm', 'produk']);
+
+        if ($search !== '') {
+            $words = array_filter(preg_split('/[\s,]+/', $search));
+            if (!empty($words)) {
+                $queryTerdaftar->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
+                        $q->orWhereRaw('LOWER(nama_usaha) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(alamat_usaha) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term])
+                          ->orWhereHas('kategori_umkm', function ($kq) use ($term) {
+                              $kq->whereRaw('LOWER(nama_kategori) LIKE ?', [$term]);
+                          })
+                          ->orWhereHas('pemilik.penduduk', function ($pq) use ($term) {
+                              $pq->whereRaw('LOWER(nama_lengkap) LIKE ?', [$term]);
+                          })
+                          ->orWhereHas('user', function ($uq) use ($term) {
+                              $uq->whereRaw('LOWER(username) LIKE ?', [$term])
+                                 ->orWhere('nik', 'LIKE', $term);
+                          })
+                          ->orWhereHas('produk', function ($prq) use ($term) {
+                              $prq->whereRaw('LOWER(nama_produk) LIKE ?', [$term]);
+                          });
+                    }
+                });
+            }
+        }
+
+        if ($kategori && !in_array($kategori, ['Semua', 'Semua Kategori'])) {
+            $queryTerdaftar->whereHas('kategori_umkm', function ($q) use ($kategori) {
+                if (\Illuminate\Support\Str::isUuid($kategori)) {
+                    $q->where('id', $kategori)->orWhere('nama_kategori', $kategori);
+                } else {
+                    $q->where('nama_kategori', $kategori);
+                }
+            });
+        }
+
+        if ($status === 'Aktif') {
+            $queryTerdaftar->where('is_active', true);
+        } elseif ($status === 'Tidak Aktif' || $status === 'Non-Aktif') {
+            $queryTerdaftar->where('is_active', false);
+        } elseif ($status === 'Stok Tersedia') {
+            $queryTerdaftar->whereHas('produk', function ($q) {
+                $q->where('status_stok', 'tersedia');
+            });
+        } elseif ($status === 'Stok Menipis') {
+            $queryTerdaftar->whereHas('produk', function ($q) {
+                $q->where('status_stok', 'menipis');
+            });
+        } elseif ($status === 'Stok Habis') {
+            $queryTerdaftar->whereHas('produk', function ($q) {
+                $q->where('status_stok', 'habis');
+            });
+        }
+
+        // Usaha Terdaftar - 6 per pagination
+        $daftarUsahaTerdaftar = $queryTerdaftar->latest()
+            ->paginate(6, ['*'], 'terdaftar_page')
+            ->withQueryString();
+        $daftarUsahaTerdaftar->appends(['tab' => 'terdaftar']);
+
+        return view('rw.umkm.umkm', compact(
+            'pendingUsaha', 
+            'historyUsaha', 
+            'daftarUsahaTerdaftar', 
+            'daftarKategoriUmkm',
+            'tab', 
+            'isPimpinan', 
+            'search',
+            'kategori',
+            'status'
+        ));
     }
 
-    /**
-     * Approve UMKM Profile
-     */
+    public function detailUsahaUmkm(Request $request, $id = null)
+    {
+        $id = $id ?? $request->get('usaha_id');
+        $usaha = UmkmUsaha::with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm', 'kategori_produk'])
+            ->findOrFail($id);
+
+        $search = trim((string)($request->get('q') ?? $request->get('search')));
+        $kategori = $request->get('kategori');
+        $status = $request->get('status');
+
+        $query = UmkmProduk::where('umkm_usaha_id', $usaha->id)
+            ->with(['usaha.kategori_umkm', 'usaha.kategori_produk', 'kategori_produk']);
+
+        $allUsahaProduk = (clone $query)->get();
+        $jumlahProdukAktif = $allUsahaProduk->where('status_produk', 'Aktif')->count();
+        $jumlahProdukTidakAktif = $allUsahaProduk->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif'])->count();
+        $jumlahProdukPending = $jumlahProdukTidakAktif;
+        $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->kategori_produk->nama_kategori ?? 'Lainnya')->count();
+        $jumlahProdukStokMenipis = $allUsahaProduk->filter(fn($item) => strtolower($item->status_stok ?? '') === 'menipis')->count();
+
+        if ($search !== '') {
+            $words = array_filter(preg_split('/[\s,]+/', $search));
+            if (!empty($words)) {
+                $query->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        $term = '%' . mb_strtolower($word, 'UTF-8') . '%';
+                        $q->orWhereRaw('LOWER(nama_produk) LIKE ?', [$term])
+                          ->orWhereRaw('LOWER(deskripsi) LIKE ?', [$term])
+                          ->orWhereHas('kategori_produk', function ($kq) use ($term) {
+                              $kq->whereRaw('LOWER(nama_kategori) LIKE ?', [$term]);
+                          });
+                    }
+                });
+            }
+        }
+
+        if ($kategori && !in_array($kategori, ['Semua', 'Semua Kategori'])) {
+            $query->whereHas('kategori_produk', function ($q) use ($kategori) {
+                if (\Illuminate\Support\Str::isUuid($kategori)) {
+                    $q->where('id', $kategori)->orWhere('nama_kategori', $kategori);
+                } else {
+                    $q->where('nama_kategori', $kategori);
+                }
+            });
+        }
+
+        if ($status === 'Aktif') {
+            $query->where('status_produk', 'Aktif');
+        } elseif ($status === 'Tidak Aktif' || $status === 'Non-Aktif') {
+            $query->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif']);
+        } elseif ($status === 'Stok Tersedia' || $status === 'Tersedia') {
+            $query->where('status_stok', 'tersedia');
+        } elseif ($status === 'Stok Menipis' || $status === 'Menipis') {
+            $query->where('status_stok', 'menipis');
+        } elseif ($status === 'Stok Habis' || $status === 'Habis') {
+            $query->where('status_stok', 'habis');
+        }
+
+        $produk = $query->latest()->paginate(8)->withQueryString();
+        $kategoriProdukList = KategoriProduk::where('umkm_usaha_id', $usaha->id)->get();
+        $daftarKategoriUmkm = KategoriUmkm::all();
+
+        return view('rw.umkm.umkm_detail_usaha', compact(
+            'usaha',
+            'produk',
+            'search',
+            'kategori',
+            'status',
+            'jumlahProdukAktif',
+            'jumlahProdukTidakAktif',
+            'jumlahProdukPending',
+            'jumlahKategoriProduk',
+            'jumlahProdukStokMenipis',
+            'kategoriProdukList',
+            'daftarKategoriUmkm'
+        ));
+    }
+
     public function approveUmkm($id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
@@ -149,9 +329,6 @@ class RwController extends Controller
         return redirect()->back()->with('success', 'Profil UMKM ' . $usaha->nama_usaha . ' berhasil disetujui.');
     }
 
-    /**
-     * Reject UMKM Profile
-     */
     public function rejectUmkm(Request $request, $id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);

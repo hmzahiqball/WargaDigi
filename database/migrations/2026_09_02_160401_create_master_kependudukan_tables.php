@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Master Data RT
+    
         Schema::create('master_rt', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('kode_rt', 10)->unique();
@@ -16,7 +16,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 2. Data Profil Keluarga (KK)
         Schema::create('keluarga', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('no_kk', 16)->unique();
@@ -27,8 +26,7 @@ return new class extends Migration
             $table->enum('status_aktivasi', ['Unverified', 'Active'])->default('Unverified');
             $table->timestamps();
         });
-
-        // 3. Data Kependudukan (Warga)
+        
         Schema::create('penduduk', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('keluarga_id')->constrained('keluarga')->cascadeOnDelete();

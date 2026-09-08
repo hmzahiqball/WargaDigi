@@ -1,16 +1,21 @@
 @php
+    $usaha = $usaha ?? $item ?? null;
+    if (!$usaha) {
+        return;
+    }
     $colClass = $colClass ?? 'col-lg-4 col-md-6';
     $foto = !empty($usaha->foto_usaha) 
-        ? asset('storage/' . $usaha->foto_usaha) 
+        ? (str_starts_with($usaha->foto_usaha, 'http') ? $usaha->foto_usaha : asset('storage/' . $usaha->foto_usaha)) 
         : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop';
     $namaUsaha = $usaha->nama_usaha ?? 'Nama Usaha';
     $kategori = $usaha->kategori_umkm->nama_kategori ?? $usaha->kategori ?? 'UMKM';
-    $owner = $usaha->user->penduduk->nama_lengkap ?? $usaha->user->username ?? 'Warga';
-    $rt = $usaha->user->penduduk->keluarga->rt->nama_rt ?? 'RT 01';
-    $detailUrl = route('pojok-umkm.detail_usaha', $usaha->id);
+    $owner = $usaha->user->penduduk->nama_lengkap ?? $usaha->pemilik->penduduk->nama_lengkap ?? $usaha->user->username ?? $usaha->pemilik->username ?? 'Warga';
+    $rt = $usaha->user->penduduk->keluarga->rt->nama_rt ?? $usaha->pemilik->penduduk->keluarga->rt->nama_rt ?? '01';
+    $detailUrl = Route::has('umkm.usaha.show') 
+        ? route('umkm.usaha.show', $usaha->id) 
+        : (Route::has('pojok-umkm.detail_usaha') ? route('pojok-umkm.detail_usaha', $usaha->id) : url('/usaha/' . $usaha->id));
     $totalProduk = $usaha->produk ? $usaha->produk->where('status_produk', 'Aktif')->count() : 0;
     
-    // Hitung harga terendah dari produk aktif
     $minHarga = $usaha->produk 
         ? $usaha->produk->where('status_produk', 'Aktif')->where('harga', '>', 0)->min('harga') 
         : null;
@@ -39,7 +44,7 @@
         <div class="card-body p-4 d-flex flex-column">
             <div class="d-flex align-items-center gap-2 text-muted small mb-2">
                 <i class="bi bi-person-circle text-success"></i>
-                <span>{{ $owner }} ({{ $rt }})</span>
+                <span>{{ $owner }} (RT {{ $rt }})</span>
             </div>
             <h5 class="fw-bold text-dark mb-2">
                 <a href="{{ $detailUrl }}" class="text-dark text-decoration-none hover-success">

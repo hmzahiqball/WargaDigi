@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-success mb-0">Riwayat Pengajuan Surat</h2>
-    <a href="{{ route('warga.surat.create') }}" class="btn btn-success">
+    <a href="{{ Route::has('warga.surat.create') ? route('warga.surat.create') : route('warga.surat.index') }}" class="btn btn-success">
         <i class="bi bi-plus-circle me-1"></i> Buat Surat Baru
     </a>
 </div>

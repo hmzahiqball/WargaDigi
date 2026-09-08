@@ -11,7 +11,6 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasUuids;
 
     /**
@@ -67,18 +66,11 @@ class User extends Authenticatable
         ];
     }
 
-
-    /**
-     * Relasi ke data penduduk berdasarkan NIK
-     */
     public function penduduk()
     {
         return $this->hasOne(Penduduk::class, 'nik', 'nik');
     }
 
-    /**
-     * Relasi ke usaha UMKM milik user berdasarkan NIK
-     */
     public function umkmUsaha()
     {
         return $this->hasMany(UmkmUsaha::class, 'nik', 'nik');

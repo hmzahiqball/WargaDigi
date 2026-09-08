@@ -50,6 +50,14 @@ return [
         'roles' => ['Admin Aplikasi'],
         'active' => ['admin.manajemen-data', 'admin/manajemen-data*'],
     ],
+    [
+        'title' => 'Galeri UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['galeri*'],
+    ],
 
     // --- ADMIN RW / PIMPINAN RW ---
     [
@@ -76,10 +84,11 @@ return [
     ],
     [
         'title' => 'Persetujuan Dokumen',
-        'url'   => '#',
+        'route' => 'rw.persetujuan-dokumen',
+        'url'   => '/rw/persetujuan-dokumen',
         'icon'  => 'bi-file-earmark-text-fill',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/dokumen*'],
+        'active' => ['rw.persetujuan-dokumen', 'rw/persetujuan-dokumen*'],
     ],
     [
         'title' => 'Persetujuan Keuangan',
@@ -97,7 +106,7 @@ return [
     ],
     [
         'title' => 'UMKM',
-        'route' => 'rw.umkm',
+        'route' => 'rw.umkm.index',
         'url'   => '/rw/umkm',
         'icon'  => 'bi-shop',
         'roles' => ['Admin RW', 'Pimpinan RW'],
@@ -130,10 +139,11 @@ return [
     ],
     [
         'title' => 'Persetujuan Dokumen',
-        'url'   => '#',
+        'route' => 'rt.persetujuan-dokumen',
+        'url'   => '/rt/persetujuan-dokumen',
         'icon'  => 'bi-file-earmark-text-fill',
         'roles' => ['Ketua RT'],
-        'active' => ['rt/dokumen*'],
+        'active' => ['rt.persetujuan-dokumen', 'rt/persetujuan-dokumen*'],
     ],
     [
         'title' => 'Persetujuan Keuangan',
@@ -155,6 +165,14 @@ return [
         'icon'  => 'bi-people-fill',
         'roles' => ['Ketua RT'],
         'active' => ['rt/keluarga*'],
+    ],
+    [
+        'title' => 'Galeri UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Ketua RT'],
+        'active' => ['galeri*'],
     ],
 
     // --- OPERATOR KONTEN ---
@@ -198,6 +216,14 @@ return [
         'roles' => ['Op Konten RW', 'Op Konten RT'],
         'active' => ['opkonten.galeri*', 'op-konten/galeri*'],
     ],
+    [
+        'title' => 'Galeri UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Op Konten RW', 'Op Konten RT', 'Op. Konten RW', 'Op. Konten RT'],
+        'active' => ['galeri*'],
+    ],
 
     // --- OPERATOR KEUANGAN ---
     [
@@ -221,6 +247,14 @@ return [
         'icon'  => 'bi-clipboard-data',
         'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
         'active' => ['opkeuangan/laporan*'],
+    ],
+    [
+        'title' => 'Galeri UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'Op. Keuangan RW', 'Op. Keuangan RT', 'DKM'],
+        'active' => ['galeri*'],
     ],
 
     // --- WARGA ---
@@ -250,11 +284,11 @@ return [
     ],
     [
         'title' => 'Galeri UMKM',
-        'route' => 'warga.umkm.galeri',
-        'url'   => '/warga/galeri',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
         'icon'  => 'bi-shop',
         'roles' => ['Warga'],
-        'active' => ['warga/galeri/kelola/produk','warga/galeri/kelola','warga/galeri*'],
+        'active' => ['warga/galeri/kelola*', 'warga/galeri/daftar*', 'galeri*'],
     ],
     [
         'title' => 'Agenda Warga',

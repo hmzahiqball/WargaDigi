@@ -31,41 +31,29 @@ class UmkmUsaha extends Model
         'klikWA' => 'integer',
     ];
 
-    /**
-     * Relasi ke Kategori UMKM
-     */
     public function kategori_umkm()
     {
         return $this->belongsTo(KategoriUmkm::class, 'kategori_umkm_id');
     }
 
-    /**
-     * Relasi ke Kategori Produk milik UMKM ini
-     */
     public function kategori_produk()
     {
         return $this->hasMany(KategoriProduk::class, 'umkm_usaha_id');
     }
 
-    /**
-     * Relasi ke Pemilik (User berdasarkan NIK)
-     */
+
     public function user()
     {
         return $this->belongsTo(User::class, 'nik', 'nik');
     }
 
-    /**
-     * Alias relasi pemilik ke User
-     */
+
     public function pemilik()
     {
         return $this->belongsTo(User::class, 'nik', 'nik');
     }
 
-    /**
-     * Relasi ke daftar produk UMKM
-     */
+
     public function produk()
     {
         return $this->hasMany(UmkmProduk::class, 'umkm_usaha_id');

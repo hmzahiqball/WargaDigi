@@ -1,5 +1,8 @@
 @php
-    $isDashboard = $isDashboard ?? (request()->is('warga/*') || (Auth::check() && !request()->is('usaha/*') && !request()->is('pojok-umkm/*')));
+    $isDashboard = isset($isDashboard) ? (Auth::check() ? true : (bool)$isDashboard) : Auth::check();
+    if (Auth::check()) {
+        $isDashboard = true;
+    }
     $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
 
     $namaUsaha = $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom';
@@ -30,8 +33,18 @@
     $linkDirectChatUsaha = \App\Services\Messaging\MessagingService::getDirectChatUrl($cleanWa, $hubungiText);
 
     $filterActionUrl = $isDashboard 
-        ? (Route::has('warga.umkm.usaha.show') ? route('warga.umkm.usaha.show', $usaha->id ?? '') : (Route::has('warga.umkm.detail_usaha') ? route('warga.umkm.detail_usaha', $usaha->id ?? '') : request()->url()))
+        ? (Route::has('umkm.usaha.show') ? route('umkm.usaha.show', $usaha->id ?? '') : request()->url()) 
         : (Route::has('pojok-umkm.detail_usaha') ? route('pojok-umkm.detail_usaha', $usaha->id ?? '') : request()->url());
+
+    $isFromKelola = request('from') === 'kelola' 
+        || request('from') === 'kelola_umkm' 
+        || str_contains(url()->previous(), 'galeri/kelola') 
+        || str_contains(request()->header('referer', ''), 'galeri/kelola');
+
+    $backUrl = $isFromKelola && Route::has('warga.umkm.kelola')
+        ? route('warga.umkm.kelola', ['usaha_id' => $usaha->id ?? null])
+        : ($isDashboard ? (Route::has('umkm.galeri') ? route('umkm.galeri') : route('warga.umkm.galeri')) : route('pojok-umkm'));
+    $backLabel = $isFromKelola ? 'Kembali ke Kelola Usaha' : ($isDashboard ? 'Kembali ke Galeri' : 'Kembali ke Pojok UMKM');
 @endphp
 
 @extends($layout)
@@ -43,40 +56,36 @@
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
             <h2 class="fw-bold text-success mb-1">{{ $namaUsaha }}</h2>
-            <div class="text-muted small">
-                <i class="bi bi-shop me-1"></i> {{ $ownerName }} ({{ $namaRt }})
+            <div class="d-flex align-items-center gap-2 text-muted small">
+                <span><i class="bi bi-person me-1"></i> {{ $ownerName }}</span>
+                <span>•</span>
+                <span><i class="bi bi-geo-alt me-1"></i> {{ $namaRt }}</span>
+                <span>•</span>
+                <span><i class="bi bi-tag me-1"></i> {{ $kategoriNama }}</span>
             </div>
         </div>
 
-
         <div>
-            @if($isDashboard)
-                <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Galeri UMKM
-                </a>
-            @else
-                <a href="{{ route('pojok-umkm') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Pojok UMKM
-                </a>
-            @endif
+            <a href="{{ $backUrl }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left"></i> {{ $backLabel }}
+            </a>
         </div>
     </div>
 
 
-    <div class="mb-5">
-        <div class="usaha-banner-card rounded-4 position-relative overflow-hidden" style="background-image: url('{{ $fotoUsaha }}'); min-height: 320px;">
-            <div class="banner-overlay"></div>
-            <div class="banner-content p-4 p-md-5">
-                <span class="badge badge-featured px-3 py-2 mb-3 rounded-2 fw-semibold" style="background-color: #f59e0b; color: #fff; font-size: 13px;">
-                    {{ $kategoriNama }} Unggulan
+    <div class="card border-0 rounded-4 overflow-hidden mb-4 shadow-sm position-relative text-white" style="min-height: 280px; background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), url('{{ $fotoUsaha }}') center/cover no-repeat;">
+        <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-between">
+            <div>
+                <span class="badge bg-white text-dark rounded-pill px-3 py-2 fw-bold small mb-2 shadow-sm">
+                    {{ $kategoriNama }}
                 </span>
-                <h3 class="fw-bold mb-2 text-white fs-3">
-                    {{ $usaha && $usaha->nama_usaha ? 'Seni ' . $usaha->nama_usaha . ' Asli Tanimulya' : 'Seni Pahat Kayu Jati Asli Tanimulya' }}
-                </h3>
-                <p class="text-white-50 mb-4 small" style="max-width: 650px; line-height: 1.6;">
+            </div>
+            <div>
+                <h2 class="fw-bold text-white mb-2 fs-1">{{ $namaUsaha }}</h2>
+                <p class="text-white-50 mb-3 fs-6" style="max-width: 650px; line-height: 1.5;">
                     {{ $deskripsiUsaha }}
                 </p>
-                <div>
+                <div class="d-flex flex-wrap gap-2">
                     <a href="{{ $linkDirectChatUsaha }}" target="_blank" class="btn {{ $messagingBtnHeroClass }} rounded-pill px-4 py-2 fw-semibold text-decoration-none shadow-sm text-white d-inline-flex align-items-center gap-2" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                         <i class="{{ $messagingIcon }}"></i> Hubungi via {{ $messagingLabel }}
                     </a>
@@ -86,7 +95,7 @@
     </div>
 
 
-    @include('warga.umkm.components.filterSearchBar', [
+    @include('components.filterSearchBar', [
         'actionUrl' => $filterActionUrl,
         'placeholder' => 'Cari Produk Usaha...',
         'produk' => $produk ?? null,

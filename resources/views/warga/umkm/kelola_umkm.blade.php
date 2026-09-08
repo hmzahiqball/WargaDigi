@@ -67,13 +67,13 @@
                                     <div class="d-flex align-items-center gap-2 text-truncate me-2">
                                         <i class="bi bi-clock-history text-warning"></i>
                                         <div class="text-truncate">
-                                            <div class="fw-semibold small text-truncate text-secondary" style="max-width: 140px;">{{ $itemUsaha->nama_usaha }}</div>
+                                            <div class="fw-semibold small text-truncate text-muted" style="max-width: 140px;">{{ $itemUsaha->nama_usaha }}</div>
                                             <div class="text-muted" style="font-size: 10px;">
                                                 {{ $itemUsaha->kategori_umkm->nama_kategori ?? 'UMKM' }}
                                             </div>
                                         </div>
                                     </div>
-                                    <span class="badge bg-warning text-dark fw-bold rounded-pill px-2 py-1 flex-shrink-0" style="font-size: 10px;">
+                                    <span class="badge bg-white text-dark fw-bold rounded-pill px-2 py-1 flex-shrink-0 border" style="font-size: 10px;">
                                         Pending
                                     </span>
                                 </div>
@@ -101,7 +101,7 @@
             @endif
 
             <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2" style="height: 46px;">
-                <i class="bi bi-arrow-left"></i> Kembali ke Galeri UMKM
+               Kembali ke Galeri UMKM
             </a>
         </div>
     </div>
@@ -130,11 +130,7 @@
 
     <div class="card border-0 rounded-4 overflow-hidden mb-4 shadow-sm position-relative text-white" style="min-height: 320px; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%), url('{{ !empty($usaha->foto_usaha) ? asset('storage/' . $usaha->foto_usaha) : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&auto=format&fit=crop' }}') center/cover no-repeat;">
         <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-between">
-            <!-- Top Badges -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <span class="badge px-3 py-2 fw-bold text-dark rounded-2" style="background-color: #ff9800; font-size: 11px; letter-spacing: 0.5px;">
-                    {{ strtoupper($usaha->kategori_umkm->nama_kategori ?? 'KERAJINAN') }} UNGGULAN
-                </span>
                 <span class="badge bg-dark bg-opacity-75 text-white rounded-pill px-3 py-2 fw-semibold">
                     <i class="bi bi-circle-fill {{ ($usaha->is_active ?? true) ? 'text-success' : 'text-secondary' }} me-1" style="font-size: 8px;"></i> 
                     {{ ($usaha->is_active ?? true) ? 'Toko Sedang Aktif' : 'Toko Non-Aktif' }}
@@ -178,7 +174,7 @@
         </div>
     </div>
 
-    @include('warga.umkm.components.filterSearchBar', [
+    @include('components.filterSearchBar', [
         'actionUrl' => route('warga.umkm.kelola'),
         'placeholder' => 'Cari Produk Berdasarkan Nama',
         'produk' => $produk ?? null,

@@ -226,15 +226,15 @@
                     <div>
                         @if($statusStok === 'habis')
                             <span class="badge rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #fee2e2; color: #dc2626; font-size: 13px;">
-                                <i class="bi bi-circle-fill" style="font-size: 8px;"></i> Habis
+                                Habis
                             </span>
                         @elseif($statusStok === 'menipis')
                             <span class="badge rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #fef3c7; color: #d97706; font-size: 13px;">
-                                <i class="bi bi-circle-fill" style="font-size: 8px;"></i> Menipis
+                                Menipis
                             </span>
                         @else
                             <span class="badge rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #dcfce7; color: #16a34a; font-size: 13px;">
-                                <i class="bi bi-circle-fill" style="font-size: 8px;"></i> Tersedia
+                                 Tersedia
                             </span>
                         @endif
                     </div>
