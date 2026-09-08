@@ -72,7 +72,7 @@ Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi
 
 // Temporary Magic Login for Testing
 Route::get('/login-warga', function () {
-    $user = \App\Models\User::where('nik', '3204xxxxxxxxx0001')->first();
+    $user = \App\Models\User::where('nik', '3204xxxxxxxx0001')->first();
     if ($user) {
         \Illuminate\Support\Facades\Auth::login($user);
         return redirect()->route('warga.surat.index');
@@ -134,9 +134,9 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
 
     // Persetujuan Dokumen
     Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('persetujuan-dokumen');
-    Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('rw.surat.approve');
-    Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('rw.surat.reject');
-    Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('rw.surat.preview');
+    Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('surat.approve');
+    Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('surat.reject');
+    Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('surat.preview');
 
     // UMKM
     Route::get('/umkm', [RwController::class, 'umkm'])->name('umkm.index');
@@ -222,3 +222,4 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::put('/galeri/kelola/produk/{id}', [KelolaUmkmController::class, 'updateProduk'])->name('umkm.produk.update');
     Route::delete('/galeri/kelola/produk/{id}', [KelolaUmkmController::class, 'destroyProduk'])->name('umkm.produk.destroy');
 });
+

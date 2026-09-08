@@ -3,22 +3,11 @@
 @section('title', 'Persetujuan Dokumen')
 
 @section('content')
-{{-- Header & Search --}}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-    <div>
-        <h2 class="fw-bold text-dark mb-1">Persetujuan Dokumen</h2>
-        <p class="text-muted mb-0">Tinjau dan kelola permintaan dokumen dari warga.</p>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <div class="input-group" style="width: 250px;">
-            <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control bg-white border-start-0 rounded-end-pill shadow-none" placeholder="Cari warga...">
-        </div>
-        <button class="btn btn-white bg-white border rounded-3 px-3 shadow-sm py-2"><i class="bi bi-filter fs-5"></i></button>
-    </div>
+<div class="mb-4">
+    <h2 class="fw-bold text-dark mb-1" style="font-size: 1.75rem;">Persetujuan Dokumen</h2>
+    <p class="text-muted mb-0">Verifikasi dan setujui permohonan surat dari warga.</p>
 </div>
 
-{{-- Flash Messages --}}
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
     <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
@@ -26,423 +15,240 @@
 </div>
 @endif
 
-{{-- Filter Boxes --}}
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card card-custom p-3 shadow-sm h-100 bg-white" style="border-radius: 12px;">
-            <label class="small fw-bold text-dark mb-1" style="font-size: 13px;">Tipe Dokumen</label>
-            <select class="form-select border-0 px-0 py-0 shadow-none text-muted bg-white" style="font-size: 14px; background-position: right 0 center;">
-                <option selected>Semua Tipe</option>
-                <option value="1">SKD</option>
-                <option value="2">Surat Pengantar</option>
-            </select>
+@forelse($pengajuan as $item)
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body p-4 bg-white" style="border-radius: 16px;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:50px;height:50px;">
+                    <i class="bi bi-person-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">{{ $item->nama_pemohon }}</h6>
+                    <span class="text-muted small">NIK: {{ $item->nik }} &bull; {{ $item->tanggal_pengajuan }}</span>
+                </div>
+            </div>
+            @php
+                $sc = match($item->status) {
+                    'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#856404', 'label' => 'Menunggu Verifikasi'],
+                    'Disetujui RT' => ['bg' => '#D4EDDA', 'color' => '#155724', 'label' => 'Disetujui'],
+                    'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak'],
+                    default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status],
+                };
+            @endphp
+            <span class="badge rounded-pill px-3 py-1" style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px;">{{ $sc['label'] }}</span>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-custom p-3 shadow-sm h-100 bg-white" style="border-radius: 12px;">
-            <label class="small fw-bold text-dark mb-1" style="font-size: 13px;">Status</label>
-            <select class="form-select border-0 px-0 py-0 shadow-none text-muted bg-white" style="font-size: 14px; background-position: right 0 center;">
-                <option selected>Diajukan</option>
-                <option value="2">Disetujui</option>
-                <option value="3">Ditolak</option>
-            </select>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4"><span class="text-muted small">Jenis Surat</span><br><span class="fw-semibold small">{{ $item->tipe_surat }}</span></div>
+            <div class="col-md-4"><span class="text-muted small">Alamat</span><br><span class="fw-semibold small">{{ $item->alamat }}</span></div>
+            <div class="col-md-4"><span class="text-muted small">Pekerjaan</span><br><span class="fw-semibold small">{{ $item->pekerjaan }}</span></div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-custom p-3 shadow-sm h-100 bg-white" style="border-radius: 12px;">
-            <label class="small fw-bold text-dark mb-1" style="font-size: 13px;">Rentang Tanggal</label>
-            <select class="form-select border-0 px-0 py-0 shadow-none text-muted bg-white" style="font-size: 14px; background-position: right 0 center;">
-                <option selected>7 Hari Terakhir</option>
-                <option value="2">Bulan Ini</option>
-            </select>
+        @if($item->status === 'Diajukan')
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}"><i class="bi bi-eye me-1"></i>Lihat Detail</button>
+            <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTtdRt{{ $item->id }}"><i class="bi bi-pen me-1"></i>Tanda Tangan & Setujui</button>
+            <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalReject{{ $item->id }}"><i class="bi bi-x-circle me-1"></i>Tolak</button>
         </div>
+        @endif
     </div>
 </div>
 
-{{-- Table --}}
-<div class="card card-custom shadow-sm border-0">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead style="background-color: #f3f4f9;">
-                <tr class="text-muted small text-uppercase" style="letter-spacing: 0.5px;">
-                    <th class="ps-4 py-3 border-0 rounded-start-3" style="font-weight: 700; font-size: 11px;">PEMOHON</th>
-                    <th class="py-3 border-0 text-center" style="font-weight: 700; font-size: 11px;">TIPE DOKUMEN</th>
-                    <th class="py-3 border-0 text-center" style="font-weight: 700; font-size: 11px;">TANGGAL SUBMIT</th>
-                    <th class="py-3 border-0 text-center" style="font-weight: 700; font-size: 11px;">STATUS</th>
-                    <th class="py-3 text-center border-0 rounded-end-3" style="font-weight: 700; font-size: 11px;">AKSI</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($pengajuan as $item)
-                <tr class="bg-white">
-                    <td class="ps-4 py-3 bg-white">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
-                                <span class="text-primary fw-bold">{{ strtoupper(substr($item->nama_pemohon, 0, 1)) }}</span>
-                            </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold small">{{ $item->nama_pemohon }}</h6>
-                                <span class="text-muted text-xs">NIK: {{ $item->nik }}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="py-3 text-center bg-white">
-                        <span class="small fw-semibold text-dark">{{ $item->tipe_surat }}</span>
-                    </td>
-                    <td class="py-3 text-center bg-white">
-                        <span class="text-muted small">{{ $item->tanggal_pengajuan }}</span>
-                    </td>
-                    <td class="py-3 text-center bg-white">
-                        @php
-                            $badgeClass = match($item->status) {
-                                'Diajukan' => 'bg-warning bg-opacity-20 text-warning',
-                                'Disetujui RT' => 'bg-success bg-opacity-10 text-success',
-                                'Ditolak RT' => 'bg-danger bg-opacity-10 text-danger',
-                                default => 'bg-secondary bg-opacity-10 text-secondary',
-                            };
-                            if ($item->status == 'Diajukan') {
-                                $badgeClass = 'bg-warning bg-opacity-20 text-warning'; // Fallback if warning text class is different
-                            }
-                        @endphp
-                        <span class="badge rounded-pill px-3 py-1 fw-semibold small" style="background-color: {{ $item->status == 'Diajukan' ? '#FFF3CD' : ($item->status == 'Disetujui RT' ? '#E8F5E9' : '#E2E3E5') }}; color: {{ $item->status == 'Diajukan' ? '#FFB300' : ($item->status == 'Disetujui RT' ? '#2E7D32' : '#6C757D') }};">{{ $item->status }}</span>
-                    </td>
-                    <td class="py-3 text-center bg-white">
-                        @if($item->status == 'Diajukan')
-                            <button class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalDetail{{ $item->id }}">
-                                Lihat Detail
-                            </button>
-                        @elseif($item->status == 'Disetujui RT')
-                            <span class="fst-italic text-dark small fw-semibold">Disetujui</span>
-                        @else
-                            <span class="fst-italic text-muted small fw-semibold">Belum Diajukan</span>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr class="bg-white">
-                    <td colspan="5" class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center justify-content-center text-muted">
-                            <i class="bi bi-inbox fs-1 mb-2"></i>
-                            <h6 class="fw-bold mb-1">Belum Ada Pengajuan</h6>
-                            <p class="small mb-0">Tidak ada pengajuan surat yang perlu diproses saat ini.</p>
-                        </div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    
-    {{-- Pagination --}}
-    @if(count($pengajuan) > 0)
-    <div class="d-flex justify-content-between align-items-center p-4 border-top">
-        <span class="text-muted small">Menampilkan 1 sampai {{ count($pengajuan) }} dari {{ count($pengajuan) }} entri</span>
-        <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-success rounded-2 px-2 disabled"><i class="bi bi-chevron-left"></i></button>
-            <button class="btn btn-sm btn-success rounded-2 px-3 fw-bold text-white">1</button>
-            <button class="btn btn-sm btn-outline-success rounded-2 px-2 disabled"><i class="bi bi-chevron-right"></i></button>
-        </div>
-    </div>
-    @endif
-</div>
-
-{{-- ==================== MODALS ==================== --}}
-@foreach($pengajuan as $item)
-
-{{-- Modal 1: Detail Permintaan Dokumen --}}
-<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-labelledby="modalDetailLabel{{ $item->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
-            <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold" id="modalDetailLabel{{ $item->id }}">Detail Permintaan Dokumen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                {{-- Top Section: Pemohon + Data Lengkap --}}
-                <div class="row g-4">
-                    {{-- Pemohon Card --}}
-                    <div class="col-md-5">
-                        <div class="p-3 bg-white border rounded-3 h-100">
-                            <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Pemohon</span>
-                            <div class="d-flex align-items-center gap-3 mt-2">
-                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
-                                    <span class="text-primary fw-bold fs-5">{{ strtoupper(substr($item->nama_pemohon, 0, 1)) }}</span>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0">{{ $item->nama_pemohon }}</h6>
-                                    <span class="text-muted small">NIK: {{ $item->nik }}</span><br>
-                                    <span class="text-muted small">{{ $item->alamat }}</span>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <span class="text-muted small">Tipe Surat:</span>
-                                <h6 class="fw-bold text-dark mt-1 mb-0">{{ $item->tipe_surat }}</h6>
-                            </div>
-                            <div class="mt-2 d-flex align-items-center gap-1 text-muted small">
-                                <i class="bi bi-calendar3"></i>
-                                <span>Diajukan: {{ $item->tanggal_pengajuan }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    {{-- Data Lengkap Pemohon --}}
-                    <div class="col-md-7">
-                        <div class="p-3 bg-white border border-success rounded-3 h-100 position-relative">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Data Lengkap Pemohon</span>
-                                <span class="badge bg-warning bg-opacity-20 text-dark rounded-pill px-3 py-1 fw-semibold small">{{ $item->status }}</span>
-                            </div>
-                            <div class="row mt-3 g-2">
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Jenis Kelamin</span>
-                                    <p class="fw-bold small mb-2">{{ $item->jenis_kelamin }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Tempat, Tgl Lahir</span>
-                                    <p class="fw-bold small mb-2">{{ $item->tempat_tgl_lahir }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Agama</span>
-                                    <p class="fw-bold small mb-2">{{ $item->agama }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Pendidikan Terakhir</span>
-                                    <p class="fw-bold small mb-2">{{ $item->pendidikan_terakhir }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Jenis Pekerjaan</span>
-                                    <p class="fw-bold small mb-2">{{ $item->pekerjaan }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Status Perkawinan</span>
-                                    <p class="fw-bold small mb-2">{{ $item->status_perkawinan }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Kewarganegaraan</span>
-                                    <p class="fw-bold small mb-2">{{ $item->kewarganegaraan }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted" style="font-size: 11px;">Nama Orang Tua</span>
-                                    <p class="fw-bold small mb-2">{{ $item->nama_orang_tua }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Lampiran Dokumen --}}
-                <div class="mt-4" id="lampiranSection{{ $item->id }}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;" id="lampiranLabel{{ $item->id }}">LAMPIRAN DOKUMEN (KK)</span>
-                        <a href="#" class="text-success small fw-bold text-decoration-none" onclick="toggleLampiran({{ $item->id }})">
-                            <span id="lampiranToggle{{ $item->id }}">LIHAT KTP →</span>
-                        </a>
-                    </div>
-                    {{-- KK Viewer --}}
-                    <div class="bg-white rounded-3 p-4 text-center border mb-4" id="lampiranKK{{ $item->id }}">
-                        <i class="bi bi-file-earmark-text text-success fs-2 d-block mb-1"></i>
-                        <span class="fw-bold small d-block">{{ $item->file_kk }}</span>
-                        <span class="text-muted" style="font-size: 11px;">{{ $item->file_kk_size }}</span>
-                        <div class="mt-2">
-                            <a href="{{ $item->file_kk_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                <i class="bi bi-eye me-1"></i>Lihat Dokumen
-                            </a>
-                        </div>
-                    </div>
-                    {{-- KTP Viewer (hidden by default) --}}
-                    <div class="bg-white rounded-3 p-4 text-center border d-none mb-4" id="lampiranKTP{{ $item->id }}">
-                        <i class="bi bi-file-earmark-text text-success fs-2 d-block mb-1"></i>
-                        <span class="fw-bold small d-block">{{ $item->file_ktp }}</span>
-                        <span class="text-muted" style="font-size: 11px;">{{ $item->file_ktp_size }}</span>
-                        <div class="mt-2">
-                            <a href="{{ $item->file_ktp_url }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                <i class="bi bi-eye me-1"></i>Lihat Dokumen
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Catatan Persetujuan --}}
-                <div class="mb-2">
-                    <label class="form-label fw-bold small">Catatan Persetujuan (Opsional)</label>
-                    <textarea class="form-control bg-white border" rows="3" placeholder="Tambahkan catatan jika diperlukan..." id="catatanPersetujuan{{ $item->id }}"></textarea>
-                </div>
-            </div>
-
-            {{-- Footer Buttons --}}
-            <div class="modal-footer border-0 px-4 pb-4 pt-2 d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-danger rounded-pill px-4"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalReject{{ $item->id }}"
-                        data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Tolak & Beri Catatan
-                </button>
-                <button type="button" class="btn btn-outline-success rounded-pill px-4"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalPreview{{ $item->id }}"
-                        data-bs-dismiss="modal">
-                    <i class="bi bi-check-circle me-1"></i>Setujui Dokumen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Modal 2: Tolak & Beri Catatan --}}
-<div class="modal fade" id="modalReject{{ $item->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+{{-- Modal Detail --}}
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
             <div class="modal-header border-0 px-4 pt-4 pb-0">
-                <h5 class="modal-title fw-bold">Tolak Pengajuan Dokumen</h5>
+                <h5 class="modal-title fw-bold">Detail Pengajuan - {{ $item->nama_pemohon }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('rt.surat.reject', $item->id) }}" method="POST">
-                @csrf
-                <div class="modal-body px-4 pt-3 bg-white">
-                    <div class="alert alert-danger bg-danger bg-opacity-10 border-danger border-opacity-25 d-flex gap-3 align-items-start mb-4" style="border-radius: 12px;">
-                        <i class="bi bi-info-circle-fill text-danger mt-1"></i>
-                        <span class="small text-danger">Mohon berikan alasan penolakan atau catatan koreksi agar pemohon dapat melakukan perbaikan pada pengajuan ini.</span>
+            <div class="modal-body px-4 pt-3">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-person-vcard me-2 text-primary"></i>Data Diri Pemohon</h6>
+                        <table class="table table-sm table-borderless small">
+                            <tr><td class="text-muted" style="width:150px">Nama</td><td class="fw-semibold">{{ $item->nama_pemohon }}</td></tr>
+                            <tr><td class="text-muted">NIK</td><td>{{ $item->nik }}</td></tr>
+                            <tr><td class="text-muted">TTL</td><td>{{ $item->tempat_tgl_lahir }}</td></tr>
+                            <tr><td class="text-muted">Jenis Kelamin</td><td>{{ $item->jenis_kelamin }}</td></tr>
+                            <tr><td class="text-muted">Agama</td><td>{{ $item->agama }}</td></tr>
+                            <tr><td class="text-muted">Pekerjaan</td><td>{{ $item->pekerjaan }}</td></tr>
+                            <tr><td class="text-muted">Status</td><td>{{ $item->status_perkawinan }}</td></tr>
+                            <tr><td class="text-muted">Alamat</td><td>{{ $item->alamat }}</td></tr>
+                        </table>
                     </div>
-                    <label class="form-label fw-bold small">Alasan Penolakan / Catatan Koreksi <span class="text-danger">*</span></label>
-                    <textarea class="form-control bg-white border" name="catatan_penolakan" rows="4" required placeholder="Contoh: Ada kesalahan input pada data NIK..."></textarea>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-image me-2 text-primary"></i>Dokumen Pendukung</h6>
+                        <div class="border rounded-3 p-3 mb-3 text-center" style="background: rgba(13,110,253,0.02);">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 mb-2">KTP</span>
+                            @if($item->file_ktp_url)
+                                <img src="{{ $item->file_ktp_url }}" alt="KTP" class="img-fluid rounded shadow-sm d-block mx-auto" style="max-height: 150px; cursor:pointer;" onclick="showRtImageModal('{{ $item->file_ktp_url }}', 'Preview KTP')">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill mt-2" onclick="showRtImageModal('{{ $item->file_ktp_url }}', 'Preview KTP')"><i class="bi bi-zoom-in me-1"></i>Perbesar</button>
+                            @else
+                                <p class="text-muted small mb-0"><i class="bi bi-x-circle me-1"></i>Belum diunggah</p>
+                            @endif
+                        </div>
+                        <div class="border rounded-3 p-3 text-center" style="background: rgba(13,110,253,0.02);">
+                            <span class="badge bg-info-subtle text-info rounded-pill px-3 mb-2">Kartu Keluarga</span>
+                            @if($item->file_kk_url)
+                                <img src="{{ $item->file_kk_url }}" alt="KK" class="img-fluid rounded shadow-sm d-block mx-auto" style="max-height: 150px; cursor:pointer;" onclick="showRtImageModal('{{ $item->file_kk_url }}', 'Preview KK')">
+                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill mt-2" onclick="showRtImageModal('{{ $item->file_kk_url }}', 'Preview KK')"><i class="bi bi-zoom-in me-1"></i>Perbesar</button>
+                            @else
+                                <p class="text-muted small mb-0"><i class="bi bi-x-circle me-1"></i>Belum diunggah</p>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex justify-content-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}">Batal</button>
-                    <button type="submit" class="btn btn-outline-danger rounded-pill px-4 fw-bold">
-                        Tolak & Kirim Catatan
-                    </button>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4"><button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button></div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal TTD RT --}}
+<div class="modal fade" id="modalTtdRt{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pen-fill text-success me-2"></i>Tanda Tangan & Setujui</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-3">
+                <p class="text-muted small mb-3">Bubuhkan tanda tangan sebagai Ketua RT untuk menyetujui pengajuan <strong>{{ $item->nama_pemohon }}</strong>.</p>
+                <div class="mb-4">
+                    <label class="form-label fw-bold small">Tanda Tangan RT <span class="text-danger">*</span></label>
+                    <div class="border rounded-3 position-relative" style="height: 200px; background: #fafafa; touch-action: none;">
+                        <canvas id="sigCanvasRt{{ $item->id }}" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
+                        <div id="sigPlaceholderRt{{ $item->id }}" class="position-absolute top-50 start-50 translate-middle text-muted small text-center" style="pointer-events:none;">
+                            <i class="bi bi-pencil-square fs-3 d-block mb-1"></i>Coretan tanda tangan di sini
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill mt-2" onclick="clearSig('Rt', '{{ $item->id }}')"><i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi</button>
                 </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold small">Stempel RT (Opsional)</label>
+                    <div class="border border-2 rounded-3 p-4 text-center" style="border-style: dashed !important; cursor: pointer;" onclick="document.getElementById('stempelRt{{ $item->id }}').click()">
+                        <input type="file" id="stempelRt{{ $item->id }}" class="d-none" accept=".png" onchange="previewStempel(this, 'stempelPreviewRt{{ $item->id }}')">
+                        <div id="stempelPlaceholderRt{{ $item->id }}"><i class="bi bi-stamp text-success fs-2 d-block mb-2"></i><span class="small">Unggah Stempel (PNG, Max 2MB)</span></div>
+                        <div id="stempelPreviewRt{{ $item->id }}" class="d-none"><img src="" class="img-fluid" style="max-height:80px;" alt="Stempel"><p class="text-success small mt-1 mb-0"><i class="bi bi-check-circle me-1"></i>Siap</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" onclick="submitApprove('Rt', '{{ $item->id }}')"><i class="bi bi-check-circle me-1"></i>Setujui & Teruskan ke RW</button>
+            </div>
+            <form id="formApproveRt{{ $item->id }}" action="{{ route('rt.surat.approve', $item->id) }}" method="POST" enctype="multipart/form-data" class="d-none">
+                @csrf
+                <input type="hidden" name="signature_rt" id="hiddenSigRt{{ $item->id }}">
             </form>
         </div>
     </div>
 </div>
 
-{{-- Modal 3: Pratinjau Dokumen (SKD) --}}
-<div class="modal fade" id="modalPreview{{ $item->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+{{-- Modal Tolak --}}
+<div class="modal fade" id="modalReject{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
             <div class="modal-header border-0 px-4 pt-4 pb-0">
-                <h5 class="modal-title fw-bold">Pratinjau Dokumen</h5>
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Tolak Pengajuan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body px-4 pt-3">
-                {{-- Surat Preview --}}
-                <div class="bg-white border rounded-3 p-4 shadow-sm" style="font-family: 'Times New Roman', serif;">
-                    <div class="text-center mb-3">
-                        <h6 class="fw-bold mb-0" style="font-size: 14px;">PEMERINTAH KABUPATEN BANDUNG BARAT</h6>
-                        <h6 class="fw-bold mb-0" style="font-size: 14px;">KECAMATAN NGAMPRAH</h6>
-                        <h6 class="fw-bold mb-0" style="font-size: 14px;">DESA TANIMULYA</h6>
-                        <p class="small mb-1">Jl. Pasirhalang Raya No. 1, Tanimulya, Kec. Ngamprah, Kab. Bandung Barat,</p>
-                        <p class="small mb-2">Kode Pos 40552, Telp. (022) 1234567</p>
-                        <hr style="border-top: 3px double #000;" class="my-2">
-                    </div>
-                    <div class="text-center mb-3">
-                        <h6 class="fw-bold text-decoration-underline mb-1">SURAT KETERANGAN DOMISILI</h6>
-                        <p class="small">Nomor: {{ $item->nomor_surat ?? '---/SKD/VIII/2024' }}</p>
-                    </div>
-                    <p class="small mb-2">Yang bertanda tangan dibawah ini :</p>
-                    <div class="ms-4 small mb-3">
-                        <table>
-                            <tr><td style="width:140px">Nama</td><td>: {{ $item->nama_kepala_desa ?? 'Budi Santoso, S.Sos.' }}</td></tr>
-                            <tr><td>Jabatan</td><td>: Kepala Desa Tanimulya</td></tr>
-                            <tr><td>Alamat</td><td>: {{ $item->alamat_kepala_desa ?? 'RT 03 RW 10, Kp. Pasirhalang, Desa Tanimulya, Ngamprah.' }}</td></tr>
-                        </table>
-                    </div>
-                    <p class="small mb-2">Menerangkan bahwa :</p>
-                    <div class="ms-4 small mb-3">
-                        <table>
-                            <tr><td style="width:180px">Nama</td><td>: {{ $item->nama_pemohon_surat ?? $item->nama_pemohon }}</td></tr>
-                            <tr><td>Tempat, Tanggal Lahir</td><td>: {{ $item->tempat_tgl_lahir_surat ?? $item->tempat_tgl_lahir }}</td></tr>
-                            <tr><td>Jenis Kelamin</td><td>: {{ $item->jenis_kelamin_surat ?? $item->jenis_kelamin }}</td></tr>
-                            <tr><td>Pekerjaan</td><td>: {{ $item->pekerjaan_surat ?? $item->pekerjaan }}</td></tr>
-                            <tr><td>Agama</td><td>: {{ $item->agama_surat ?? $item->agama }}</td></tr>
-                            <tr><td>Status Perkawinan</td><td>: {{ $item->status_perkawinan_surat ?? $item->status_perkawinan }}</td></tr>
-                            <tr><td>Kewarganegaraan</td><td>: {{ $item->kewarganegaraan_surat ?? 'Indonesia' }}</td></tr>
-                            <tr><td>Alamat</td><td>: {{ $item->alamat_surat ?? $item->alamat }}</td></tr>
-                        </table>
-                    </div>
-                    <p class="small">Dengan ini menerangkan bahwa orang yang bersangkutan benar tingal berdomisili di Desa Tanimulya Kecamatan Ngamprah Kabupaten Bandung Barat.</p>
+            <form action="{{ route('rt.surat.reject', $item->id) }}" method="POST">
+                @csrf
+                <div class="modal-body px-4 pt-3"><textarea name="catatan_penolakan" class="form-control" rows="4" placeholder="Jelaskan alasan penolakan..." required></textarea></div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Tolak</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+@empty
+<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+    <div class="card-body p-5 text-center bg-white" style="border-radius: 16px;">
+        <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+        <h5 class="fw-bold">Belum Ada Pengajuan</h5>
+        <p class="text-muted">Belum ada dokumen yang perlu diverifikasi saat ini.</p>
+    </div>
+</div>
+@endforelse
+
+{{-- Modal Global Preview Gambar --}}
+<div class="modal fade" id="rtImageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <h5 class="modal-title fw-bold" id="rtImageTitle">Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-footer border-0 px-4 pb-4 pt-3 d-flex justify-content-between align-items-center">
-                <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Diajukan: {{ $item->tanggal_pengajuan }}</span>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-danger rounded-pill px-4"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalReject{{ $item->id }}"
-                            data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-1"></i>Tolak & Beri Catatan
-                    </button>
-                    <button type="button" class="btn btn-outline-success rounded-pill px-4"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalConfirm{{ $item->id }}"
-                            data-bs-dismiss="modal">
-                        <i class="bi bi-check-circle me-1"></i>Setujui Dokumen
-                    </button>
-                </div>
+            <div class="modal-body px-4 pt-3 pb-4 text-center">
+                <img src="" id="rtImageSrc" class="img-fluid rounded shadow" style="max-height: 70vh;" alt="Preview">
             </div>
         </div>
     </div>
 </div>
-
-{{-- Modal 4: Konfirmasi Sukses (Surat Siap Dikirim) --}}
-<div class="modal fade" id="modalConfirm{{ $item->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow text-center p-3 bg-white" style="border-radius: 20px;">
-            <div class="modal-body p-4 bg-white">
-                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
-                    <i class="bi bi-check-lg text-success fs-3"></i>
-                </div>
-                <h6 class="fw-bold mb-2">Pengajuan Disetujui & Terkirim</h6>
-                <p class="text-muted mb-4" style="font-size: 13px;">Dokumen Telah berhasil disetujui dan berhasil dikirim ke staff RW.</p>
-                <form action="{{ route('rt.surat.approve', $item->id) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-success rounded-pill px-4 w-100 fw-bold">Selesai</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Modal 5: Catatan Telah Dikirim (shown after reject via JS) --}}
-<div class="modal fade" id="modalRejectSuccess{{ $item->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow text-center p-3 bg-white" style="border-radius: 20px;">
-            <div class="modal-body p-4 bg-white">
-                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
-                    <i class="bi bi-check-lg text-success fs-3"></i>
-                </div>
-                <h6 class="fw-bold mb-2">Catatan Telah Dikirim</h6>
-                <p class="text-muted mb-4" style="font-size: 13px;">Pengajuan yang telah ditolak berhasil dikirim kembali ke pengaju beserta catatan.</p>
-                <a href="{{ route('rt.persetujuan-dokumen') }}" class="btn btn-success rounded-pill px-4 w-100 fw-bold">Kembali ke Dashboard</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-@endforeach
 @endsection
 
 @push('scripts')
 <script>
-function toggleLampiran(id) {
-    const kkEl = document.getElementById('lampiranKK' + id);
-    const ktpEl = document.getElementById('lampiranKTP' + id);
-    const labelEl = document.getElementById('lampiranLabel' + id);
-    const toggleEl = document.getElementById('lampiranToggle' + id);
-
-    if (kkEl.classList.contains('d-none')) {
-        kkEl.classList.remove('d-none');
-        ktpEl.classList.add('d-none');
-        labelEl.textContent = 'LAMPIRAN DOKUMEN (KK)';
-        toggleEl.textContent = 'LIHAT KTP →';
-    } else {
-        kkEl.classList.add('d-none');
-        ktpEl.classList.remove('d-none');
-        labelEl.textContent = 'LAMPIRAN DOKUMEN (KTP)';
-        toggleEl.textContent = 'LIHAT KARTU KELUARGA →';
-    }
+function showRtImageModal(src, title) {
+    document.getElementById('rtImageSrc').src = src;
+    document.getElementById('rtImageTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('rtImageModal')).show();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="modalTtdRt"]').forEach(modal => {
+        const id = modal.id.replace('modalTtdRt', '');
+        const canvas = document.getElementById('sigCanvasRt' + id);
+        if (!canvas) return;
+        const placeholder = document.getElementById('sigPlaceholderRt' + id);
+        const ctx = canvas.getContext('2d');
+        let drawing = false, lx = 0, ly = 0;
+        modal.addEventListener('shown.bs.modal', function() {
+            const r = canvas.parentElement.getBoundingClientRect();
+            canvas.width = r.width; canvas.height = r.height;
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+        function gp(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        canvas.addEventListener('pointerdown', function(e) { drawing = true; const p = gp(e); lx = p.x; ly = p.y; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+        canvas.addEventListener('pointermove', function(e) { if (!drawing) return; e.preventDefault(); if (placeholder) placeholder.classList.add('d-none'); const p = gp(e); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke(); lx = p.x; ly = p.y; });
+        canvas.addEventListener('pointerup', function(e) { drawing = false; canvas.releasePointerCapture(e.pointerId); });
+    });
+});
+
+window.clearSig = function(role, id) {
+    const canvas = document.getElementById('sigCanvas' + role + id);
+    const ph = document.getElementById('sigPlaceholder' + role + id);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (ph) ph.classList.remove('d-none');
+};
+
+window.previewStempel = function(input, previewId) {
+    if (input.files && input.files[0]) {
+        const f = input.files[0];
+        if (f.type !== 'image/png') { alert('Format harus PNG!'); input.value = ''; return; }
+        if (f.size > 2*1024*1024) { alert('Max 2MB!'); input.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const el = document.getElementById(previewId);
+            el.querySelector('img').src = e.target.result;
+            el.classList.remove('d-none');
+            el.previousElementSibling.classList.add('d-none');
+        };
+        reader.readAsDataURL(f);
+    }
+};
+
+window.submitApprove = function(role, id) {
+    const form = document.getElementById('formApprove' + role + id);
+    const canvas = document.getElementById('sigCanvas' + role + id);
+    if (canvas) document.getElementById('hiddenSig' + role + id).value = canvas.toDataURL('image/png');
+    const fileInput = document.getElementById('stempel' + role + id);
+    if (fileInput && fileInput.files.length > 0) { fileInput.name = 'stempel_' + role.toLowerCase(); form.appendChild(fileInput); }
+    form.submit();
+};
 </script>
 @endpush

@@ -6,7 +6,7 @@
 {{-- Header --}}
 <div class="mb-4">
     <h2 class="fw-bold" style="color: #198754;">Layanan Permohonan Surat</h2>
-    <p class="text-muted mb-0">Ajukan permohonan surat administrasi (Domisili, Keterangan Tidak Mampu, dll) secara mandiri.</p>
+    <p class="text-muted mb-0">Ajukan permohonan surat pengantar RT/RW secara mandiri.</p>
 </div>
 
 {{-- Flash Messages --}}
@@ -35,74 +35,37 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4 bg-white" style="border-radius: 16px;">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">Status Pengajuan Saya</h5>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-white bg-white border rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-funnel me-1"></i>Semua Status
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="#">Semua Status</a></li>
-                            <li><a class="dropdown-item" href="#">Menunggu Verifikasi</a></li>
-                            <li><a class="dropdown-item" href="#">Selesai / Siap Diambil</a></li>
-                            <li><a class="dropdown-item" href="#">Ditolak</a></li>
-                        </ul>
+                    <h5 class="fw-bold mb-0">Riwayat Pengajuan Surat</h5>
+                </div>
+                @forelse($pengajuan as $item)
+                <div class="border rounded-3 p-3 mb-2 d-flex justify-content-between align-items-center" style="background: #fafafa;">
+                    <div>
+                        <span class="fw-bold small">{{ $item->tipe_surat }}</span>
+                        <br><span class="text-muted" style="font-size: 11px;">{{ $item->created_at->format('d M Y H:i') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        @php
+                            $sc = match($item->status) {
+                                'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#856404', 'label' => 'Menunggu RT'],
+                                'Disetujui RT' => ['bg' => '#D1ECF1', 'color' => '#0C5460', 'label' => 'Menunggu RW'],
+                                'Selesai' => ['bg' => '#D4EDDA', 'color' => '#155724', 'label' => 'Selesai'],
+                                'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RT'],
+                                'Ditolak RW' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RW'],
+                                default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status],
+                            };
+                        @endphp
+                        <span class="badge rounded-pill px-3 py-1" style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px;">{{ $sc['label'] }}</span>
+                        @if($item->status === 'Selesai')
+                            <a href="{{ route('warga.surat.download-pdf', $item->id) }}" class="btn btn-sm btn-success rounded-pill px-3"><i class="bi bi-download me-1"></i>PDF</a>
+                        @endif
                     </div>
                 </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead style="background-color: #f8f9fa;">
-                            <tr class="text-muted small" style="font-size: 12px;">
-                                <th class="border-0 py-2 fw-bold">Jenis Dokumen</th>
-                                <th class="border-0 py-2 fw-bold text-center">Tanggal Pengajuan</th>
-                                <th class="border-0 py-2 fw-bold text-center">Status</th>
-                                <th class="border-0 py-2 fw-bold text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($pengajuan as $item)
-                            <tr class="bg-white">
-                                <td class="bg-white py-3">
-                                    <span class="fw-bold small">{{ $item->tipe_surat }}</span><br>
-                                    <span class="text-muted" style="font-size: 11px;">ID: DOC-{{ now()->format('Y') }}-{{ str_pad($item->id, 3, '0', STR_PAD_LEFT) }}</span>
-                                </td>
-                                <td class="bg-white py-3 text-center">
-                                    <span class="text-muted small">{{ $item->created_at->format('d M Y') }}</span>
-                                </td>
-                                <td class="bg-white py-3 text-center">
-                                    @php
-                                        $statusConfig = match($item->status) {
-                                            'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#B8860B', 'label' => 'Menunggu Verifikasi'],
-                                            'Disetujui RT' => ['bg' => '#D4EDDA', 'color' => '#155724', 'label' => 'Disetujui RT'],
-                                            'Selesai' => ['bg' => '#D1ECF1', 'color' => '#0C5460', 'label' => 'Selesai / Siap Diambil'],
-                                            'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak'],
-                                            'Ditolak RW' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak'],
-                                            default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status],
-                                        };
-                                    @endphp
-                                    <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 11px;">
-                                        {{ $statusConfig['label'] }}
-                                    </span>
-                                </td>
-                                <td class="bg-white py-3 text-center">
-                                    @if($item->status === 'Selesai')
-                                        <a href="{{ route('warga.surat.download', $item->id) }}" class="btn btn-sm btn-outline-success rounded-pill fw-bold small text-decoration-none shadow-sm"><i class="bi bi-download me-1"></i>Unduh PDF</a>
-                                    @else
-                                        <span class="text-muted small"><i class="bi bi-clock-history me-1"></i>Menunggu</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4 bg-white">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2 text-muted"></i>
-                                    Belum ada riwayat pengajuan surat.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                @empty
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                    <p class="text-muted small mb-0">Belum ada pengajuan surat.</p>
                 </div>
+                @endforelse
             </div>
         </div>
 
@@ -110,31 +73,26 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4 bg-white" style="border-radius: 16px;">
                 <h5 class="fw-bold mb-1">Pilih Kategori Permohonan</h5>
-                <p class="text-muted small mb-3">Pilih jenis surat untuk melihat persyaratan yang dibutuhkan</p>
-
-                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">JENIS SURAT</span>
-                <p class="text-muted mb-2" style="font-size: 12px;"><i class="bi bi-lightbulb me-1"></i>Tips: Pastikan data profil Anda sudah lengkap sebelum mengajukan.</p>
-
-                <select class="form-select border rounded-3 py-2 bg-white shadow-sm" id="jenisSuratSelect" style="font-size: 14px;">
-                    <option value="" selected>Pilih jenis surat yang ingin diajukan...</option>
-                    @foreach($tipeSurat as $tipe)
-                        <option value="{{ $tipe }}">{{ $tipe }}</option>
+                <p class="text-muted small mb-3">Pilih jenis surat untuk persyaratan yang dibutuhkan.</p>
+                <label class="form-label fw-bold small text-muted">JENIS SURAT</label>
+                <select class="form-select bg-white border" id="jenisSuratSelect">
+                    <option value="">Pilih jenis surat yang ingin diajukan...</option>
+                    @foreach($tipeSurat as $i => $surat)
+                        <option value="{{ $surat }}">{{ ($i+1) }}. {{ $surat }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
 
-        {{-- Section 3: Formulir Permohonan (Tersembunyi, tampil saat pilih jenis surat) --}}
+        {{-- Section 3: Formulir (hidden by default) --}}
         <div class="card border-0 shadow-sm mb-4 d-none" id="formPengajuan" style="border-radius: 16px;">
             <div class="card-body p-4 bg-white" style="border-radius: 16px;">
-                <h5 class="fw-bold mb-1" id="formTitle">Formulir Permohonan Surat Pengantar Domisili</h5>
-                <p class="text-muted small mb-4">Lengkapi form di bawah ini untuk mengajukan surat pengantar di RT/RW.</p>
-
-                <form action="{{ route('warga.surat.store') }}" method="POST" enctype="multipart/form-data" id="suratForm">
+                <h5 class="fw-bold mb-3" id="formTitle">Formulir Permohonan</h5>
+                <form action="{{ route('warga.surat.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="tipe_surat" id="tipeSuratHidden" value="">
+                    <input type="hidden" name="tipe_surat" id="tipeSuratHidden">
 
-                    {{-- Data Diri Pemohon --}}
+                    {{-- Data Diri Pemohon (readonly dari database) --}}
                     <div class="mb-4">
                         <h6 class="fw-bold"><i class="bi bi-person-fill me-2 text-success"></i>Data Diri Pemohon</h6>
                         <div class="row g-3 mt-1">
@@ -143,7 +101,7 @@
                                 <input type="text" class="form-control bg-light border" value="{{ $penduduk->nama_lengkap ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">NIK <i class="bi bi-shield-check text-success"></i></label>
+                                <label class="form-label small fw-bold text-muted">NIK</label>
                                 <input type="text" class="form-control bg-light border" value="{{ $penduduk->nik ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
@@ -152,7 +110,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Tanggal Lahir</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk ? $penduduk->tanggal_lahir->format('d/m/Y') : '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" value="{{ $penduduk && $penduduk->tanggal_lahir ? $penduduk->tanggal_lahir->format('d-m-Y') : '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Jenis Kelamin</label>
@@ -162,8 +120,16 @@
                                 <label class="form-label small fw-bold text-muted">Pekerjaan</label>
                                 <input type="text" class="form-control bg-light border" value="{{ $penduduk->pekerjaan ?? '-' }}" readonly>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Agama</label>
+                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->agama ?? '-' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Status Perkawinan</label>
+                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->status_perkawinan ?? '-' }}" readonly>
+                            </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-muted">Alamat Domisili Saat Ini</label>
+                                <label class="form-label small fw-bold text-muted">Alamat Domisili</label>
                                 <textarea class="form-control bg-light border" rows="2" readonly>{{ $penduduk && $penduduk->keluarga ? $penduduk->keluarga->alamat : '-' }}</textarea>
                             </div>
                         </div>
@@ -172,40 +138,55 @@
                     {{-- Keperluan Pengajuan --}}
                     <div class="mb-4">
                         <h6 class="fw-bold"><i class="bi bi-send-fill me-2 text-success"></i>Keperluan Pengajuan</h6>
-                        <label class="form-label small fw-bold text-muted mt-1">Jelaskan Tujuan Pengajuan Surat</label>
-                        <textarea class="form-control bg-white border" name="keperluan" rows="4" placeholder="Contoh: Persyaratan pembuatan rekening bank baru..." required></textarea>
+                        <label class="form-label small fw-bold text-muted mt-1">Jelaskan Tujuan Pengajuan Surat (Opsional)</label>
+                        <textarea class="form-control bg-white border" name="keperluan" rows="3" placeholder="Contoh: Persyaratan pembuatan rekening bank baru..."></textarea>
                     </div>
 
-                    {{-- Unggah Dokumen Pendukung --}}
+                    {{-- Dokumen Pendukung (Preview Otomatis) --}}
                     <div class="mb-4">
-                        <h6 class="fw-bold"><i class="bi bi-paperclip me-2 text-success"></i>Unggah Dokumen Pendukung</h6>
-                        <div class="row g-3 mt-1">
-                            {{-- Upload KTP --}}
+                        <h6 class="fw-bold"><i class="bi bi-file-earmark-image me-2 text-success"></i>Dokumen Pendukung (KTP & KK)</h6>
+                        <p class="text-muted small mb-3">Dokumen KTP dan KK Anda otomatis ditampilkan dari data yang sudah terdaftar.</p>
+                        <div class="row g-3">
+                            {{-- Preview KTP --}}
                             <div class="col-md-6">
-                                <div class="border border-2 rounded-3 p-4 text-center position-relative upload-zone" style="border-style: dashed !important; cursor: pointer; background: rgba(25, 135, 84, 0.02);" onclick="document.getElementById('fileKtp').click()">
-                                    <input type="file" id="fileKtp" name="file_ktp" class="d-none" accept=".jpg,.jpeg,.png,.pdf" onchange="showFileName(this, 'ktpPreview')">
-                                    <div id="ktpPreview">
-                                        <i class="bi bi-cloud-arrow-up text-success fs-2 d-block mb-2"></i>
-                                        <span class="fw-bold small d-block">Unggah Foto KTP</span>
-                                        <span class="text-muted" style="font-size: 11px;">Format: JPG, PNG, PDF (Max 5MB)</span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <span class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">Pilih File</span>
-                                    </div>
+                                <label class="form-label small fw-bold text-muted">Foto KTP</label>
+                                <div class="border rounded-3 p-3 text-center" style="background: rgba(25,135,84,0.02); min-height: 180px;">
+                                    @if($ktpUrl)
+                                        <img src="{{ $ktpUrl }}" alt="KTP" class="img-fluid rounded shadow-sm mb-2" style="max-height: 140px; cursor:pointer;" onclick="showImageModal('{{ $ktpUrl }}', 'Preview KTP - {{ $penduduk->nama_lengkap }}')">
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="showImageModal('{{ $ktpUrl }}', 'Preview KTP')"><i class="bi bi-zoom-in me-1"></i>Perbesar</button>
+                                        </div>
+                                    @else
+                                        <div class="py-3">
+                                            <i class="bi bi-camera text-muted fs-1 d-block mb-2"></i>
+                                            <span class="text-muted small d-block mb-2">Belum ada foto KTP tersimpan</span>
+                                            <label class="btn btn-sm btn-outline-success rounded-pill px-3" for="fileKtp">
+                                                <i class="bi bi-upload me-1"></i>Unggah KTP
+                                            </label>
+                                            <input type="file" id="fileKtp" name="file_ktp" class="d-none" accept=".jpg,.jpeg,.png">
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
-                            {{-- Upload KK --}}
+                            {{-- Preview KK --}}
                             <div class="col-md-6">
-                                <div class="border border-2 rounded-3 p-4 text-center position-relative upload-zone" style="border-style: dashed !important; cursor: pointer; background: rgba(25, 135, 84, 0.02);" onclick="document.getElementById('fileKk').click()">
-                                    <input type="file" id="fileKk" name="file_kk" class="d-none" accept=".jpg,.jpeg,.png,.pdf" onchange="showFileName(this, 'kkPreview')">
-                                    <div id="kkPreview">
-                                        <i class="bi bi-cloud-arrow-up text-success fs-2 d-block mb-2"></i>
-                                        <span class="fw-bold small d-block">Unggah Kartu Keluarga</span>
-                                        <span class="text-muted" style="font-size: 11px;">Format: JPG, PNG, PDF (Max 5MB)</span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <span class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">Pilih File</span>
-                                    </div>
+                                <label class="form-label small fw-bold text-muted">Kartu Keluarga</label>
+                                <div class="border rounded-3 p-3 text-center" style="background: rgba(25,135,84,0.02); min-height: 180px;">
+                                    @if($kkUrl)
+                                        <img src="{{ $kkUrl }}" alt="KK" class="img-fluid rounded shadow-sm mb-2" style="max-height: 140px; cursor:pointer;" onclick="showImageModal('{{ $kkUrl }}', 'Preview KK - {{ $penduduk->nama_lengkap }}')">
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="showImageModal('{{ $kkUrl }}', 'Preview KK')"><i class="bi bi-zoom-in me-1"></i>Perbesar</button>
+                                        </div>
+                                    @else
+                                        <div class="py-3">
+                                            <i class="bi bi-camera text-muted fs-1 d-block mb-2"></i>
+                                            <span class="text-muted small d-block mb-2">Belum ada foto KK tersimpan</span>
+                                            <label class="btn btn-sm btn-outline-info rounded-pill px-3" for="fileKk">
+                                                <i class="bi bi-upload me-1"></i>Unggah KK
+                                            </label>
+                                            <input type="file" id="fileKk" name="file_kk" class="d-none" accept=".jpg,.jpeg,.png">
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -233,7 +214,6 @@
 
     {{-- Kolom Sidebar (Kanan) --}}
     <div class="col-lg-4">
-        {{-- Butuh Bantuan? --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4 bg-white" style="border-radius: 16px;">
                 <h6 class="fw-bold mb-2">Butuh Bantuan?</h6>
@@ -243,15 +223,27 @@
                 </a>
             </div>
         </div>
-
-        {{-- Informasi Proses --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-body p-4 bg-white" style="border-radius: 16px;">
                 <h6 class="fw-bold mb-2"><i class="bi bi-lightbulb-fill text-warning me-1"></i>Informasi Proses</h6>
                 <p class="text-muted small mb-0">
-                    Proses verifikasi biasanya memakan waktu <strong>1-2 hari kerja</strong> oleh Admin RW.
-                    Pastikan data pendukung yang Anda unggah terlihat jelas untuk mempercepat proses persetujuan.
+                    Proses verifikasi: <strong>Warga ? RT ? RW</strong>. Setelah disetujui kedua pihak, surat bisa langsung diunduh dalam format PDF.
                 </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Preview Gambar --}}
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <h5 class="modal-title fw-bold" id="imagePreviewTitle">Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-3 pb-4 text-center">
+                <img src="" id="imagePreviewSrc" class="img-fluid rounded shadow" style="max-height: 70vh;" alt="Preview">
             </div>
         </div>
     </div>
@@ -269,9 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
     selectEl.addEventListener('change', function() {
         if (this.value) {
             formCard.classList.remove('d-none');
-            formTitle.textContent = 'Formulir Permohonan ' + this.value;
+            formTitle.textContent = 'Formulir Permohonan: ' + this.value;
             hiddenInput.value = this.value;
-            // Smooth scroll ke formulir
             formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
             formCard.classList.add('d-none');
@@ -279,41 +270,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function showFileName(input, previewId) {
-    const previewEl = document.getElementById(previewId);
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Ukuran file terlalu besar! Maksimal 5MB.');
-            input.value = '';
-            return;
-        }
-
-        previewEl.innerHTML = `
-            <i class="bi bi-file-earmark-check-fill text-success fs-2 d-block mb-2"></i>
-            <span class="fw-bold small d-block text-success">${file.name}</span>
-            <span class="text-muted" style="font-size: 11px;">${sizeMB} MB — Siap diunggah</span>
-        `;
-    }
+function showImageModal(src, title) {
+    document.getElementById('imagePreviewSrc').src = src;
+    document.getElementById('imagePreviewTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
 }
 
 function resetForm() {
     document.getElementById('formPengajuan').classList.add('d-none');
     document.getElementById('jenisSuratSelect').value = '';
-    document.getElementById('suratForm').reset();
-    // Reset preview
-    document.getElementById('ktpPreview').innerHTML = `
-        <i class="bi bi-cloud-arrow-up text-success fs-2 d-block mb-2"></i>
-        <span class="fw-bold small d-block">Unggah Foto KTP</span>
-        <span class="text-muted" style="font-size: 11px;">Format: JPG, PNG, PDF (Max 5MB)</span>
-    `;
-    document.getElementById('kkPreview').innerHTML = `
-        <i class="bi bi-cloud-arrow-up text-success fs-2 d-block mb-2"></i>
-        <span class="fw-bold small d-block">Unggah Kartu Keluarga</span>
-        <span class="text-muted" style="font-size: 11px;">Format: JPG, PNG, PDF (Max 5MB)</span>
-    `;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 @endpush

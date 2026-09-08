@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\MasterRt;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -183,6 +186,30 @@ class DatabaseSeeder extends Seeder
             'status_perkawinan' => 'Belum Kawin',
         ]);
 
+        
+        // Data Keluarga (KK) milik Budi Sampurno (Demo)
+        $keluargaSampurno = \App\Models\Keluarga::create([
+            'no_kk' => '3217010101010000',
+            'nik_kepala_keluarga' => '3217010101010003',
+            'alamat' => 'Jl. Budi Sampurno No. 1, RT 01 / RW 21',
+            'rt_id' => MasterRt::where('kode_rt', '01')->first()->id ?? 1,
+            'no_wa' => '081234567890',
+            'status_aktivasi' => 'Active',
+        ]);
+
+        \App\Models\Penduduk::create([
+            'keluarga_id' => $keluargaSampurno->id,
+            'nik' => '3217010101010003',
+            'nama_lengkap' => 'Budi Sampurno',
+            'jenis_kelamin' => 'L',
+            'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => '1990-01-01',
+            'agama' => 'Islam',
+            'pekerjaan' => 'Wiraswasta',
+            'status_hubungan_keluarga' => 'Kepala Keluarga',
+            'status_perkawinan' => 'Kawin',
+        ]);
+
         $this->call([
             RoleSeeder::class,
             MasterRtSeeder::class,
@@ -197,3 +224,5 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
+
+
