@@ -16,7 +16,7 @@
             $pendingCount = ($pendingUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $pendingUsaha->total() : count($pendingUsaha ?? []);
             $terdaftarCount = ($daftarUsahaTerdaftar instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $daftarUsahaTerdaftar->total() : count($daftarUsahaTerdaftar ?? []);
         @endphp
-        <div class="d-flex align-items-center gap-2 border-bottom pb-2 flex-wrap">
+        <div class="d-flex align-items-center gap-2 pb-2 flex-wrap">
             <a href="{{ route('rw.umkm.index', ['tab' => 'persetujuan']) }}" 
                class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab !== 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
                style="{{ $tab !== 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
@@ -31,7 +31,7 @@
                class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
                style="{{ $tab === 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
                 <i class="bi bi-shop"></i>
-                <span>Daftar Usaha UMKM yang Terdaftar</span>
+                <span>Daftar UMKM yang Terdaftar</span>
                 @if($terdaftarCount > 0)
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">{{ $terdaftarCount }}</span>
                 @endif
@@ -108,7 +108,7 @@
                 </div>
 
                 <div class="card border shadow-sm rounded-4 p-4 bg-white text-center">
-                    <div class="rounded-circle bg-light d-inline-flex p-3 mb-3 mx-auto text-success">
+                    <div class="d-inline-flex p-3 mb-1 mx-auto text-success">
                         <i class="bi bi-shop fs-2"></i>
                     </div>
                     <h6 class="fw-bold text-dark mb-1">Daftar Usaha Terdaftar</h6>
