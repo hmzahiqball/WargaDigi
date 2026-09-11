@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'status_akun',
         'last_login',
+        'rt_id',
     ];
 
     /**
@@ -74,5 +75,10 @@ class User extends Authenticatable
     public function umkmUsaha()
     {
         return $this->hasMany(UmkmUsaha::class, 'nik', 'nik');
+    }
+
+    public function rt()
+    {
+        return $this->belongsTo(MasterRt::class, 'rt_id');
     }
 }

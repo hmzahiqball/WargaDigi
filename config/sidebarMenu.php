@@ -236,17 +236,19 @@ return [
     ],
     [
         'title' => 'Catat Transaksi',
-        'url'   => '#',
+        'route' => 'opkeuangan.transaksi.index',
+        'url'   => '/op-keuangan/transaksi',
         'icon'  => 'bi-receipt',
         'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
-        'active' => ['opkeuangan/transaksi*'],
+        'active' => ['opkeuangan.transaksi.index', 'op-keuangan/transaksi*'],
     ],
     [
         'title' => 'Laporan Keuangan',
-        'url'   => '#',
+        'route' => 'opkeuangan.laporan.index',
+        'url'   => '/op-keuangan/laporan',
         'icon'  => 'bi-clipboard-data',
         'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
-        'active' => ['opkeuangan/laporan*'],
+        'active' => ['opkeuangan.laporan.index', 'op-keuangan/laporan*'],
     ],
     [
         'title' => 'Galeri UMKM',

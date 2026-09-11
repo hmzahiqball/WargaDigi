@@ -11,6 +11,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $rtData = [
+            ['kode_rt' => '01', 'nama_rt' => 'RT 01 / RW 21'],
+            ['kode_rt' => '02', 'nama_rt' => 'RT 02 / RW 21'],
+            ['kode_rt' => '03', 'nama_rt' => 'RT 03 / RW 21'],
+            ['kode_rt' => '04', 'nama_rt' => 'RT 04 / RW 21'],
+            ['kode_rt' => '05', 'nama_rt' => 'RT 05 / RW 21'],
+            ['kode_rt' => '06', 'nama_rt' => 'RT 06 / RW 21'],
+        ];
+        
+        foreach ($rtData as $rt) {
+            MasterRt::create($rt);
+        }
+
+        $rt01Id = MasterRt::where('kode_rt', '01')->first()->id ?? null;
 
         User::create([
             'nik' => '3217010101010001',
@@ -87,6 +101,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'Ketua RT',
             'status_akun' => 'Active',
+            'rt_id' => $rt01Id,
             'nik_verified_at' => now(),
         ]);
 
@@ -97,6 +112,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'Op Keuangan RT',
             'status_akun' => 'Active',
+            'rt_id' => $rt01Id,
             'nik_verified_at' => now(),
         ]);
 
@@ -107,22 +123,9 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'Op Konten RT',
             'status_akun' => 'Active',
+            'rt_id' => $rt01Id,
             'nik_verified_at' => now(),
         ]);
-
-
-        $rtData = [
-            ['kode_rt' => '01', 'nama_rt' => 'RT 01 / RW 21'],
-            ['kode_rt' => '02', 'nama_rt' => 'RT 02 / RW 21'],
-            ['kode_rt' => '03', 'nama_rt' => 'RT 03 / RW 21'],
-            ['kode_rt' => '04', 'nama_rt' => 'RT 04 / RW 21'],
-            ['kode_rt' => '05', 'nama_rt' => 'RT 05 / RW 21'],
-            ['kode_rt' => '06', 'nama_rt' => 'RT 06 / RW 21'],
-        ];
-        
-        foreach ($rtData as $rt) {
-            MasterRt::create($rt);
-        }
 
         // 12. Membuat Akun Warga (Budi Santoso) — untuk demo pengajuan surat
         $wargaUser = User::create([
@@ -221,8 +224,8 @@ class DatabaseSeeder extends Seeder
             UmkmUsahaSeeder::class,
             KategoriProdukSeeder::class,
             UmkmProdukSeeder::class,
+            TransaksiKeuanganSeeder::class,
         ]);
     }
+
 }
-
-

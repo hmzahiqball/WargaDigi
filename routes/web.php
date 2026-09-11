@@ -194,6 +194,10 @@ Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT,Op. Konten RW,Op. Kon
 Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan RW,Op. Keuangan RT,Op Keuangan RW,Op Keuangan RT'])->group(function () {
     Route::prefix('op-keuangan')->group(function () {
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
+        Route::get('/transaksi', [OpKeuanganController::class, 'transaksiIndex'])->name('opkeuangan.transaksi.index');
+        Route::post('/transaksi', [OpKeuanganController::class, 'transaksiStore'])->name('opkeuangan.transaksi.store');
+        Route::get('/laporan', [OpKeuanganController::class, 'laporanIndex'])->name('opkeuangan.laporan.index');
+        Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
         Route::get('/', [OpKeuanganController::class, 'dashboard']);
     });
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);

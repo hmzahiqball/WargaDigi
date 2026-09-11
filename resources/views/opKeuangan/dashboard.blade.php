@@ -117,7 +117,7 @@
         <div class="card card-custom p-4 shadow-sm border-0 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">TRANSAKSI TERBARU</span>
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
+                <a href="{{ route('opkeuangan.transaksi.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
             </div>
 
             <div class="d-flex flex-column gap-3">
