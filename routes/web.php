@@ -21,6 +21,8 @@ use App\Http\Controllers\RwController;
 use App\Http\Controllers\RtController;
 use App\Http\Controllers\OpKontenController;
 use App\Http\Controllers\OpKeuanganController;
+use App\Http\Controllers\LaporanKeuanganPublicController;
+use App\Http\Controllers\PersetujuanKeuanganController;
 use App\Http\Controllers\OpKonten\AgendaController as OpKontenAgendaController;
 use App\Http\Controllers\OpKonten\GaleriController as OpKontenGaleriController;
 use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
@@ -144,6 +146,11 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::get('/umkm/usaha/{id}', [RwController::class, 'detailUsahaUmkm'])->name('umkm.usaha.detail');
     Route::post('/umkm/{id}/approve', [RwController::class, 'approveUmkm'])->name('umkm.approve');
     Route::post('/umkm/{id}/reject', [RwController::class, 'rejectUmkm'])->name('umkm.reject');
+
+    // Persetujuan Keuangan
+    Route::get('/persetujuan-keuangan', [PersetujuanKeuanganController::class, 'index'])->name('persetujuan-keuangan.index');
+    Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('persetujuan-keuangan.approve');
+    Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('persetujuan-keuangan.reject');
 });
 
 //RT (Role: Ketua RT)
@@ -154,6 +161,11 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::post('/surat/{id}/approve', [RtController::class, 'approveDokumen'])->name('rt.surat.approve');
     Route::post('/surat/{id}/reject', [RtController::class, 'rejectDokumen'])->name('rt.surat.reject');
     Route::get('/surat/{id}/preview', [RtController::class, 'previewSurat'])->name('rt.surat.preview');
+
+    // Persetujuan Keuangan
+    Route::get('/persetujuan-keuangan', [PersetujuanKeuanganController::class, 'index'])->name('rt.persetujuan-keuangan.index');
+    Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('rt.persetujuan-keuangan.approve');
+    Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('rt.persetujuan-keuangan.reject');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
@@ -197,9 +209,11 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::get('/transaksi', [OpKeuanganController::class, 'transaksiIndex'])->name('opkeuangan.transaksi.index');
         Route::post('/transaksi', [OpKeuanganController::class, 'transaksiStore'])->name('opkeuangan.transaksi.store');
         Route::put('/transaksi/{id}', [OpKeuanganController::class, 'transaksiUpdate'])->name('opkeuangan.transaksi.update');
+        Route::delete('/transaksi/{id}', [OpKeuanganController::class, 'transaksiDestroy'])->name('opkeuangan.transaksi.destroy');
         Route::get('/laporan', [OpKeuanganController::class, 'laporanIndex'])->name('opkeuangan.laporan.index');
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
-        Route::get('/laporan/{id}/pdf', [OpKeuanganController::class, 'laporanDownloadPdf'])->name('opkeuangan.laporan.pdf');
+        Route::delete('/laporan/{id}', [OpKeuanganController::class, 'laporanDestroy'])->name('opkeuangan.laporan.destroy');
+        Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
         Route::get('/', [OpKeuanganController::class, 'dashboard']);
     });
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
@@ -243,3 +257,8 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::delete('/galeri/kelola/produk/{id}', [KelolaUmkmController::class, 'destroyProduk'])->name('umkm.produk.destroy');
 });
 
+// Publik Laporan Keuangan (All Authenticated Users)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/laporan-keuangan', [LaporanKeuanganPublicController::class, 'index'])->name('laporan-keuangan.publik');
+    Route::get('/laporan-keuangan/{id}/pdf', [LaporanKeuanganPublicController::class, 'downloadPdf'])->name('laporan-keuangan.pdf');
+});

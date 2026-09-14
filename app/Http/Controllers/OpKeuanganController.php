@@ -42,8 +42,9 @@ class OpKeuanganController extends Controller
             $query->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
         } elseif ($unit === 'DKM') {
             $query->where('unit_sumber', 'DKM');
+        } elseif ($unit === 'RW') {
+            $query->where('unit_sumber', 'RW');
         }
-        // RW can see all units — no additional filter
 
         return $query;
     }
@@ -114,6 +115,8 @@ class OpKeuanganController extends Controller
             $queryTx->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
         } elseif ($unit === 'DKM') {
             $queryTx->where('unit_sumber', 'DKM');
+        } elseif ($unit === 'RW') {
+            $queryTx->where('unit_sumber', 'RW');
         }
 
         $transaksiTerbaru = $queryTx->get()->map(function($tx) {
@@ -150,6 +153,8 @@ class OpKeuanganController extends Controller
             $laporanTerbaru->where('rt_id', $rt_id);
         } elseif ($unit === 'DKM') {
             $laporanTerbaru->where('unit', 'DKM');
+        } elseif ($unit === 'RW') {
+            $laporanTerbaru->where('unit', 'RW');
         }
         $laporanTerbaru = $laporanTerbaru->first();
 
@@ -267,7 +272,7 @@ class OpKeuanganController extends Controller
         return $steps;
     }
 
-    public function transaksiIndex()
+    public function transaksiIndex(Request $request)
     {
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
@@ -279,6 +284,21 @@ class OpKeuanganController extends Controller
             $query->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
         } elseif ($unit === 'DKM') {
             $query->where('unit_sumber', 'DKM');
+        } elseif ($unit === 'RW') {
+            $query->where('unit_sumber', 'RW');
+        }
+
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+        if ($request->filled('bulan')) {
+            $query->whereMonth('tanggal', $request->bulan);
+        }
+        if ($request->filled('tipe')) {
+            $query->where('tipe', $request->tipe);
+        }
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
         }
 
         $transaksi = $query->paginate(10);
@@ -298,11 +318,19 @@ class OpKeuanganController extends Controller
             $query->where('rt_id', $rt_id);
         } elseif ($unit === 'DKM') {
             $query->where('unit', 'DKM');
+        } elseif ($unit === 'RW') {
+            $query->where('unit', 'RW');
         }
 
-        $laporan = $query->paginate(10);
+        $laporans = $query->paginate(10);
 
-        return view('opKeuangan.laporan', compact('laporan', 'unit'));
+        foreach ($laporans as $lap) {
+            if (in_array($lap->status, ['Draft', 'Submitted'])) {
+                $this->syncLaporanKeuangan($lap);
+            }
+        }
+
+        return view('opKeuangan.laporan', ['laporan' => $laporans, 'unit' => $unit]);
     }
 
     public function transaksiStore(Request $request)
@@ -464,13 +492,13 @@ class OpKeuanganController extends Controller
         return back()->with('success', 'Laporan berhasil di-generate dan diajukan untuk approval.');
     }
 
-    public function laporanDownloadPdf($id)
+    public function publishLaporan($id)
     {
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
 
-        $laporan = LaporanKeuangan::with(['rt'])->findOrFail($id);
+        $laporan = LaporanKeuangan::findOrFail($id);
 
         // Verify ownership
         if ($unit === 'RT' && $laporan->rt_id !== $rt_id) {
@@ -480,38 +508,106 @@ class OpKeuanganController extends Controller
             abort(403);
         }
 
-        // Ambil transaksi pada periode laporan
+        if ($laporan->status !== 'Approved') {
+            return back()->with('error', 'Hanya laporan yang sudah Approved yang bisa di-publish.');
+        }
+
+        if ($laporan->is_published) {
+            return back()->with('error', 'Laporan ini sudah di-publish.');
+        }
+
+        $laporan->update([
+            'is_published' => true
+        ]);
+
+        return back()->with('success', 'Laporan berhasil di-publish dan kini dapat dilihat oleh publik.');
+    }
+
+    /**
+     * Sinkronisasi data laporan keuangan (total pemasukan, pengeluaran, saldo)
+     * berdasarkan transaksi riil bulan tersebut.
+     */
+    private function syncLaporanKeuangan(LaporanKeuangan $laporan)
+    {
         $queryTx = TransaksiKeuangan::whereMonth('tanggal', $laporan->periode_bulan)
             ->whereYear('tanggal', $laporan->periode_tahun)
             ->where('unit_sumber', $laporan->unit)
-            ->where('status', '!=', 'Rejected')
-            ->orderBy('tanggal', 'asc');
+            ->where('status', '!=', 'Rejected');
 
         if ($laporan->unit === 'RT') {
             $queryTx->where('rt_id', $laporan->rt_id);
         }
 
-        $transaksiList = $queryTx->get();
+        $pemasukan = (clone $queryTx)->pemasukan()->sum('jumlah');
+        $pengeluaran = (clone $queryTx)->pengeluaran()->sum('jumlah');
 
-        // Determine RT info for header
-        $rtLabel = '';
-        if ($laporan->unit === 'RT' && $laporan->rt) {
-            $rtLabel = $laporan->rt->kode_rt ?? '01';
+        // Hitung Saldo Awal (total semua transaksi sebelum bulan laporan)
+        $firstDayOfMonth = Carbon::createFromDate($laporan->periode_tahun, $laporan->periode_bulan, 1)->startOfDay();
+        $saldoAwalQuery = TransaksiKeuangan::where('tanggal', '<', $firstDayOfMonth)
+            ->where('unit_sumber', $laporan->unit)
+            ->where('status', '!=', 'Rejected');
+
+        if ($laporan->unit === 'RT') {
+            $saldoAwalQuery->where('rt_id', $laporan->rt_id);
         }
 
-        $namaBulan = date('F', mktime(0, 0, 0, $laporan->periode_bulan, 10));
+        $saldoAwalPemasukan = (clone $saldoAwalQuery)->pemasukan()->sum('jumlah');
+        $saldoAwalPengeluaran = (clone $saldoAwalQuery)->pengeluaran()->sum('jumlah');
+        $saldoAwal = $saldoAwalPemasukan - $saldoAwalPengeluaran;
+        $saldoAkhir = $saldoAwal + $pemasukan - $pengeluaran;
 
-        $pdf = Pdf::loadView('opKeuangan.laporan-pdf', [
-            'laporan' => $laporan,
-            'transaksiList' => $transaksiList,
-            'rtLabel' => $rtLabel,
-            'namaBulan' => $namaBulan,
+        $laporan->update([
+            'total_pemasukan' => $pemasukan,
+            'total_pengeluaran' => $pengeluaran,
+            'saldo_awal' => max(0, $saldoAwal),
+            'saldo_akhir' => max(0, $saldoAkhir),
         ]);
+    }
 
-        $pdf->setPaper('A4', 'portrait');
+    public function transaksiDestroy($id)
+    {
+        $roleData = $this->getRoleFilterData();
+        $unit = $roleData['unit'] ?? 'RW';
+        $rt_id = $roleData['rt_id'];
 
-        $filename = 'Laporan_Keuangan_' . $laporan->unit . '_' . $namaBulan . '_' . $laporan->periode_tahun . '.pdf';
+        $tx = TransaksiKeuangan::findOrFail($id);
 
-        return $pdf->download($filename);
+        if ($unit === 'RT' && $tx->rt_id !== $rt_id) {
+            abort(403, 'Unauthorized action.');
+        } elseif ($unit === 'DKM' && $tx->unit_sumber !== 'DKM') {
+            abort(403, 'Unauthorized action.');
+        } elseif ($unit === 'RW' && $tx->unit_sumber !== 'RW') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Hard delete
+        $tx->delete();
+
+        return back()->with('success', 'Transaksi berhasil dihapus.');
+    }
+
+    public function laporanDestroy($id)
+    {
+        $roleData = $this->getRoleFilterData();
+        $unit = $roleData['unit'] ?? 'RW';
+        $rt_id = $roleData['rt_id'];
+
+        $laporan = LaporanKeuangan::findOrFail($id);
+
+        if ($unit === 'RT' && $laporan->rt_id !== $rt_id) {
+            abort(403, 'Unauthorized action.');
+        } elseif ($unit === 'DKM' && $laporan->unit !== 'DKM') {
+            abort(403, 'Unauthorized action.');
+        } elseif ($unit === 'RW' && $laporan->unit !== 'RW') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($laporan->status === 'Approved') {
+            return back()->with('error', 'Laporan yang sudah disetujui tidak dapat dihapus.');
+        }
+
+        $laporan->delete();
+
+        return back()->with('success', 'Laporan berhasil dihapus.');
     }
 }

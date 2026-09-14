@@ -92,17 +92,19 @@ return [
     ],
     [
         'title' => 'Persetujuan Keuangan',
-        'url'   => '#',
+        'route' => 'rw.persetujuan-keuangan.index',
+        'url'   => '/rw/persetujuan-keuangan',
         'icon'  => 'bi-cash-stack',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/keuangan*'],
+        'active' => ['rw.persetujuan-keuangan.index', 'rw/persetujuan-keuangan*'],
     ],
     [
         'title' => 'Laporan Keuangan',
-        'url'   => '#',
+        'route' => 'laporan-keuangan.publik',
+        'url'   => '/laporan-keuangan',
         'icon'  => 'bi-wallet2',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/laporan-keuangan*'],
+        'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
     ],
     [
         'title' => 'UMKM',
@@ -147,17 +149,19 @@ return [
     ],
     [
         'title' => 'Persetujuan Keuangan',
-        'url'   => '#',
+        'route' => 'rt.persetujuan-keuangan.index',
+        'url'   => '/rt/persetujuan-keuangan',
         'icon'  => 'bi-cash-stack',
         'roles' => ['Ketua RT'],
-        'active' => ['rt/keuangan*'],
+        'active' => ['rt.persetujuan-keuangan.index', 'rt/persetujuan-keuangan*'],
     ],
     [
-        'title' => 'Keuangan Kas RT',
-        'url'   => '#',
+        'title' => 'Laporan Keuangan',
+        'route' => 'laporan-keuangan.publik',
+        'url'   => '/laporan-keuangan',
         'icon'  => 'bi-wallet2',
         'roles' => ['Ketua RT'],
-        'active' => ['rt/kas*'],
+        'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
     ],
     [
         'title' => 'Informasi Keluarga',
@@ -232,7 +236,7 @@ return [
         'url'   => '/op-keuangan/dashboard',
         'icon'  => 'bi-grid-1x2-fill',
         'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
-        'active' => ['opkeuangan.dashboard', 'op-keuangan*', 'opkeuangan*'],
+        'active' => ['opkeuangan.dashboard', 'op-keuangan/dashboard'],
     ],
     [
         'title' => 'Catat Transaksi',
@@ -310,11 +314,11 @@ return [
     ],
     [
         'title' => 'Laporan Keuangan',
-        'route' => 'transparansi',
-        'url'   => '/transparansi',
+        'route' => 'laporan-keuangan.publik',
+        'url'   => '/laporan-keuangan',
         'icon'  => 'bi-wallet2',
         'roles' => ['Warga'],
-        'active' => ['transparansi*'],
+        'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
     ],
 
     // --- BOTTOM MENU ITEMS ---

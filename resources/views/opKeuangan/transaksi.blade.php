@@ -21,34 +21,55 @@
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
         <!-- Filter Bar -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <label class="form-label text-muted small">Range Tanggal</label>
-                <input type="date" class="form-control bg-light border-0">
+        <form method="GET" action="{{ route('opkeuangan.transaksi.index') }}" class="row g-3 mb-4">
+            <div class="col-md-2">
+                <label class="form-label text-muted small">Tahun</label>
+                <select name="tahun" class="form-select bg-light border-0">
+                    <option value="">Semua</option>
+                    @for($y = date('Y'); $y >= 2023; $y--)
+                        <option value="{{ $y }}" {{ request('tahun') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small">Bulan</label>
+                <select name="bulan" class="form-select bg-light border-0">
+                    <option value="">Semua</option>
+                    @for($m = 1; $m <= 12; $m++)
+                        <option value="{{ sprintf('%02d', $m) }}" {{ request('bulan') == sprintf('%02d', $m) ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 10)) }}</option>
+                    @endfor
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label text-muted small">Tipe Transaksi</label>
-                <select class="form-select bg-light border-0">
+                <select name="tipe" class="form-select bg-light border-0">
                     <option value="">Semua Tipe</option>
-                    <option value="pemasukan">Pemasukan</option>
-                    <option value="pengeluaran">Pengeluaran</option>
+                    <option value="pemasukan" {{ request('tipe') == 'pemasukan' ? 'selected' : '' }}>Pemasukan</option>
+                    <option value="pengeluaran" {{ request('tipe') == 'pengeluaran' ? 'selected' : '' }}>Pengeluaran</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label text-muted small">Kategori</label>
-                <select class="form-select bg-light border-0">
+                <select name="kategori" class="form-select bg-light border-0">
                     <option value="">Semua Kategori</option>
-                    <option value="Iuran Warga">Iuran Warga</option>
-                    <option value="Operasional">Operasional</option>
-                    <option value="Dana Kematian">Dana Kematian</option>
+                    <option value="Iuran Warga" {{ request('kategori') == 'Iuran Warga' ? 'selected' : '' }}>Iuran Warga</option>
+                    <option value="Operasional" {{ request('kategori') == 'Operasional' ? 'selected' : '' }}>Operasional</option>
+                    <option value="Dana Kematian" {{ request('kategori') == 'Dana Kematian' ? 'selected' : '' }}>Dana Kematian</option>
+                    <option value="Donasi" {{ request('kategori') == 'Donasi' ? 'selected' : '' }}>Donasi</option>
+                    <option value="Lainnya" {{ request('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-secondary w-100">
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-secondary w-100">
                     <i class="bi bi-funnel me-1"></i> Filter
                 </button>
+                @if(request()->anyFilled(['tahun', 'bulan', 'tipe', 'kategori']))
+                <a href="{{ route('opkeuangan.transaksi.index') }}" class="btn btn-light border text-danger" title="Reset Filter">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                @endif
             </div>
-        </div>
+        </form>
 
         <!-- Table -->
         <div class="table-responsive">
@@ -86,6 +107,15 @@
                                         <button class="dropdown-item" onclick="openEditModal('{{ $tx->id }}', '{{ $tx->tipe }}', '{{ addslashes($tx->judul) }}', '{{ $tx->kategori }}', '{{ $tx->tanggal->format('Y-m-d') }}', '{{ $tx->jumlah }}', '{{ addslashes($tx->deskripsi ?? '') }}')">
                                             <i class="bi bi-pencil me-2 text-primary"></i> Edit
                                         </button>
+                                    </li>
+                                    <li>
+                                        <form action="{{ route('opkeuangan.transaksi.destroy', $tx->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-2"></i> Hapus
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
                             </div>

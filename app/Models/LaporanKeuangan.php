@@ -18,6 +18,7 @@ class LaporanKeuangan extends Model
         'periode_tahun',
         'unit',
         'rt_id',
+        'is_published',
         'total_pemasukan',
         'total_pengeluaran',
         'saldo_awal',

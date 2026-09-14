@@ -70,7 +70,9 @@
                         <td class="py-3 text-danger fw-medium">- {{ $lap->formatted_total_pengeluaran }}</td>
                         <td class="py-3 text-primary fw-bold">{{ $lap->formatted_saldo_akhir }}</td>
                         <td class="py-3 text-center">
-                            @if($lap->status == 'Approved')
+                            @if($lap->is_published)
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill"><i class="bi bi-globe me-1"></i> Published</span>
+                            @elseif($lap->status == 'Approved')
                                 <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Approved</span>
                             @elseif($lap->status == 'Submitted')
                                 <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill"><i class="bi bi-hourglass me-1"></i> Pending Review</span>
@@ -80,7 +82,23 @@
                         </td>
                         <td class="py-3 text-end">
                             <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('opkeuangan.laporan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF"><i class="bi bi-file-pdf"></i></a>
+                                <a href="{{ route('laporan-keuangan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
+                                
+                                @if($lap->status == 'Approved' && !$lap->is_published)
+                                <form action="{{ route('opkeuangan.laporan.publish', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mempublish laporan ini? Laporan yang dipublish dapat dilihat oleh Warga.');">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Publish Laporan"><i class="bi bi-upload me-1"></i> Publish</button>
+                                </form>
+                                @endif
+
+                                @if($lap->status !== 'Approved' && !$lap->is_published)
+                                <form action="{{ route('opkeuangan.laporan.destroy', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-light text-danger" title="Hapus"><i class="bi bi-trash"></i></button>
+                                </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
