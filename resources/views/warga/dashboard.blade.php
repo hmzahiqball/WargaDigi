@@ -30,6 +30,80 @@
     </div>
 @endif
 
+@if(isset($suratNotif) && count($suratNotif) > 0)
+    @php
+        $waitingRt = collect($suratNotif)->where('status', 'Diajukan')->count();
+        $waitingRw = collect($suratNotif)->where('status', 'Disetujui RT')->count();
+        $readyDownload = collect($suratNotif)->where('status', 'Disetujui RW')->count();
+        $ditolakRt = collect($suratNotif)->where('status', 'Ditolak RT')->count();
+        $ditolakRw = collect($suratNotif)->where('status', 'Ditolak RW')->count();
+    @endphp
+    @if($waitingRt > 0)
+    <div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-3 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #f59e0b !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.2); width: 42px; height: 42px;">
+                <i class="bi bi-hourglass-split text-warning fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Surat Keterangan Menunggu Verifikasi RT</h6>
+                <p class="text-muted small mb-0">Terdapat <strong>{{ $waitingRt }}</strong> surat keterangan yang sedang menunggu persetujuan dari Ketua RT.</p>
+            </div>
+        </div>
+        <a href="{{ route('warga.surat.index') }}" class="btn btn-warning btn-sm text-light fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+            <i class="bi bi-file-earmark-text me-1"></i> Cek Status Surat
+        </a>
+    </div>
+    @endif
+    @if($waitingRw > 0)
+    <div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-3 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #3b82f6 !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(59, 130, 246, 0.2); width: 42px; height: 42px;">
+                <i class="bi bi-arrow-right-circle text-primary fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Surat Keterangan Menunggu Pengesahan RW</h6>
+                <p class="text-muted small mb-0">Terdapat <strong>{{ $waitingRw }}</strong> surat keterangan yang sudah disetujui RT dan sedang menunggu pengesahan dari Ketua RW.</p>
+            </div>
+        </div>
+        <a href="{{ route('warga.surat.index') }}" class="btn btn-primary btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+            <i class="bi bi-file-earmark-text me-1"></i> Cek Status Surat
+        </a>
+    </div>
+    @endif
+    @if($readyDownload > 0)
+    <div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-3 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #22c55e !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(34, 197, 94, 0.2); width: 42px; height: 42px;">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Surat Keterangan Siap Diunduh!</h6>
+                <p class="text-muted small mb-0">Terdapat <strong>{{ $readyDownload }}</strong> surat keterangan yang sudah diverifikasi oleh RT dan RW. Silakan unduh surat Anda.</p>
+            </div>
+        </div>
+        <a href="{{ route('warga.surat.index') }}" class="btn btn-success btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+            <i class="bi bi-download me-1"></i> Unduh Surat
+        </a>
+    </div>
+    @endif
+    @if($ditolakRt > 0 || $ditolakRw > 0)
+    <div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-3 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #ef4444 !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(239, 68, 68, 0.2); width: 42px; height: 42px;">
+                <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Surat Keterangan Ditolak</h6>
+                <p class="text-muted small mb-0">Terdapat <strong>{{ $ditolakRt + $ditolakRw }}</strong> surat keterangan yang ditolak. Silakan periksa catatan penolakan dan ajukan ulang.</p>
+            </div>
+        </div>
+        <a href="{{ route('warga.surat.index') }}" class="btn btn-danger btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+            <i class="bi bi-file-earmark-text me-1"></i> Lihat Detail
+        </a>
+    </div>
+    @endif
+@endif
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">

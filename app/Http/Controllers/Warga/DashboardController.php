@@ -12,6 +12,7 @@ use App\Models\Penduduk;
 use App\Models\Pengumuman;
 use App\Models\Berita;
 use App\Models\Agenda;
+use App\Models\PengajuanSurat;
 
 class DashboardController extends Controller
 {
@@ -93,6 +94,26 @@ class DashboardController extends Controller
                 return $item;
             });
 
+        // Query surat status untuk notifikasi
+        $suratNotif = [];
+        if ($user && $user->nik) {
+            $pendudukSurat = Penduduk::where('nik', $user->nik)->first();
+            if ($pendudukSurat) {
+                $suratList = PengajuanSurat::where('penduduk_id', $pendudukSurat->id)
+                    ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Disetujui RW', 'Ditolak RT', 'Ditolak RW'])
+                    ->latest()
+                    ->get();
+                foreach ($suratList as $s) {
+                    $suratNotif[] = (object)[
+                        'id' => $s->id,
+                        'tipe_surat' => $s->tipe_surat,
+                        'status' => $s->status,
+                        'tanggal' => $s->created_at->format('d M Y'),
+                    ];
+                }
+            }
+        }
+
         return view('warga.dashboard', compact(
             'pengumumanPin',
             'semuaAgenda',
@@ -102,6 +123,7 @@ class DashboardController extends Controller
             'beritaTerkini', 
             'agendaList',
             'pendingUmkmListCount', 
-            'daftarProdukTerbaru'));
+            'daftarProdukTerbaru',
+            'suratNotif'));
     }
 }

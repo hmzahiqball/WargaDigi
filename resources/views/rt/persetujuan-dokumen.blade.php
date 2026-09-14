@@ -150,8 +150,8 @@
                         </div>
                     </div>
                     <div class="col-lg-7">
-                        <label class="form-label fw-bold small"><i class="bi bi-file-earmark-text me-1"></i>Pratinjau Surat (Real-time)</label>
-                        <div class="bg-light border rounded-3 shadow-sm" style="overflow:hidden;">
+                        <label class="form-label fw-bold small"><i class="bi bi-file-earmark-text me-1"></i>Pratinjau Surat</label>
+                        <div class="bg-white border rounded-3 shadow-sm" style="overflow:hidden;">
                             <iframe id="previewFrameRt{{ $item->id }}" src="{{ route('rt.surat.preview', $item->id) }}" style="width:100%;height:500px;border:none;" title="Preview Surat"></iframe>
                         </div>
                     </div>

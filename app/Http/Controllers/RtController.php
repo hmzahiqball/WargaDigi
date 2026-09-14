@@ -139,7 +139,13 @@ class RtController extends Controller
             if ($rt) $kodeRt = $rt->kode_rt;
         }
 
-        $namaKetuaRt = \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '..........................';
+        // Use logged-in RT user's data
+        $loggedInRt = auth()->user();
+        $namaKetuaRt = $loggedInRt->username ?? '..........................';
+        if ($loggedInRt && $loggedInRt->rt_id) {
+            $loggedRt = \App\Models\MasterRt::find($loggedInRt->rt_id);
+            if ($loggedRt) $kodeRt = $loggedRt->kode_rt;
+        }
         $namaKetuaRw = \App\Models\User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
 
         $tanggalSelesai = $item->updated_at;

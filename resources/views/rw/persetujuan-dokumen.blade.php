@@ -111,9 +111,11 @@
                 </div>
 
                 <hr class="my-4">
-                <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Preview Surat (Sesuai Cetakan Asli)</h6>
-                <div class="bg-light border rounded-3 shadow-sm" style="overflow: hidden;">
-                    <iframe src="{{ route('rw.surat.preview', $item->id) }}" style="width: 100%; height: 600px; border: none;" title="Preview Surat"></iframe>
+                <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Preview Surat</h6>
+                <div class="d-flex justify-content-center">
+                    <div class="bg-white border rounded-3 shadow-sm" style="width: 595px; max-width: 100%; overflow: hidden;">
+                        <iframe src="{{ route('rw.surat.preview', $item->id) }}" style="width: 595px; height: 842px; border: none; display: block;" title="Preview Surat"></iframe>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4 justify-content-center gap-2">
@@ -156,8 +158,8 @@
                         </div>
                     </div>
                     <div class="col-lg-7">
-                        <label class="form-label fw-bold small"><i class="bi bi-file-earmark-text me-1"></i>Pratinjau Surat (Real-time)</label>
-                        <div class="bg-light border rounded-3 shadow-sm" style="overflow:hidden;">
+                        <label class="form-label fw-bold small"><i class="bi bi-file-earmark-text me-1"></i>Pratinjau Surat</label>
+                        <div class="bg-white border rounded-3 shadow-sm" style="overflow:hidden;">
                             <iframe id="previewFrameRw{{ $item->id }}" src="{{ route('rw.surat.preview', $item->id) }}" style="width:100%;height:500px;border:none;" title="Preview Surat"></iframe>
                         </div>
                     </div>

@@ -26,10 +26,10 @@
         .ttd-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .ttd-table td.rw-col { width: 50%; text-align: left; vertical-align: top; padding-left: 15px; }
         .ttd-table td.rt-col { width: 50%; text-align: right; vertical-align: top; padding-right: 15px; }
-        .ttd-box-container { display: inline-block; text-align: center; width: 180px; }
-        .ttd-box { height: 75px; position: relative; margin-top: 15px; margin-bottom: 5px; }
+        .ttd-box-container { display: inline-block; text-align: center; width: 200px; }
+        .ttd-box { height: 80px; position: relative; margin-top: 10px; margin-bottom: 0px; }
         .ttd-img { max-height: 60px; max-width: 150px; position: relative; z-index: 1; margin-top: 5px; }
-        .stempel-img { max-height: 65px; max-width: 80px; opacity: 0.85; position: absolute; z-index: 10; top: 5px; left: 50px; }
+        .stempel-img { max-height: 110px; max-width: 110px; opacity: 0.80; position: absolute; z-index: 10; top: -25px; left: -15px; }
         .selected { font-weight: bold; text-decoration: underline; }
         .catatan { color: red; font-size: 12px; font-style: italic; margin-top: 10px; margin-left: 15px; }
     </style>
@@ -219,7 +219,7 @@
                     if (data.className === 'ttd-img') {
                         img.style.cssText = 'max-height:60px;max-width:150px;position:relative;z-index:1;margin-top:5px;';
                     } else {
-                        img.style.cssText = 'max-height:65px;max-width:80px;opacity:0.85;position:absolute;z-index:10;top:5px;left:50px;';
+                        img.style.cssText = 'max-height:110px;max-width:110px;opacity:0.80;position:absolute;z-index:10;top:-25px;left:-15px;';
                     }
                     box.appendChild(img);
                 }

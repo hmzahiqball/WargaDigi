@@ -35,6 +35,23 @@
     </div>
 @endif
 
+@if($stats['dokumen_pending']['need_review'] > 0)
+<div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #3b82f6 !important;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(59, 130, 246, 0.2); width: 42px; height: 42px;">
+            <i class="bi bi-file-earmark-text text-primary fs-5"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold mb-1 text-dark">Terdapat Dokumen Surat yang Perlu Disahkan</h6>
+            <p class="text-muted small mb-0">Terdapat <strong>{{ $stats['dokumen_pending']['need_review'] }}</strong> surat keterangan yang sudah disetujui RT dan menunggu pengesahan tanda tangan Anda.</p>
+        </div>
+    </div>
+    <a href="{{ route('rw.persetujuan-dokumen') }}" class="btn btn-primary btn-sm fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+        <i class="bi bi-clipboard-check me-1"></i> Tinjau Dokumen Sekarang
+    </a>
+</div>
+@endif
+
 <div class="row g-3 mb-4">
     @include('rw.components.cardStatDashboard', [
         'title' => 'JUMLAH PENDUDUK',
