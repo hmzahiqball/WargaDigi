@@ -242,7 +242,7 @@ class PendudukSeeder extends Seeder
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000014',
                 'keluarga_id' => $kkBudiSantoso ? $kkBudiSantoso->id : null,
-                'nik' => '3204xxxxxxxx0001',
+                'nik' => '3204111122220002',
                 'nama_lengkap' => 'Budi Santoso',
                 'jenis_kelamin' => 'L',
                 'tempat_lahir' => 'Jakarta',

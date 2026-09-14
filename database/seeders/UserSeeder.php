@@ -93,7 +93,7 @@ class UserSeeder extends Seeder
             ],
             // Akun demo untuk pengajuan permohonan surat
             [
-                'nik' => '3204xxxxxxxx0001',
+                'nik' => '3204111122220002',
                 'username' => 'budisantoso',
                 'password' => Hash::make('warga_pass'),
                 'role' => 'Warga',

@@ -92,7 +92,7 @@ class KeluargaSeeder extends Seeder
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000008',
                 'no_kk' => '3204xxxxxxxx0001',
-                'nik_kepala_keluarga' => '3204xxxxxxxx0001',
+                'nik_kepala_keluarga' => '3204111122220002',
                 'alamat' => 'Jl. Merdeka Barat No. 45, RT 03 / RW 05, Kelurahan Sukamaju',
                 'rt_id' => $rt01 ? $rt01->id : null,
                 'no_wa' => '081234567890',

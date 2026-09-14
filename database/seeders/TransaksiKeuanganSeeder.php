@@ -62,7 +62,7 @@ class TransaksiKeuanganSeeder extends Seeder
                 'status' => 'Verified',
                 'unit_sumber' => 'RW',
                 'dicatat_oleh' => $opRw->id,
-                'diverifikasi_oleh' => clone $opRw->id, // dummy verifikator
+                'diverifikasi_oleh' => $opRw->id, // dummy verifikator
                 'tanggal_verifikasi' => now()->subDays(4),
             ]);
         }
