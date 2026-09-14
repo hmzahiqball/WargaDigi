@@ -318,9 +318,14 @@
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="bi bi-people-fill text-success me-2 fs-5"></i>
-                                        <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-people-fill text-success me-2 fs-5"></i>
+                                            <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran</span>
+                                        </div>
+                                        <span id="detailTotalHadirRw" class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 d-none" style="font-size: 0.8rem;">
+                                            <i class="bi bi-people-fill me-1"></i><span id="detailTotalHadirNumRw">0</span> Warga Hadir
+                                        </span>
                                     </div>
                                     <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
                                 </div>
@@ -644,12 +649,17 @@
                 
                 // RSVP
                 const rsvpStatus = document.getElementById('detailRsvpStatus');
+                const totalHadirBadgeRw = document.getElementById('detailTotalHadirRw');
+                const totalHadirNumRw = document.getElementById('detailTotalHadirNumRw');
                 if (item.is_rsvp_enabled == 1) {
                     rsvpStatus.textContent = 'Aktif - Warga dapat mengonfirmasi kehadiran';
                     rsvpStatus.className = 'd-block text-success fw-medium';
+                    totalHadirBadgeRw.classList.remove('d-none');
+                    totalHadirNumRw.textContent = item.total_hadir || 0;
                 } else {
                     rsvpStatus.textContent = 'Tidak Aktif';
                     rsvpStatus.className = 'd-block text-muted';
+                    totalHadirBadgeRw.classList.add('d-none');
                 }
                 
                 // Map

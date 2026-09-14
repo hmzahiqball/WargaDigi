@@ -158,6 +158,7 @@ class RwController extends Controller
                 'date' => 'Today',
             ],
         ];
+        $pendingUmkmCount = \App\Models\UmkmUsaha::where('status_verifikasi', 'Pending')->count();
 
         return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs', 'pendingUmkmCount'));
     }

@@ -616,9 +616,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="${bgColor} text-white rounded px-2 py-1 flex-shrink-0 fw-bold" style="font-size: 0.75rem;">
                     ${timeShort}
                 </div>
-                <div>
+                <div class="w-100">
                     <h6 class="fw-bold text-dark mb-0" style="font-size: 0.85rem; line-height: 1.2;">${agenda.judul_agenda}</h6>
                     <span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-geo-alt"></i> ${agenda.lokasi}</span>
+                    ${agenda.is_rsvp_enabled ? `
+                    <div class="d-flex align-items-center gap-1 mt-2">
+                        <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Hadir' ? 'btn-success text-white' : 'btn-outline-success'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Hadir" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                            <i class="bi bi-check-circle"></i> Ya
+                        </button>
+                        <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Tidak Hadir' ? 'btn-danger text-white' : 'btn-outline-danger'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Tidak Hadir" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                            <i class="bi bi-x-circle"></i> Tidak
+                        </button>
+                        <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Ragu-ragu' ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Ragu-ragu" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                            <i class="bi bi-question-circle"></i> Ragu
+                        </button>
+                        <span class="text-success ms-1" style="font-size: 0.65rem; white-space: nowrap;"><i class="bi bi-people-fill"></i> ${agenda.total_hadir || 0}</span>
+                    </div>` : ''}
                 </div>
             `;
             agendaListContainer.appendChild(card);
@@ -657,11 +670,24 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="d-block text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">${agenda.month_short}</span>
                                 <span class="d-block fw-bold fs-3" style="line-height: 1;">${agenda.day_num}</span>
                             </div>
-                            <div>
+                            <div class="w-100">
                                 <h6 class="fw-bold text-dark mb-1 small" style="line-height: 1.4;">${judul}</h6>
                                 <p class="text-muted mb-0 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                                     <i class="bi bi-geo-alt-fill text-success"></i> ${lokasi}
                                 </p>
+                                ${agenda.is_rsvp_enabled ? `
+                                <div class="d-flex align-items-center gap-1 mt-2">
+                                    <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Hadir' ? 'btn-success text-white' : 'btn-outline-success'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Hadir" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                                        <i class="bi bi-check-circle"></i> Ya
+                                    </button>
+                                    <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Tidak Hadir' ? 'btn-danger text-white' : 'btn-outline-danger'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Tidak Hadir" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                                        <i class="bi bi-x-circle"></i> Tidak
+                                    </button>
+                                    <button type="button" class="btn btn-sm ${agenda.user_rsvp_status === 'Ragu-ragu' ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'} rounded-pill flex-fill rsvp-btn" data-agenda="${agenda.id}" data-status="Ragu-ragu" style="font-size: 0.65rem; padding: 2px 6px;" onclick="sendDashRsvp(this)">
+                                        <i class="bi bi-question-circle"></i> Ragu
+                                    </button>
+                                    <span class="text-success ms-1" style="font-size: 0.65rem; white-space: nowrap;"><i class="bi bi-people-fill"></i> ${agenda.total_hadir || 0}</span>
+                                </div>` : ''}
                             </div>
                         </div>
                     `;
@@ -711,6 +737,73 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Highlight and show
     renderCalendar();
+    // Dashboard RSVP function
+    window.sendDashRsvp = function(btnEl) {
+        const agendaId = btnEl.dataset.agenda;
+        const status = btnEl.dataset.status;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        
+        const container = btnEl.closest('.d-flex');
+        const buttons = container.querySelectorAll('.rsvp-btn');
+        buttons.forEach(b => b.disabled = true);
+        const originalHtml = btnEl.innerHTML;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        
+        fetch('/warga/agenda/rsvp', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ agenda_id: agendaId, status_kehadiran: status }),
+        })
+        .then(res => {
+            if (!res.ok) return res.text().then(t => { throw new Error('HTTP ' + res.status); });
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                buttons.forEach(b => {
+                    b.disabled = false;
+                    const st = b.dataset.status;
+                    if (st === 'Hadir') {
+                        b.className = (st === status) ? 'btn btn-sm btn-success text-white rounded-pill flex-fill rsvp-btn' : 'btn btn-sm btn-outline-success rounded-pill flex-fill rsvp-btn';
+                    } else if (st === 'Tidak Hadir') {
+                        b.className = (st === status) ? 'btn btn-sm btn-danger text-white rounded-pill flex-fill rsvp-btn' : 'btn btn-sm btn-outline-danger rounded-pill flex-fill rsvp-btn';
+                    } else if (st === 'Ragu-ragu') {
+                        b.className = (st === status) ? 'btn btn-sm btn-warning text-dark rounded-pill flex-fill rsvp-btn' : 'btn btn-sm btn-outline-warning text-dark rounded-pill flex-fill rsvp-btn';
+                    }
+                });
+                // Update total hadir count in same row
+                const countSpan = container.querySelector('.text-success.ms-1');
+                if (countSpan) countSpan.innerHTML = '<i class="bi bi-people-fill"></i> ' + data.total_hadir;
+                // Update agendaMap memory
+                for (const date in agendaMap) {
+                    agendaMap[date].forEach(a => {
+                        if (a.id == agendaId) {
+                            a.user_rsvp_status = status;
+                            a.total_hadir = data.total_hadir;
+                        }
+                    });
+                }
+            } else {
+                buttons.forEach(b => b.disabled = false);
+                alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
+            }
+        })
+        .catch(err => {
+            console.error('RSVP error:', err);
+            buttons.forEach(b => b.disabled = false);
+            alert('Gagal menyimpan respons kehadiran.');
+        })
+        .finally(() => {
+            if (btnEl.innerHTML.includes('spinner')) btnEl.innerHTML = originalHtml;
+        });
+    };
+
     showAgendasForDate(selectedDateStr);
     renderUpcomingAgendas();
 });

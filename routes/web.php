@@ -203,11 +203,22 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
 });
 
+
+// API: Agenda Kehadiran Count
+Route::middleware(['auth'])->get('/api/agenda/{agendaId}/kehadiran-count', function($agendaId) {
+    $count = \App\Models\AgendaKehadiran::where('agenda_id', $agendaId)
+        ->where('status_kehadiran', 'Hadir')
+        ->count();
+    return response()->json(['success' => true, 'total_hadir' => $count]);
+})->name('api.agenda.kehadiran.count');
+
 // Warga
 Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/berita', [WargaBeritaController::class, 'index'])->name('berita.index');
     Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+    Route::get('/agenda/{agenda}', [AgendaController::class, 'show'])->name('agenda.show');
+    Route::post('/agenda/rsvp', [AgendaController::class, 'rsvp'])->name('agenda.rsvp');
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');

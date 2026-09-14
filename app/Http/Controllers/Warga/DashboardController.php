@@ -13,6 +13,7 @@ use App\Models\Pengumuman;
 use App\Models\Berita;
 use App\Models\Agenda;
 use App\Models\PengajuanSurat;
+use App\Models\AgendaKehadiran;
 
 class DashboardController extends Controller
 {
@@ -81,16 +82,32 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $userId = $user->id ?? null;
+
         $semuaAgenda = Agenda::where('status', 'Publish')
             ->orderBy('tanggal_mulai', 'asc')
             ->get()
-            ->map(function ($item) {
+            ->map(function ($item) use ($userId) {
                 // Konversi tanggal untuk frontend JS (seperti format OP Konten)
                 $dt = \Carbon\Carbon::parse($item->tanggal_mulai)->setTimezone('Asia/Jakarta');
                 $item->date_str = $dt->format('Y-m-d');
                 $item->time_str = $dt->format('H:i');
                 $item->month_short = $dt->translatedFormat('M');
                 $item->day_num = $dt->format('d');
+
+                // RSVP data
+                $item->user_rsvp_status = null;
+                $item->total_hadir = 0;
+                if ($item->is_rsvp_enabled && $userId) {
+                    $rsvp = AgendaKehadiran::where('agenda_id', $item->id)
+                        ->where('user_id', $userId)
+                        ->first();
+                    $item->user_rsvp_status = $rsvp ? $rsvp->status_kehadiran : null;
+                    $item->total_hadir = AgendaKehadiran::where('agenda_id', $item->id)
+                        ->where('status_kehadiran', 'Hadir')
+                        ->count();
+                }
+
                 return $item;
             });
 

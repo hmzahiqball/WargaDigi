@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Berita;
 use App\Models\Agenda;
+use App\Models\AgendaKehadiran;
 use App\Models\Pengumuman;
 use Carbon\Carbon;
 
@@ -56,6 +57,7 @@ class PusatInformasiController extends Controller
                     'latitude' => $item->latitude,
                     'longitude' => $item->longitude,
                     'is_rsvp_enabled' => $item->is_rsvp_enabled,
+                    'total_hadir' => $item->is_rsvp_enabled ? AgendaKehadiran::where('agenda_id', $item->id)->where('status_kehadiran', 'Hadir')->count() : 0,
                     'image' => $item->banner_flyer ? asset($item->banner_flyer) : null,
                     'status' => $item->status,
                     'time_ago' => Carbon::parse($item->updated_at)->setTimezone('Asia/Jakarta')->diffForHumans(),

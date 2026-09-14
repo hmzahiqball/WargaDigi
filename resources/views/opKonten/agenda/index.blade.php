@@ -633,12 +633,17 @@
                     </div>
 
                     <div class="col-12">
-                        <div class="d-flex align-items-center gap-2 p-2 rounded-3 bg-light border">
-                            <i class="bi bi-person-check fs-5 text-success"></i>
-                            <div>
-                                <span class="d-block fw-semibold" style="font-size: 13px;">Konfirmasi Kehadiran</span>
-                                <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 12px;">Aktif</span>
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light border">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person-check fs-5 text-success"></i>
+                                <div>
+                                    <span class="d-block fw-semibold" style="font-size: 13px;">Konfirmasi Kehadiran</span>
+                                    <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 12px;">Aktif</span>
+                                </div>
                             </div>
+                            <span id="detailTotalHadir" class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 d-none" style="font-size: 0.8rem;">
+                                <i class="bi bi-people-fill me-1"></i><span id="detailTotalHadirNum">0</span> Warga Hadir
+                            </span>
                         </div>
                     </div>
                     
@@ -1187,12 +1192,24 @@
 
         // RSVP Status
         const rsvpStatusText = document.getElementById('detailRsvpStatus');
+        const totalHadirBadge = document.getElementById('detailTotalHadir');
+        const totalHadirNum = document.getElementById('detailTotalHadirNum');
         if (item.is_rsvp_enabled == 1) {
             rsvpStatusText.textContent = 'Aktif';
             rsvpStatusText.className = 'd-block text-success fw-medium';
+            // Fetch total hadir
+            totalHadirBadge.classList.remove('d-none');
+            totalHadirNum.textContent = '...';
+            fetch('/api/agenda/' + item.id + '/kehadiran-count', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content }
+            })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(data => { if(data.success) totalHadirNum.textContent = data.total_hadir; })
+            .catch(() => { totalHadirNum.textContent = '0'; });
         } else {
             rsvpStatusText.textContent = 'Tidak Aktif';
             rsvpStatusText.className = 'd-block text-muted fw-medium';
+            totalHadirBadge.classList.add('d-none');
         }
 
         // Date and Time

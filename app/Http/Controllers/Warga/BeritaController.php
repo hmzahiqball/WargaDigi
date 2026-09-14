@@ -78,6 +78,7 @@ class BeritaController extends Controller
                     'image' => null,
                     'raw_content' => $item->isi_pengumuman,
                     'kategori' => 'Pengumuman Warga',
+                    'is_priority' => $item->is_priority,
                     'updated_at' => $item->updated_at
                 ];
             });
@@ -114,7 +115,7 @@ class BeritaController extends Controller
             });
 
         $sorotanUmkm = $umkmProduk->first();
-        $pengumumanPenting = $pengumuman->take(3); // First 3 pengumuman
+        $pengumumanPenting = collect($pengumuman)->where('is_priority', true)->take(3); // First 3 pengumuman
 
         $semua = collect($berita)->merge($agenda)->merge($pengumuman)->merge($umkmProduk)->sortByDesc('updated_at')->values()->all();
 

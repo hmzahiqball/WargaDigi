@@ -78,12 +78,28 @@
                                 <hr class="mb-4" style="border-color: #E5E7EB;">
                                 <div class="row">
                                     <div class="col-12 mb-3">
-                                        <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
-                                            <div class="d-flex align-items-center mb-1">
-                                                <i class="bi bi-people-fill text-success me-2 fs-5"></i>
-                                                <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                                        <div id="pvRsvpContainer" class="p-4 bg-light rounded-4 border d-none" style="border-color: #E5E7EB;">
+                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-people-fill text-success me-2 fs-5"></i>
+                                                    <span class="fw-bold text-dark" style="font-size: 16px;">Konfirmasi Kehadiran</span>
+                                                </div>
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2" style="font-size: 0.85rem;">
+                                                    <i class="bi bi-people-fill me-1"></i><span id="pvTotalHadirNum">0</span> Warga Hadir
+                                                </span>
                                             </div>
-                                            <span id="pvRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
+                                            <p class="text-muted mb-3" style="font-size: 0.85rem;">Pilih status kehadiran Anda untuk agenda ini:</p>
+                                            <div class="d-flex gap-3">
+                                                <button type="button" class="btn rounded-pill flex-fill btn-outline-success" style="cursor: default;" disabled>
+                                                    <i class="bi bi-check-circle me-1"></i>Hadir
+                                                </button>
+                                                <button type="button" class="btn rounded-pill flex-fill btn-outline-danger" style="cursor: default;" disabled>
+                                                    <i class="bi bi-x-circle me-1"></i>Tidak Hadir
+                                                </button>
+                                                <button type="button" class="btn rounded-pill flex-fill btn-outline-warning text-dark" style="cursor: default;" disabled>
+                                                    <i class="bi bi-question-circle me-1"></i>Ragu-ragu
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-12" id="pvMapContainer" style="display: none;">
@@ -191,13 +207,13 @@
             extraInfoBox.classList.remove('d-none');
 
             // RSVP
-            const rsvpStatus = document.getElementById('pvRsvpStatus');
+            const rsvpContainer = document.getElementById('pvRsvpContainer');
+            const totalHadirNum = document.getElementById('pvTotalHadirNum');
             if (data.is_rsvp_enabled == 1) {
-                rsvpStatus.textContent = 'Aktif - Anda dapat mengonfirmasi kehadiran';
-                rsvpStatus.className = 'd-block text-success fw-medium';
+                rsvpContainer.classList.remove('d-none');
+                totalHadirNum.textContent = data.total_hadir || 0;
             } else {
-                rsvpStatus.textContent = 'Tidak Aktif';
-                rsvpStatus.className = 'd-block text-muted';
+                rsvpContainer.classList.add('d-none');
             }
 
             // Map

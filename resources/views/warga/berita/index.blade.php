@@ -353,29 +353,39 @@
         <div class="col-lg-4 mt-4 mt-lg-0">
             
             <!-- Pengumuman Penting -->
-            <div class="widget-box">
-                <h4 class="widget-title">
-                    <i class="bi bi-megaphone-fill text-warning"></i> Pengumuman Penting
-                </h4>
-                
-                @forelse($pengumumanPenting as $index => $pengumuman)
-                    <div class="pengumuman-alert {{ $index % 2 == 0 ? 'danger' : 'info' }}" style="cursor: pointer;" onclick="openDetail('{{ $pengumuman['id'] }}', 'Pengumuman')">
-                        <div class="icon">
-                            <i class="bi {{ $index % 2 == 0 ? 'bi-exclamation-triangle' : 'bi-droplet' }}"></i>
-                        </div>
-                        <div>
-                            <h5 class="pengumuman-alert-title">{{ $pengumuman['title'] }}</h5>
-                            <p class="pengumuman-alert-text">{{ Str::limit($pengumuman['description'], 100) }}</p>
-                            @if($index % 2 == 0)
-                                <small class="text-danger fw-bold mt-1 d-block" style="font-size: 0.75rem;">Prioritas Tinggi</small>
-                            @endif
-                        </div>
+            <div class="widget-box border-0 shadow-sm rounded-4" style="background: #ffffff;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        <i class="bi bi-megaphone-fill text-warning" style="font-size: 14px;"></i>
                     </div>
-                @empty
-                    <p class="text-muted small text-center my-4">Tidak ada pengumuman penting saat ini.</p>
-                @endforelse
+                    <h4 class="widget-title mb-0 border-0 pb-0 fw-bold" style="font-size: 1.1rem; color: #1e293b;">
+                        Pengumuman Penting
+                    </h4>
+                </div>
+                
+                <div class="d-flex flex-column gap-3 mt-3">
+                    @forelse($pengumumanPenting as $pengumuman)
+                        <div class="p-3 rounded-3 border" style="cursor: pointer; background: #fffcf9; border-color: #ffedd5 !important; transition: all 0.2s;" onclick="openDetail('{{ $pengumuman['id'] }}', 'Pengumuman')" onmouseover="this.style.borderColor='#fdba74'; this.style.backgroundColor='#fff7ed'" onmouseout="this.style.borderColor='#ffedd5'; this.style.backgroundColor='#fffcf9'">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-shrink-0 text-danger mt-1">
+                                    <i class="bi bi-exclamation-circle-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem; line-height: 1.3;">{{ $pengumuman['title'] }}</h5>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem; line-height: 1.4;">{{ Str::limit($pengumuman['description'], 80) }}</p>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1" style="font-size: 0.7rem; font-weight: 600;">Prioritas Tinggi</span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-4">
+                            <i class="bi bi-bell-slash text-muted fs-3 opacity-50 mb-2 d-block"></i>
+                            <p class="text-muted small mb-0">Tidak ada pengumuman penting saat ini.</p>
+                        </div>
+                    @endforelse
+                </div>
 
-                <button class="btn btn-outline-green mt-2" onclick="switchTab('Pengumuman')">Lihat Semua Pengumuman</button>
+                <button class="btn btn-outline-success w-100 rounded-pill mt-4 fw-medium" style="font-size: 0.85rem;" onclick="switchTab('Pengumuman')">Lihat Semua Pengumuman</button>
             </div>
 
             <!-- Sorotan UMKM -->
@@ -434,7 +444,12 @@
                     <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold" id="detailBadgeType" style="font-size: 0.85rem;"></span>
                     <span class="badge rounded-pill px-3 py-1 fw-semibold d-none" style="background: white; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;" id="detailKategoriBadge"></span>
                 </div>
-                <span class="text-muted small" style="font-family: monospace;" id="detailIdText"></span>
+                <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-share-wa-detail rounded-pill px-3 py-1" id="detailShareBtn" onclick="shareDetailToWhatsApp()" title="Bagikan ke WhatsApp">
+                            <i class="bi bi-whatsapp me-1"></i> Bagikan
+                        </button>
+                        <span class="text-muted small" style="font-family: monospace;" id="detailIdText"></span>
+                    </div>
             </div>
             
             <h1 class="fw-bold text-dark mb-4" id="detailFullTitle" style="font-size: 2.2rem; line-height: 1.3;"></h1>
@@ -465,7 +480,7 @@
                         <div class="p-3 bg-light rounded-3 border" style="border-color: #E5E7EB;">
                             <div class="d-flex align-items-center mb-1">
                                 <i class="bi bi-people-fill text-success me-2 fs-5"></i>
-                                <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran (RSVP)</span>
+                                <span class="fw-bold text-dark" style="font-size: 14px;">Konfirmasi Kehadiran</span>
                             </div>
                             <span id="detailRsvpStatus" class="d-block text-muted" style="font-size: 13px;">Aktif</span>
                         </div>
@@ -548,9 +563,18 @@
 
         filtered.forEach(item => {
             const dateStr = item.date.split(',')[0]; // Extract just the date part for card
+            let iconClass = 'bi-newspaper text-success';
+            if (item.type === 'Agenda') {
+                iconClass = 'bi-calendar-event text-primary';
+            } else if (item.type === 'Pengumuman') {
+                iconClass = item.is_priority ? 'bi-megaphone-fill text-warning' : 'bi-info-circle text-info';
+            } else if (item.type === 'UMKM News') {
+                iconClass = 'bi-shop text-orange';
+            }
+
             const imgHtml = item.image 
                 ? `<img src="${item.image}" alt="Thumbnail">`
-                : `<div class="placeholder-img"><i class="bi ${item.type === 'Agenda' ? 'bi-calendar-event' : (item.type === 'Pengumuman' ? 'bi-megaphone' : 'bi-newspaper')}"></i></div>`;
+                : `<div class="placeholder-img bg-light border"><i class="bi ${iconClass}"></i></div>`;
             
             html += `
                 <div class="col-md-6">
@@ -564,7 +588,12 @@
                             <p class="content-card-text">${item.description}</p>
                             <div class="content-card-footer">
                                 <span class="date">${dateStr}</span>
-                                <span class="read-more">Baca selengkapnya <i class="bi bi-chevron-right small"></i></span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-share-wa rounded-pill px-2 py-1" onclick="shareToWhatsApp(event, '${item.id}', '${item.type}')" data-title="${item.title.replace(/"/g, '&quot;')}" title="Bagikan ke WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </button>
+                                    <span class="read-more">Baca selengkapnya <i class="bi bi-chevron-right small"></i></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -590,9 +619,12 @@
         renderGrid();
     }
 
+    let currentDetailItem = null;
+
     function openDetail(id, type) {
         const item = semuaData.find(x => x.id == id && x.type == type);
         if(!item) return;
+        currentDetailItem = item;
 
         // Hide List, Show Detail
         document.getElementById('listView').style.display = 'none';
@@ -694,6 +726,32 @@
     }
 
     // Initialize
+
+    // Share to WhatsApp from card
+    function shareToWhatsApp(e, id, type) {
+        e.stopPropagation(); // Prevent card click from opening detail
+        const title = e.currentTarget.getAttribute('data-title') || '';
+        const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        const shareUrl = baseUrl + '?open=' + encodeURIComponent(id) + '&type=' + encodeURIComponent(type);
+        const message = '📰 *' + title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
+        const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
+        
+        window.open(waUrl, '_blank');
+    }
+
+    // Share to WhatsApp from detail view
+    function shareDetailToWhatsApp() {
+        if (!currentDetailItem) return;
+
+        const item = currentDetailItem;
+        const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        const shareUrl = baseUrl + '?open=' + encodeURIComponent(item.id) + '&type=' + encodeURIComponent(item.type);
+        const message = '📰 *' + item.title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
+        const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
+        
+        window.open(waUrl, '_blank');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         // Auto-switch tab based on URL param
         const urlParams = new URLSearchParams(window.location.search);
@@ -726,6 +784,37 @@
 </script>
 <style>
     .cursor-pointer { cursor: pointer; }
+    
+    /* WhatsApp Share Button - Card */
+    .btn-share-wa {
+        background: #25D366;
+        color: white;
+        border: none;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+    .btn-share-wa:hover {
+        background: #128C7E;
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    /* WhatsApp Share Button - Detail */
+    .btn-share-wa-detail {
+        background: #25D366;
+        color: white;
+        border: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .btn-share-wa-detail:hover {
+        background: #128C7E;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+    }
     .fade-in {
         animation: fadeIn 0.4s ease-in-out;
     }
