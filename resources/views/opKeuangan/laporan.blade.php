@@ -80,8 +80,7 @@
                         </td>
                         <td class="py-3 text-end">
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn btn-sm btn-light text-primary" title="Detail"><i class="bi bi-eye"></i></button>
-                                <button class="btn btn-sm btn-light text-danger" title="Download PDF"><i class="bi bi-file-pdf"></i></button>
+                                <a href="{{ route('opkeuangan.laporan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF"><i class="bi bi-file-pdf"></i></a>
                             </div>
                         </td>
                     </tr>

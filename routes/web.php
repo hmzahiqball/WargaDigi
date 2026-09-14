@@ -196,8 +196,10 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::get('/dashboard', [OpKeuanganController::class, 'dashboard'])->name('opkeuangan.dashboard');
         Route::get('/transaksi', [OpKeuanganController::class, 'transaksiIndex'])->name('opkeuangan.transaksi.index');
         Route::post('/transaksi', [OpKeuanganController::class, 'transaksiStore'])->name('opkeuangan.transaksi.store');
+        Route::put('/transaksi/{id}', [OpKeuanganController::class, 'transaksiUpdate'])->name('opkeuangan.transaksi.update');
         Route::get('/laporan', [OpKeuanganController::class, 'laporanIndex'])->name('opkeuangan.laporan.index');
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
+        Route::get('/laporan/{id}/pdf', [OpKeuanganController::class, 'laporanDownloadPdf'])->name('opkeuangan.laporan.pdf');
         Route::get('/', [OpKeuanganController::class, 'dashboard']);
     });
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);

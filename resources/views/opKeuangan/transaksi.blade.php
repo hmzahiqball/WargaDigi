@@ -59,7 +59,6 @@
                         <th class="text-muted small fw-semibold py-3">PERIHAL</th>
                         <th class="text-muted small fw-semibold py-3">KATEGORI</th>
                         <th class="text-muted small fw-semibold py-3">JUMLAH (IDR)</th>
-                        <th class="text-muted small fw-semibold py-3 text-center">STATUS</th>
                         <th class="text-muted small fw-semibold py-3 text-end">AKSI</th>
                     </tr>
                 </thead>
@@ -77,22 +76,24 @@
                         <td class="py-3 fw-bold {{ $tx->tipe == 'pemasukan' ? 'text-success' : 'text-danger' }}">
                             {{ $tx->tipe == 'pemasukan' ? '+' : '-' }} {{ $tx->formatted_jumlah }}
                         </td>
-                        <td class="py-3 text-center">
-                            @if($tx->status == 'Verified' || $tx->status == 'Approved')
-                                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Selesai</span>
-                            @elseif($tx->status == 'Pending')
-                                <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill"><i class="bi bi-clock me-1"></i> Pending</span>
-                            @else
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">{{ $tx->status }}</span>
-                            @endif
-                        </td>
                         <td class="py-3 text-end">
-                            <button class="btn btn-sm btn-light rounded-circle"><i class="bi bi-three-dots-vertical text-muted"></i></button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical text-muted"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                    <li>
+                                        <button class="dropdown-item" onclick="openEditModal('{{ $tx->id }}', '{{ $tx->tipe }}', '{{ addslashes($tx->judul) }}', '{{ $tx->kategori }}', '{{ $tx->tanggal->format('Y-m-d') }}', '{{ $tx->jumlah }}', '{{ addslashes($tx->deskripsi ?? '') }}')">
+                                            <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">Belum ada transaksi ditemukan.</td>
+                        <td colspan="5" class="text-center py-5 text-muted">Belum ada transaksi ditemukan.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -158,6 +159,11 @@
                         <input type="number" class="form-control bg-light border-0 py-2" placeholder="0" name="jumlah" required>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Deskripsi (Opsional)</label>
+                        <textarea class="form-control bg-light border-0 py-2" rows="2" name="deskripsi" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Upload Bukti Transaksi (Opsional)</label>
                         <div class="border border-2 border-dashed rounded-3 p-4 text-center text-muted upload-area" style="cursor: pointer; background: #fafafa;">
@@ -170,6 +176,86 @@
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3">Simpan Transaksi</button>
+                        <button type="button" class="btn btn-light py-2 fw-semibold rounded-3 text-muted" data-bs-dismiss="modal">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Transaksi -->
+<div class="modal fade" id="modalEditTransaksi" tabindex="-1" aria-labelledby="modalEditTransaksiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 pb-0 mt-2 mx-2">
+                <h5 class="modal-title fw-bold" id="modalEditTransaksiLabel">Edit Transaksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formEditTransaksi" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipe Transaksi</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check form-check-inline form-radio-custom">
+                                <input class="form-check-input" type="radio" name="tipe" id="editTipePemasukan" value="pemasukan">
+                                <label class="form-check-label" for="editTipePemasukan">Pemasukan (+)</label>
+                            </div>
+                            <div class="form-check form-check-inline form-radio-custom">
+                                <input class="form-check-input" type="radio" name="tipe" id="editTipePengeluaran" value="pengeluaran">
+                                <label class="form-check-label" for="editTipePengeluaran">Pengeluaran (-)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Judul Transaksi</label>
+                        <input type="text" class="form-control bg-light border-0 py-2" name="judul" id="editJudul" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Kategori</label>
+                            <select class="form-select bg-light border-0 py-2" name="kategori" id="editKategori" required>
+                                <option value="Iuran Warga">Iuran Warga</option>
+                                <option value="Operasional">Operasional</option>
+                                <option value="Donasi">Donasi</option>
+                                <option value="Setoran ke RW">Setoran ke RW</option>
+                                <option value="Dana Kematian">Dana Kematian</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tanggal</label>
+                            <input type="date" class="form-control bg-light border-0 py-2" name="tanggal" id="editTanggal" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Jumlah (Rp)</label>
+                        <input type="number" class="form-control bg-light border-0 py-2" name="jumlah" id="editJumlah" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Deskripsi (Opsional)</label>
+                        <textarea class="form-control bg-light border-0 py-2" rows="2" name="deskripsi" id="editDeskripsi" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Ganti Bukti Transaksi (Opsional)</label>
+                        <div class="border border-2 border-dashed rounded-3 p-4 text-center text-muted upload-area" style="cursor: pointer; background: #fafafa;">
+                            <i class="bi bi-cloud-arrow-up fs-2"></i>
+                            <div class="mt-2">Drag & drop file baru atau klik untuk browse</div>
+                            <div class="small">Max file size: 5MB (JPG, PNG, PDF)</div>
+                            <input type="file" name="bukti_file" class="d-none">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3"><i class="bi bi-check-lg me-1"></i> Simpan Perubahan</button>
                         <button type="button" class="btn btn-light py-2 fw-semibold rounded-3 text-muted" data-bs-dismiss="modal">Batal</button>
                     </div>
                 </form>
@@ -227,4 +313,36 @@
         font-weight: 600;
     }
 </style>
+
+@push('scripts')
+<script>
+function openEditModal(id, tipe, judul, kategori, tanggal, jumlah, deskripsi) {
+    const form = document.getElementById('formEditTransaksi');
+    form.action = '/op-keuangan/transaksi/' + id;
+
+    // Set tipe radio
+    if (tipe === 'pemasukan') {
+        document.getElementById('editTipePemasukan').checked = true;
+    } else {
+        document.getElementById('editTipePengeluaran').checked = true;
+    }
+
+    document.getElementById('editJudul').value = judul;
+    document.getElementById('editKategori').value = kategori;
+    document.getElementById('editTanggal').value = tanggal;
+    document.getElementById('editJumlah').value = jumlah;
+    document.getElementById('editDeskripsi').value = deskripsi;
+
+    var modal = new bootstrap.Modal(document.getElementById('modalEditTransaksi'));
+    modal.show();
+}
+
+// Upload area click handler
+document.querySelectorAll('.upload-area').forEach(function(area) {
+    area.addEventListener('click', function() {
+        this.querySelector('input[type="file"]').click();
+    });
+});
+</script>
+@endpush
 @endsection
