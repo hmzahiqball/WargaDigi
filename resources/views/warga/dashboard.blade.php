@@ -8,9 +8,42 @@
         <h2 class="fw-bold text-success mb-1">Selamat Datang, {{ Auth::user()->name ?? 'Bapak/Ibu' }}</h2>
         <p class="text-muted mb-0">Kepala Keluarga - RW 21 Desa Tanimulya</p>
     </div>
-    <span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
-        <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
-    </span>
+    <div class="d-flex align-items-center gap-3">
+        <!-- Notification Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-light position-relative rounded-circle border-0 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
+                <i class="bi bi-bell text-dark"></i>
+                @if(Auth::user()->unreadNotifications->count() > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ Auth::user()->unreadNotifications->count() }}
+                </span>
+                @endif
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                <li><h6 class="dropdown-header fw-bold">Notifikasi</h6></li>
+                @forelse(Auth::user()->notifications as $notification)
+                <li>
+                    <a class="dropdown-item py-3 {{ $notification->read_at ? '' : 'bg-light' }}" href="{{ route('warga.notifications.read', $notification->id) }}">
+                        <div class="d-flex gap-3">
+                            <div class="mt-1"><i class="bi bi-info-circle text-warning fs-5"></i></div>
+                            <div>
+                                <span class="d-block fw-bold mb-1">{{ $notification->data['judul'] ?? 'Pemberitahuan' }}</span>
+                                <small class="text-muted text-wrap d-block" style="white-space: normal;">{{ $notification->data['pesan'] ?? '' }}</small>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">{{ $notification->created_at->diffForHumans() }}</small>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+                @empty
+                <li><span class="dropdown-item text-muted text-center py-4 small">Belum ada notifikasi.</span></li>
+                @endforelse
+            </ul>
+        </div>
+
+        <span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
+            <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
+        </span>
+    </div>
 </div>
 
 @if(isset($pendingUmkmListCount) && ($pendingUmkmListCount) > 0)
@@ -122,10 +155,10 @@
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <a href="{{ route('transparansi') }}" class="text-decoration-none text-dark">
+        <a href="{{ route('warga.tagihan.index') }}" class="text-decoration-none text-dark">
             <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
                 <i class="bi bi-cash-coin mb-2 fs-3 text-success"></i>
-                <span class="fw-semibold small">Laporan Kas &<br>Iuran Warga</span>
+                <span class="fw-semibold small">Tagihan &<br>Iuran</span>
             </div>
         </a>
     </div>

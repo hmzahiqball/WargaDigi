@@ -27,6 +27,8 @@ use App\Http\Controllers\OpKonten\AgendaController as OpKontenAgendaController;
 use App\Http\Controllers\OpKonten\GaleriController as OpKontenGaleriController;
 use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
 use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanController;
+use App\Http\Controllers\TagihanController;
+use App\Http\Controllers\Warga\TagihanController as WargaTagihanController;
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -214,6 +216,17 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
         Route::delete('/laporan/{id}', [OpKeuanganController::class, 'laporanDestroy'])->name('opkeuangan.laporan.destroy');
         Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
+        
+        // Tagihan / Iuran
+        Route::get('/rekening', [TagihanController::class, 'rekeningIndex'])->name('opkeuangan.rekening.index');
+        Route::post('/rekening', [TagihanController::class, 'rekeningSave'])->name('opkeuangan.rekening.save');
+        Route::get('/iuran', [TagihanController::class, 'iuranIndex'])->name('opkeuangan.iuran.index');
+        Route::get('/iuran/{id}', [TagihanController::class, 'iuranDetail'])->name('opkeuangan.iuran.detail');
+        Route::post('/tagihan', [TagihanController::class, 'tagihanStore'])->name('opkeuangan.tagihan.store');
+        Route::put('/pembayaran/{id}/approve', [TagihanController::class, 'approvePembayaran'])->name('opkeuangan.pembayaran.approve');
+        Route::put('/pembayaran/{id}/reject', [TagihanController::class, 'rejectPembayaran'])->name('opkeuangan.pembayaran.reject');
+        Route::post('/pembayaran/{id}/broadcast', [TagihanController::class, 'broadcastReminder'])->name('opkeuangan.pembayaran.broadcast');
+
         Route::get('/', [OpKeuanganController::class, 'dashboard']);
     });
     Route::get('/opkeuangan/dashboard', [OpKeuanganController::class, 'dashboard']);
@@ -243,6 +256,12 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
     Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
     
+    // Tagihan Warga
+    Route::get('/tagihan', [WargaTagihanController::class, 'index'])->name('tagihan.index');
+    Route::post('/tagihan/{id}/bayar', [WargaTagihanController::class, 'bayar'])->name('tagihan.bayar');
+    Route::get('/tagihan/{id}/resi', [WargaTagihanController::class, 'downloadResi'])->name('tagihan.resi');
+    Route::get('/notifikasi/{id}/read', [DashboardController::class, 'markNotificationAsRead'])->name('notifications.read');
+
     // UMKM Galeri Baru
     Route::get('/galeri/produk/{id}', [GaleriUmkmController::class, 'detailProduk'])->name('umkm.produk.detail');
     Route::get('/galeri/daftar', [GaleriUmkmController::class, 'createUsaha'])->name('umkm.daftar');

@@ -255,6 +255,22 @@ return [
         'active' => ['opkeuangan.laporan.index', 'op-keuangan/laporan*'],
     ],
     [
+        'title' => 'Pantau Iuran',
+        'route' => 'opkeuangan.iuran.index',
+        'url'   => '/op-keuangan/iuran',
+        'icon'  => 'bi-receipt-cutoff',
+        'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
+        'active' => ['opkeuangan.iuran.index', 'opkeuangan.iuran.detail', 'op-keuangan/iuran*'],
+    ],
+    [
+        'title' => 'Pengaturan Rekening',
+        'route' => 'opkeuangan.rekening.index',
+        'url'   => '/op-keuangan/rekening',
+        'icon'  => 'bi-bank',
+        'roles' => ['Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
+        'active' => ['opkeuangan.rekening.index', 'op-keuangan/rekening*'],
+    ],
+    [
         'title' => 'Galeri UMKM',
         'route' => 'umkm.galeri',
         'url'   => '/galeri',

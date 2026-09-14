@@ -25,10 +25,23 @@ class LaporanKeuanganPublicController extends Controller
         // Allow everyone to see DKM and RW.
         // For Warga, limit RT to their own RT unless they are admin/rw/etc.
         if ($user && $user->role === 'Warga') {
-            $query->where(function ($q) use ($user) {
+            $wargaRtId = $user->rt_id;
+            
+            // Coba ambil dari data Penduduk -> Keluarga jika rt_id di User null
+            if (!$wargaRtId) {
+                $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
+                if ($penduduk && $penduduk->keluarga) {
+                    $wargaRtId = $penduduk->keluarga->rt_id;
+                }
+            }
+
+            $query->where(function ($q) use ($wargaRtId) {
                 $q->whereIn('unit', ['RW', 'DKM'])
-                  ->orWhere(function ($q2) use ($user) {
-                      $q2->where('unit', 'RT')->where('rt_id', $user->rt_id);
+                  ->orWhere(function ($q2) use ($wargaRtId) {
+                      $q2->where('unit', 'RT');
+                      if ($wargaRtId) {
+                          $q2->where('rt_id', $wargaRtId);
+                      }
                   });
             });
         }
@@ -117,6 +130,7 @@ class LaporanKeuanganPublicController extends Controller
             'laporan' => $laporan,
             'transaksiList' => $transaksiList,
             'rtLabel' => $rtLabel,
+            'namaBulan' => $namaBulan,
         ]);
 
         return $pdf->download("Laporan_Keuangan_{$laporan->unit}_{$laporan->periode_tahun}_{$laporan->periode_bulan}.pdf");

@@ -143,4 +143,12 @@ class DashboardController extends Controller
             'daftarProdukTerbaru',
             'suratNotif'));
     }
+
+    public function markNotificationAsRead($id)
+    {
+        $notification = \Illuminate\Support\Facades\Auth::user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+
+        return redirect($notification->data['url'] ?? route('home'));
+    }
 }
