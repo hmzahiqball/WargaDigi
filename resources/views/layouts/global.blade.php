@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="@yield('meta_description', 'WargaDigi 21 — Digitalisasi Gotong Royong')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — WargaDigi</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo warga-digi.png') }}">
+    <title>@yield('title', 'Dashboard') — WargaDigi 21</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @stack('styles')
 </head>
