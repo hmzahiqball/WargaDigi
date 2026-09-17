@@ -1,4 +1,7 @@
-@extends('layouts.opKeuangan')
+@extends('layouts.global')
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
 
 @section('title', 'Dashboard Operator Keuangan')
 
@@ -19,9 +22,6 @@
                     <i class="bi bi-wallet2 text-success fs-5"></i>
                     <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">TOTAL KAS RW</span>
                 </div>
-                <span class="badge bg-success bg-opacity-10 text-success fw-bold rounded-pill px-2.5 py-1 text-xs">
-                    <i class="bi bi-graph-up-arrow me-1"></i>{{ $stats['kas_rw']['change'] }}
-                </span>
             </div>
             <h2 class="fw-bold text-dark mb-1 fs-2">{{ $stats['kas_rw']['total'] }}</h2>
             <span class="text-muted small">{{ $stats['kas_rw']['subtext'] }}</span>
@@ -98,6 +98,14 @@
                     <span class="text-muted small">Ekuitas</span>
                     <span class="fw-bold text-dark">{{ $sheetSaldo['ekuitas'] }}</span>
                 </div>
+                <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-light-subtle">
+                    <span class="text-muted small">Pemasukan Bulan Ini</span>
+                    <span class="fw-bold text-success">{{ $stats['pemasukan_bulan_ini'] }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-light-subtle">
+                    <span class="text-muted small">Pengeluaran Bulan Ini</span>
+                    <span class="fw-bold text-danger">{{ $stats['pengeluaran_bulan_ini'] }}</span>
+                </div>
             </div>
 
             <div class="bg-light border border-light-subtle rounded-3 p-2.5 text-center mt-3">
@@ -114,11 +122,11 @@
         <div class="card card-custom p-4 shadow-sm border-0 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">TRANSAKSI TERBARU</span>
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
+                <a href="{{ route('opkeuangan.transaksi.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
             </div>
 
             <div class="d-flex flex-column gap-3">
-                @foreach($transaksiTerbaru as $tx)
+                @forelse($transaksiTerbaru as $tx)
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-light border border-light-subtle">
                         <div class="d-flex align-items-center gap-3">
                             <div class="{{ $tx['icon_bg'] }} rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
@@ -130,15 +138,14 @@
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="fw-bold small mb-1 {{ $tx['type'] == 'income' ? 'text-success' : 'text-danger' }}">
+                            <div class="fw-bold small {{ $tx['type'] == 'income' ? 'text-success' : 'text-danger' }}">
                                 {{ $tx['amount'] }}
                             </div>
-                            <span class="badge rounded-pill px-2.5 py-1 {{ $tx['status_class'] }} fw-semibold text-xs">
-                                {{ $tx['status'] }}
-                            </span>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="text-center text-muted py-4">Belum ada transaksi.</div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -146,10 +153,16 @@
     {{-- Right: Status Laporan Terbaru --}}
     <div class="col-lg-4">
         <div class="card card-custom p-4 shadow-sm border-0 h-100 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">STATUS LAPORAN TERBARU</span>
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
+                <a href="{{ route('opkeuangan.laporan.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
             </div>
+
+            @if(isset($laporanTitle))
+            <div class="mb-3 px-1">
+                <span class="small fw-bold text-dark">{{ $laporanTitle }}</span>
+            </div>
+            @endif
 
             {{-- Vertical Steps --}}
             <div class="d-flex flex-column gap-4 mb-4 position-relative ps-2">
@@ -166,9 +179,9 @@
                 @endforeach
             </div>
 
-            <button class="btn btn-success w-100 py-2.5 fw-bold mt-auto rounded-3 shadow-sm" type="button">
-                Ingatkan Verifikator
-            </button>
+            <a href="{{ route('opkeuangan.laporan.index') }}" class="btn btn-success w-100 py-2.5 fw-bold mt-auto rounded-3 shadow-sm text-decoration-none text-center">
+                Kelola Laporan
+            </a>
         </div>
     </div>
 </div>
@@ -214,16 +227,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
+                            }
+                        }
+                    }
                 },
                 scales: {
                     x: {
-                        grid: { display: false },
-                        ticks: { display: false }
+                        grid: { display: false }
                     },
                     y: {
                         grid: { color: '#f0f0f0' },
-                        ticks: { display: false }
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
+                                if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + 'rb';
+                                return 'Rp ' + value;
+                            }
+                        }
                     }
                 }
             }

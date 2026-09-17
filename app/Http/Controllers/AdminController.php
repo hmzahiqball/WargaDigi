@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -37,138 +40,218 @@ class AdminController extends Controller
 
     public function pengaturanSistem()
     {
-        $settings = [
-            'instance_name' => 'RW 21 Tanimulya',
-            'domain' => 'rw21.wargadigi.id',
-            'description' => 'Platform digital untuk warga RW 21 Desa Tanimulya',
-            'notif_whatsapp' => true,
-            'notif_email' => true,
-            'notif_push' => false,
-            'two_factor' => true,
-            'session_timeout' => 30,
-            'maintenance_mode' => false,
-        ];
+        $settings = SystemSetting::all_settings();
 
         return view('admin.pengaturan-sistem', compact('settings'));
     }
 
-    public function manajemenHakAkses()
+    public function updatePengaturanSistem(Request $request)
     {
-        $users = [
-            [
-                'name' => 'Budi Santoso',
-                'nik' => '1234567898912345 6',
-                'role' => 'Ketua RW',
-                'role_color' => '#43A047',
-                'access' => ['op_keuangan' => true, 'op_konten' => false, 'admin_rw' => false, 'pimpinan_rt' => false, 'pimpinan_rw' => false],
-            ],
-            [
-                'name' => 'Siti Aminah',
-                'nik' => '1234567898912345 6',
-                'role' => 'Operator Konten',
-                'role_color' => '#0288D1',
-                'access' => ['op_keuangan' => true, 'op_konten' => false, 'admin_rw' => false, 'pimpinan_rt' => false, 'pimpinan_rw' => false],
-            ],
-            [
-                'name' => 'Agus Supriyadi',
-                'nik' => '1234567898912345 6',
-                'role' => 'Bendahara RW',
-                'role_color' => '#FF9800',
-                'access' => ['op_keuangan' => true, 'op_konten' => false, 'admin_rw' => false, 'pimpinan_rt' => false, 'pimpinan_rw' => false],
-            ],
-        ];
+        $validated = $request->validate([
+            'instance_name'    => ['required', 'string', 'max:100'],
+            'domain'           => ['nullable', 'string', 'max:150'],
+            'description'      => ['nullable', 'string', 'max:500'],
+            'logo'             => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'session_timeout'  => ['required', 'integer', 'in:15,30,60,120'],
+            'notif_whatsapp'   => ['nullable'],
+            'notif_email'      => ['nullable'],
+            'notif_push'       => ['nullable'],
+            'two_factor'       => ['nullable'],
+            'maintenance_mode' => ['nullable'],
+        ]);
 
-        return view('admin.manajemen-hak-akses', compact('users'));
+        SystemSetting::setMany([
+            'instance_name'    => $validated['instance_name'],
+            'domain'           => $validated['domain'] ?? '',
+            'description'      => $validated['description'] ?? '',
+            'session_timeout'  => (int) $validated['session_timeout'],
+            'notif_whatsapp'   => $request->boolean('notif_whatsapp'),
+            'notif_email'      => $request->boolean('notif_email'),
+            'notif_push'       => $request->boolean('notif_push'),
+            'two_factor'       => $request->boolean('two_factor'),
+            'maintenance_mode' => $request->boolean('maintenance_mode'),
+        ]);
+
+        if ($request->hasFile('logo')) {
+            // Remove previous logo if it exists.
+            $oldLogo = SystemSetting::get('logo');
+            if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+                Storage::disk('public')->delete($oldLogo);
+            }
+            $path = $request->file('logo')->store('settings', 'public');
+            SystemSetting::set('logo', $path);
+        }
+
+        return redirect()
+            ->route('admin.pengaturan-sistem')
+            ->with('success', 'Pengaturan sistem berhasil disimpan.');
     }
 
-    public function logAktivitas()
+    public function manajemenHakAkses(Request $request)
     {
-        $logs = [
-            [
-                'date' => '26 Agu 2026',
-                'time' => '14:32:05',
-                'name' => 'Budi Waluyo',
-                'initials' => 'BW',
-                'avatar_bg' => '#bdbdbd',
-                'role' => 'RW ADMIN',
-                'role_bg' => '#1B5E20',
-                'role_color' => '#ffffff',
-                'activity_type' => 'Membuat Data Baru',
-                'activity_icon' => 'bi-file-earmark-plus',
-                'description' => 'Menambahkan data warga baru (ID: W-2026-984) ke sistem.',
-                'status' => 'Sukses',
-                'status_class' => 'success',
-                'category' => 'data',
-            ],
-            [
-                'date' => '26 Agu 2026',
-                'time' => '10:15:22',
-                'name' => 'Siti Aminah',
-                'initials' => 'SA',
-                'avatar_bg' => '#bdbdbd',
-                'role' => 'OPR KEUANGAN',
-                'role_bg' => '#43A047',
-                'role_color' => '#ffffff',
-                'activity_type' => 'Memasukkan data transaksi',
-                'activity_icon' => 'bi-wallet2',
-                'description' => 'Mencatat pembayaran iuran bulanan RT 02 (Nominal: Rp 450.000).',
-                'status' => 'Sukses',
-                'status_class' => 'success',
-                'category' => 'transaksi',
-            ],
-            [
-                'date' => '25 Agu 2026',
-                'time' => '19:45:10',
-                'name' => 'Agus Riyadi',
-                'initials' => 'AR',
-                'avatar_bg' => '#bdbdbd',
-                'role' => 'RT LEADER',
-                'role_bg' => '#546E7A',
-                'role_color' => '#ffffff',
-                'activity_type' => 'Mengubah status persetujuan',
-                'activity_icon' => 'bi-check2-square',
-                'description' => 'Menyetujui permohonan surat pengantar (Ref: SP-092-23).',
-                'status' => 'Sukses',
-                'status_class' => 'success',
-                'category' => 'persetujuan',
-            ],
-            [
-                'date' => '24 Agu 2026',
-                'time' => '16:20:45',
-                'name' => 'Dian Kartika',
-                'initials' => 'DK',
-                'avatar_bg' => '#bdbdbd',
-                'role' => 'OPR KONTEN',
-                'role_bg' => '#2E7D32',
-                'role_color' => '#ffffff',
-                'activity_type' => 'Membuat Data Publikasi',
-                'activity_icon' => 'bi-newspaper',
-                'description' => 'Mempublikasikan artikel berita: "Jadwal Kerja Bakti Minggu Ini".',
-                'status' => 'Sukses',
-                'status_class' => 'success',
-                'category' => 'publikasi',
-            ],
-            [
-                'date' => '24 Agu 2026',
-                'time' => '09:05:33',
-                'name' => 'Budi Waluyo',
-                'initials' => 'BW',
-                'avatar_bg' => '#bdbdbd',
-                'role' => 'RW ADMIN',
-                'role_bg' => '#1B5E20',
-                'role_color' => '#ffffff',
-                'activity_type' => 'Mengubah Pengaturan',
-                'activity_icon' => 'bi-gear',
-                'description' => 'Mengaktifkan mode verifikasi 2 langkah untuk semua akun pengurus.',
-                'status' => 'Sukses',
-                'status_class' => 'success',
-                'category' => 'settings',
-            ],
+        $search = trim((string) $request->input('search'));
+
+        $users = \App\Models\User::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%");
+            })
+            ->orderBy('username')
+            ->paginate(15)
+            ->withQueryString();
+
+        // Available roles come from Spatie (falls back to the users enum list).
+        $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name')->all();
+        if (empty($roles)) {
+            $roles = $this->availableRoles();
+        }
+
+        return view('admin.manajemen-hak-akses', compact('users', 'roles', 'search'));
+    }
+
+    /**
+     * Update a single user's role (kept in sync between the `role` column and Spatie).
+     */
+    public function updateHakAkses(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'role' => ['required', 'string', Rule::in($this->availableRoles())],
+        ]);
+
+        $user = \App\Models\User::findOrFail($id);
+        $user->update(['role' => $validated['role']]);
+        // syncSpatieRole() is triggered automatically via the model's saved() hook.
+
+        return redirect()
+            ->route('admin.manajemen-hak-akses')
+            ->with('success', 'Hak akses ' . ($user->username ?? $user->nik) . ' berhasil diperbarui menjadi ' . $validated['role'] . '.');
+    }
+
+    /**
+     * The canonical list of assignable roles (mirrors the users.role enum).
+     */
+    protected function availableRoles(): array
+    {
+        return [
+            'Admin Aplikasi',
+            'Admin RW',
+            'Pimpinan RW',
+            'Op Konten RW',
+            'Op Keuangan RW',
+            'Ketua RT',
+            'Op Konten RT',
+            'Op Keuangan RT',
+            'DKM',
+            'Warga',
         ];
+    }
 
-        $totalLogs = 240;
+    public function logAktivitas(Request $request)
+    {
+        $activityModel = \Spatie\Activitylog\Models\Activity::class;
 
-        return view('admin.log-aktivitas', compact('logs', 'totalLogs'));
+        $query = $activityModel::with('causer')->latest();
+
+        // Search on description or causer name.
+        if ($search = trim((string) $request->input('search'))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('log_name', 'like', "%{$search}%");
+            });
+        }
+
+        // Category filter (stored in properties->category or derived from log_name).
+        if ($category = $request->input('category')) {
+            $query->where('properties->category', $category);
+        }
+
+        $paginated = $query->paginate(15)->withQueryString();
+        $totalLogs = $activityModel::count();
+
+        $logs = collect($paginated->items())->map(function ($activity) {
+            return $this->transformActivity($activity);
+        })->all();
+
+        return view('admin.log-aktivitas', [
+            'logs' => $logs,
+            'totalLogs' => $totalLogs,
+            'paginator' => $paginated,
+        ]);
+    }
+
+    /**
+     * Map a Spatie Activity record into the shape the log view expects.
+     */
+    protected function transformActivity($activity): array
+    {
+        $causer = $activity->causer;
+        $name = $causer?->name ?? ($causer?->username ?? 'Sistem');
+        $role = $causer?->role ?? 'SISTEM';
+        $props = $activity->properties ?? collect();
+        $status = $props['status'] ?? 'Sukses';
+        $category = $props['category'] ?? ($activity->log_name ?: 'lainnya');
+
+        // Icon + display type by log_name / event.
+        [$activityType, $icon] = $this->activityDisplay($activity->log_name, $activity->event);
+
+        $created = $activity->created_at;
+
+        return [
+            'date' => $created?->translatedFormat('d M Y') ?? '-',
+            'time' => $created?->format('H:i:s') ?? '-',
+            'name' => $name,
+            'initials' => $this->initials($name),
+            'avatar_bg' => '#bdbdbd',
+            'role' => strtoupper($role),
+            'role_bg' => $this->roleColor($role),
+            'role_color' => '#ffffff',
+            'activity_type' => $activityType,
+            'activity_icon' => $icon,
+            'description' => $activity->description,
+            'status' => $status,
+            'status_class' => $status === 'Gagal' ? 'danger' : 'success',
+            'category' => $category,
+        ];
+    }
+
+    protected function activityDisplay(?string $logName, ?string $event): array
+    {
+        return match ($logName) {
+            'auth'       => ['Login / Logout', 'bi-box-arrow-in-right'],
+            'pengaturan' => ['Mengubah Pengaturan', 'bi-gear'],
+            'master_rt'  => ['Manajemen RT', 'bi-building'],
+            'pengguna'   => ['Manajemen Pengguna', 'bi-person-gear'],
+            'berita'     => ['Membuat Data Publikasi', 'bi-newspaper'],
+            default      => match ($event) {
+                'created' => ['Membuat Data Baru', 'bi-file-earmark-plus'],
+                'updated' => ['Memperbarui Data', 'bi-pencil-square'],
+                'deleted' => ['Menghapus Data', 'bi-trash'],
+                default   => ['Aktivitas Sistem', 'bi-activity'],
+            },
+        };
+    }
+
+    protected function roleColor(?string $role): string
+    {
+        return match ($role) {
+            'Admin Aplikasi'                 => '#1B5E20',
+            'Admin RW', 'Pimpinan RW'        => '#2E7D32',
+            'Ketua RT'                       => '#546E7A',
+            'Op Keuangan RW', 'Op Keuangan RT', 'DKM' => '#43A047',
+            'Op Konten RW', 'Op Konten RT'   => '#0288D1',
+            'Warga'                          => '#78909c',
+            default                          => '#455A64',
+        };
+    }
+
+    protected function initials(string $name): string
+    {
+        $parts = preg_split('/\s+/', trim($name));
+        $initials = '';
+        foreach (array_slice($parts, 0, 2) as $p) {
+            $initials .= mb_strtoupper(mb_substr($p, 0, 1));
+        }
+        return $initials ?: 'SY';
     }
 
     public function arsipDataWarga()

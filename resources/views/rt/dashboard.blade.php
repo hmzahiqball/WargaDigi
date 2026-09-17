@@ -1,4 +1,7 @@
-@extends('layouts.rt')
+@extends('layouts.global')
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
 
 @section('title', 'Dashboard RT')
 
@@ -8,6 +11,24 @@
     <h2 class="fw-bold text-dark mb-1">Ringkasan</h2>
     <p class="text-muted mb-0">Selamat pagi, Ketua RT. Berikut adalah perkembangan terbaru di lingkungan Anda.</p>
 </div>
+
+{{-- Notifikasi Dokumen Menunggu Verifikasi --}}
+@if($stats['dokumen_menunggu']['total'] > 0)
+<div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 mb-4 rounded-3 gap-3" style="background-color: #ffffff; border-left: 4px solid #f59e0b !important;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(245, 158, 11, 0.2); width: 42px; height: 42px;">
+            <i class="bi bi-file-earmark-text text-warning fs-5"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold mb-1 text-dark">Terdapat Dokumen yang Perlu Diverifikasi</h6>
+            <p class="text-muted small mb-0">Terdapat <strong>{{ $stats['dokumen_menunggu']['total'] }}</strong> surat keterangan warga yang menunggu persetujuan dan tanda tangan Anda.</p>
+        </div>
+    </div>
+    <a href="{{ route('rt.persetujuan-dokumen') }}" class="btn btn-warning btn-sm text-light fw-bold rounded-pill px-3 py-2 text-nowrap shadow-sm">
+        <i class="bi bi-clipboard-check me-1"></i> Tinjau Dokumen Sekarang
+    </a>
+</div>
+@endif
 
 {{-- Top 3 Metric Cards --}}
 <div class="row g-3 mb-4">
@@ -202,3 +223,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+

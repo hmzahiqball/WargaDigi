@@ -43,4 +43,22 @@ class TransparansiController extends Controller
 
         return view('pages.transparansi', compact('summary', 'transactions', 'reports'));
     }
+
+    public function downloadPdf($id)
+    {
+        $reports = [
+            ['title' => 'Laporan Triwulan III – 2024', 'period' => 'Juli - September 2024'],
+            ['title' => 'Laporan Triwulan II – 2024', 'period' => 'April - Juni 2024'],
+            ['title' => 'Laporan Tahunan 2023', 'period' => 'Januari - Desember 2023'],
+        ];
+
+        if (!isset($reports[$id])) {
+            abort(404);
+        }
+
+        $report = $reports[$id];
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.transparansi_pdf', compact('report'));
+        return $pdf->download(str_replace(' ', '_', $report['title']) . '.pdf');
+    }
 }

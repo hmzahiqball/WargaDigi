@@ -1,28 +1,30 @@
 <?php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = [
-            'Admin Aplikasi',
-            'Admin RW',
-            'Pimpinan',
-            'Op. Konten RW',
-            'Op. Keuangan RW',
-            'ketua RT',
-            'Op. Konten RT',
-            'Op. Keuangan RT',
-            'DKM',
-            'Warga'
-        ];
+        if (class_exists(\Spatie\Permission\Models\Role::class)) {
+            $roles = [
+                'Admin Aplikasi',
+                'Admin RW',
+                'Pimpinan RW',
+                'Op Konten RW',
+                'Op Keuangan RW',
+                'Ketua RT',
+                'Op Konten RT',
+                'Op Keuangan RT',
+                'DKM',
+                'Warga'
+            ];
 
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role]);
+            foreach ($roles as $role) {
+                \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role]);
+            }
         }
     }
 }
