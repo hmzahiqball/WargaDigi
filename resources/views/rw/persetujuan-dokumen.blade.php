@@ -26,7 +26,13 @@
                     <span class="text-muted small">NIK: {{ $item->nik }} &bull; {{ $item->tanggal_pengajuan }}</span>
                 </div>
             </div>
-            <span class="badge rounded-pill px-3 py-2" style="background:#D1ECF1;color:#0C5460;">Menunggu Review RW</span>
+            @if($item->status === 'Ditolak RW')
+                <span class="badge rounded-pill px-3 py-2" style="background:#F8D7DA;color:#842029;">Ditolak RW</span>
+            @elseif($item->status === 'Selesai')
+                <span class="badge rounded-pill px-3 py-2" style="background:#D1E7DD;color:#0F5132;">Disahkan RW</span>
+            @else
+                <span class="badge rounded-pill px-3 py-2" style="background:#D1ECF1;color:#0C5460;">Menunggu Review RW</span>
+            @endif
         </div>
         <div class="row g-3 mb-3">
             <div class="col-md-4"><span class="text-muted small">Jenis Surat</span><br><span class="fw-semibold small">{{ $item->tipe_surat }}</span></div>
