@@ -997,7 +997,7 @@
         document.getElementById('kategoriAgenda').value = agenda.kategori;
         document.getElementById('lokasiAgenda').value = agenda.lokasi;
         quill.root.innerHTML = agenda.detail_pengumuman;
-        document.getElementById('quillValidation').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
+        document.getElementById('deskripsiAgendaInput').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
         
         const dateObj = new Date(agenda.tanggal_mulai);
         const yyyy = dateObj.getFullYear();
@@ -1284,14 +1284,7 @@
         detailModal.show();
     }
 
-    function editAgendaFromJson(id) {
-        const item = dummyAgendaData.find(a => a.id == id);
-        if(item) {
-            const detailModal = bootstrap.Modal.getInstance(document.getElementById('modalDetailAgenda'));
-            if(detailModal) detailModal.hide();
-            editAgenda(item);
-        }
-    }
+    function editAgendaFromJson(id) { const item = dummyAgendaData.find(a => a.id == id); if(item) { const detailModalEl = document.getElementById('modalDetailAgenda'); const detailModal = bootstrap.Modal.getInstance(detailModalEl); if(detailModal) { detailModal.hide(); } else { detailModalEl.classList.remove('show'); detailModalEl.style.display = 'none'; document.body.classList.remove('modal-open'); const backdrop = document.querySelector('.modal-backdrop'); if(backdrop) backdrop.remove(); } setTimeout(() => { try { editAgenda(item); } catch(e) { console.error("Edit Agenda Error:", e); alert("Gagal membuka form edit: " + e.message); } }, 500); } }
 
     // Sweet Alerts
     function confirmDelete(id) {
@@ -1429,3 +1422,6 @@
     }
 </script>
 @endpush
+
+
+
