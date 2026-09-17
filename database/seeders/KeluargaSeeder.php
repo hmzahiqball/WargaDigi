@@ -88,13 +88,33 @@ class KeluargaSeeder extends Seeder
                 'no_wa' => '089612345678',
                 'status_aktivasi' => 'Active',
             ],
-            // Keluarga Budi Santoso (Demo Permohonan Surat) - RT 01
+            // Keluarga Op Keuangan RT 01
+            [
+                'id' => 'a1b2c3d4-0001-4000-8000-000000000010',
+                'no_kk' => '3217010101000010',
+                'nik_kepala_keluarga' => '3217010101010009', // Sesuai NIK Op Keuangan RT
+                'alamat' => 'Jl. Mawar No. 2, RT 01 / RW 21, Tanimulya',
+                'rt_id' => $rt01 ? $rt01->id : null,
+                'no_wa' => '081111111119',
+                'status_aktivasi' => 'Active',
+            ],
+            // Keluarga DKM - RT 01
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000008',
+                'no_kk' => '3217010101000008',
+                'nik_kepala_keluarga' => '3217010101010007', // Sesuai NIK DKM
+                'alamat' => 'Jl. Masjid No. 1, RT 01 / RW 21, Tanimulya',
+                'rt_id' => $rt01 ? $rt01->id : null,
+                'no_wa' => '081111111117',
+                'status_aktivasi' => 'Active',
+            ],
+            // Keluarga Budi Santoso (Demo Permohonan Surat) - RT 03
+            [
+                'id' => 'a1b2c3d4-0001-4000-8000-000000000011', // Ubah ujungnya jadi 0011
                 'no_kk' => '3204xxxxxxxx0001',
                 'nik_kepala_keluarga' => '3204111122220002',
                 'alamat' => 'Jl. Merdeka Barat No. 45, RT 03 / RW 05, Kelurahan Sukamaju',
-                'rt_id' => $rt01 ? $rt01->id : null,
+                'rt_id' => $rt03 ? $rt03->id : null, // Sesuaikan dengan RT 03
                 'no_wa' => '081234567890',
                 'status_aktivasi' => 'Active',
             ],
