@@ -163,6 +163,11 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::get('/persetujuan-keuangan', [PersetujuanKeuanganController::class, 'index'])->name('persetujuan-keuangan.index');
     Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('persetujuan-keuangan.approve');
     Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('persetujuan-keuangan.reject');
+
+    // Mutasi Warga
+    Route::get('/mutasi-warga', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'index'])->name('mutasi.index');
+    Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'approve'])->name('mutasi.approve');
+    Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'reject'])->name('mutasi.reject');
 });
 
 //RT (Role: Ketua RT)
@@ -178,6 +183,11 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/persetujuan-keuangan', [PersetujuanKeuanganController::class, 'index'])->name('rt.persetujuan-keuangan.index');
     Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('rt.persetujuan-keuangan.approve');
     Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('rt.persetujuan-keuangan.reject');
+
+    // Mutasi Warga
+    Route::get('/mutasi-warga', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'index'])->name('rt.mutasi.index');
+    Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'approve'])->name('rt.mutasi.approve');
+    Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'reject'])->name('rt.mutasi.reject');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
@@ -261,6 +271,8 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');
+    Route::post('/keluarga/anggota', [KeluargaController::class, 'storeAnggota'])->name('keluarga.anggota.store');
+    Route::put('/keluarga/anggota/{id}', [KeluargaController::class, 'updateAnggota'])->name('keluarga.anggota.update');
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
     Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
