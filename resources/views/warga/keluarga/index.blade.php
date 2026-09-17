@@ -32,7 +32,7 @@
     </div>
 
     <div class="mb-4">
-        <button class="btn btn-success fw-medium px-4 py-2" style="background-color: #559e66; border: none; border-radius: 8px;">
+        <button class="btn btn-success fw-medium px-4 py-2" style="background-color: #559e66; border: none; border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#modalTambahAnggota">
             <i class="bi bi-file-earmark-text me-1"></i> Ajukan Perubahan Data/KK Baru
         </button>
     </div>
@@ -89,6 +89,9 @@
                             <span class="badge {{ $badgeColor }} px-3 py-1 rounded-pill" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                 {{ strtoupper($member->status_hubungan_keluarga) }}
                             </span>
+                            <button type="button" class="btn btn-sm btn-outline-success ms-2 rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEditAnggota-{{ $member->id }}">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </button>
                         </div>
                     </div>
                     
@@ -187,4 +190,7 @@
         </div>
     </div>
 </div>
+
+@include('warga.keluarga.modals')
+
 @endsection
