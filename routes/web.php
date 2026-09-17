@@ -78,7 +78,7 @@ Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi
 
 // Temporary Magic Login for Testing
 Route::get('/login-warga', function () {
-    $user = \App\Models\User::where('nik', '3204xxxxxxxx0001')->first();
+    $user = \App\Models\User::where('nik', '3217010101010003')->first(); // Budi Sampurno (Warga)
     if ($user) {
         \Illuminate\Support\Facades\Auth::login($user);
         return redirect()->route('warga.surat.index');
