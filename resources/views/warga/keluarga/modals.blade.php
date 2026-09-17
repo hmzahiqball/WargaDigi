@@ -16,11 +16,18 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" style="font-size: 0.85rem;">Unggah Scan Kartu Keluarga (KK)</label>
-                            <div class="border border-dashed rounded-3 p-3 text-center position-relative" style="background-color: #f8fafc; border-color: #cbd5e1; border-style: dashed !important; border-width: 2px !important;">
-                                <input type="file" name="file_kk" class="position-absolute w-100 h-100 opacity-0 start-0 top-0" style="cursor: pointer;" required accept=".jpg,.jpeg,.png,.pdf">
-                                <i class="bi bi-cloud-arrow-up fs-4 text-primary"></i>
-                                <p class="mb-0 mt-2" style="font-size: 0.8rem;">Tarik & lepas file di sini atau <span class="text-primary fw-medium">Cari File</span></p>
-                                <small class="text-muted" style="font-size: 0.7rem;">Format: JPG, PNG, PDF (Max. 2MB)</small>
+                            <div class="border border-dashed rounded-3 p-3 text-center position-relative file-upload-wrapper" style="background-color: #f8fafc; border-color: #cbd5e1; border-style: dashed !important; border-width: 2px !important; transition: all 0.3s ease;">
+                                <input type="file" name="file_kk" class="position-absolute w-100 h-100 opacity-0 start-0 top-0 file-input" style="cursor: pointer; z-index: 2;" required accept=".jpg,.jpeg,.png,.pdf">
+                                <div class="upload-placeholder">
+                                    <i class="bi bi-cloud-arrow-up fs-4 text-primary"></i>
+                                    <p class="mb-0 mt-2" style="font-size: 0.8rem;">Tarik & lepas file di sini atau <span class="text-primary fw-medium">Cari File</span></p>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Format: JPG, PNG, PDF (Max. 10MB)</small>
+                                </div>
+                                <div class="upload-preview d-none">
+                                    <i class="bi bi-file-earmark-check fs-1 text-success"></i>
+                                    <p class="mb-0 mt-2 text-success fw-bold file-name-display text-truncate px-2" style="font-size: 0.85rem;"></p>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Klik atau tarik file untuk mengganti</small>
+                                </div>
                             </div>
                             <small class="text-danger mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-exclamation-triangle"></i> Wajib jika menambahkan NIK/Nama</small>
                         </div>
@@ -181,11 +188,18 @@
                     </div>
                     <div class="mb-4">
                         <label class="form-label" style="font-size: 0.85rem;">Unggah Scan Kartu Keluarga (KK)</label>
-                        <div class="border border-dashed rounded-3 p-3 text-center position-relative" style="background-color: #f8fafc; border-color: #cbd5e1; border-style: dashed !important; border-width: 2px !important;">
-                            <input type="file" name="file_kk" class="position-absolute w-100 h-100 opacity-0 start-0 top-0" style="cursor: pointer;" accept=".jpg,.jpeg,.png,.pdf">
-                            <i class="bi bi-cloud-arrow-up fs-4 text-primary"></i>
-                            <p class="mb-0 mt-2" style="font-size: 0.8rem;">Tarik & lepas file di sini atau <span class="text-primary fw-medium">Cari File</span></p>
-                            <small class="text-muted" style="font-size: 0.7rem;">Format: JPG, PNG, PDF (Max. 2MB)</small>
+                        <div class="border border-dashed rounded-3 p-3 text-center position-relative file-upload-wrapper" style="background-color: #f8fafc; border-color: #cbd5e1; border-style: dashed !important; border-width: 2px !important; transition: all 0.3s ease;">
+                            <input type="file" name="file_kk" class="position-absolute w-100 h-100 opacity-0 start-0 top-0 file-input" style="cursor: pointer; z-index: 2;" accept=".jpg,.jpeg,.png,.pdf">
+                            <div class="upload-placeholder">
+                                <i class="bi bi-cloud-arrow-up fs-4 text-primary"></i>
+                                <p class="mb-0 mt-2" style="font-size: 0.8rem;">Tarik & lepas file di sini atau <span class="text-primary fw-medium">Cari File</span></p>
+                                <small class="text-muted" style="font-size: 0.7rem;">Format: JPG, PNG, PDF (Max. 10MB)</small>
+                            </div>
+                            <div class="upload-preview d-none">
+                                <i class="bi bi-file-earmark-check fs-1 text-success"></i>
+                                <p class="mb-0 mt-2 text-success fw-bold file-name-display text-truncate px-2" style="font-size: 0.85rem;"></p>
+                                <small class="text-muted" style="font-size: 0.7rem;">Klik atau tarik file untuk mengganti</small>
+                            </div>
                         </div>
                         <small class="text-danger mt-1 d-block" style="font-size: 0.75rem;"><i class="bi bi-exclamation-triangle"></i> Wajib jika mengubah NIK/Nama</small>
                     </div>
@@ -273,6 +287,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Terjadi kesalahan pada server. Silakan coba lagi.');
                 console.error(error);
             });
+        });
+        
+        // Handle reset event to clear file previews
+        form.addEventListener('reset', function() {
+            const wrappers = this.querySelectorAll('.file-upload-wrapper');
+            wrappers.forEach(wrapper => {
+                wrapper.querySelector('.upload-placeholder').classList.remove('d-none');
+                wrapper.querySelector('.upload-preview').classList.add('d-none');
+                wrapper.querySelector('.file-name-display').textContent = '';
+                wrapper.style.borderColor = '#cbd5e1';
+                wrapper.style.backgroundColor = '#f8fafc';
+            });
+        });
+    });
+
+    // File input preview logic
+    const fileInputs = document.querySelectorAll('.file-input');
+    fileInputs.forEach(input => {
+        const wrapper = input.closest('.file-upload-wrapper');
+        
+        // Handle file change
+        input.addEventListener('change', function() {
+            const placeholder = wrapper.querySelector('.upload-placeholder');
+            const preview = wrapper.querySelector('.upload-preview');
+            const nameDisplay = wrapper.querySelector('.file-name-display');
+            
+            if (this.files && this.files[0]) {
+                nameDisplay.textContent = this.files[0].name;
+                placeholder.classList.add('d-none');
+                preview.classList.remove('d-none');
+                wrapper.style.borderColor = '#059669'; // success color
+                wrapper.style.backgroundColor = '#f0fdf4'; // light success
+            } else {
+                placeholder.classList.remove('d-none');
+                preview.classList.add('d-none');
+                wrapper.style.borderColor = '#cbd5e1';
+                wrapper.style.backgroundColor = '#f8fafc';
+            }
+        });
+
+        // Add visual feedback on drag over
+        input.addEventListener('dragover', () => {
+            wrapper.style.borderColor = '#3b82f6';
+            wrapper.style.backgroundColor = '#eff6ff';
+        });
+        input.addEventListener('dragleave', () => {
+            if (!input.files || input.files.length === 0) {
+                wrapper.style.borderColor = '#cbd5e1';
+                wrapper.style.backgroundColor = '#f8fafc';
+            } else {
+                wrapper.style.borderColor = '#059669';
+                wrapper.style.backgroundColor = '#f0fdf4';
+            }
+        });
+        input.addEventListener('drop', () => {
+            wrapper.style.borderColor = '#059669';
+            wrapper.style.backgroundColor = '#f0fdf4';
         });
     });
 });
