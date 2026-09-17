@@ -8,36 +8,59 @@
     <p class="text-muted">Konfigurasi instance, notifikasi, keamanan, dan mode pemeliharaan.</p>
 </div>
 
+@if (session('success'))
+    <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="border-radius: 0.5rem;">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+@endif
+@if ($errors->any())
+    <div class="alert alert-danger mb-4" style="border-radius: 0.5rem;">
+        <i class="bi bi-exclamation-triangle-fill"></i> Terjadi kesalahan:
+        <ul class="mb-0 mt-1">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<form id="settingsForm" method="POST" action="{{ route('admin.pengaturan-sistem.update') }}" enctype="multipart/form-data">
+    @csrf
+
 {{-- Informasi Instance --}}
 <div class="admin-card mb-4 animate-in delay-1">
     <div class="admin-card-header-inline">
         <h5><i class="bi bi-building text-success"></i> Informasi Instance</h5>
     </div>
     <div class="admin-card-body">
-        <form id="instanceForm">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label small fw-semibold">Nama Instance</label>
-                    <input type="text" class="form-control admin-input" value="{{ $settings['instance_name'] }}" id="instanceName">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small fw-semibold">Domain</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-globe2 text-success"></i></span>
-                        <input type="text" class="form-control admin-input" value="{{ $settings['domain'] }}" id="instanceDomain">
-                    </div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label small fw-semibold">Deskripsi</label>
-                    <textarea class="form-control admin-input" rows="3" id="instanceDesc">{{ $settings['description'] }}</textarea>
-                </div>
-                <div class="col-12 text-end">
-                    <button type="button" class="btn btn-success px-4" style="border-radius: 0.5rem;" onclick="showAdminToast('Informasi instance berhasil disimpan!', 'success')">
-                        <i class="bi bi-check-lg"></i> Simpan Perubahan
-                    </button>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Nama Instance</label>
+                <input type="text" name="instance_name" class="form-control admin-input" value="{{ old('instance_name', $settings['instance_name']) }}" id="instanceName" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Domain</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-globe2 text-success"></i></span>
+                    <input type="text" name="domain" class="form-control admin-input" value="{{ old('domain', $settings['domain']) }}" id="instanceDomain">
                 </div>
             </div>
-        </form>
+            <div class="col-12">
+                <label class="form-label small fw-semibold">Deskripsi</label>
+                <textarea class="form-control admin-input" name="description" rows="3" id="instanceDesc">{{ old('description', $settings['description']) }}</textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Logo Instance</label>
+                @if (!empty($settings['logo']))
+                    <div class="mb-2">
+                        <img src="{{ asset('storage/' . $settings['logo']) }}" alt="Logo" style="height: 48px; border-radius: 0.4rem; border: 1px solid #e0e0e0; padding: 4px; background:#fff;">
+                    </div>
+                @endif
+                <input type="file" name="logo" accept=".png,.jpg,.jpeg,.svg,.webp" class="form-control admin-input">
+                <small class="text-muted">Format PNG/JPG/SVG/WEBP, maksimal 2 MB.</small>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -57,7 +80,7 @@
                     </div>
                 </div>
                 <label class="admin-toggle">
-                    <input type="checkbox" {{ $settings['notif_whatsapp'] ? 'checked' : '' }} data-setting="notif_whatsapp">
+                    <input type="checkbox" name="notif_whatsapp" value="1" {{ $settings['notif_whatsapp'] ? 'checked' : '' }} data-setting="notif_whatsapp">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -70,7 +93,7 @@
                     </div>
                 </div>
                 <label class="admin-toggle">
-                    <input type="checkbox" {{ $settings['notif_email'] ? 'checked' : '' }} data-setting="notif_email">
+                    <input type="checkbox" name="notif_email" value="1" {{ $settings['notif_email'] ? 'checked' : '' }} data-setting="notif_email">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -83,7 +106,7 @@
                     </div>
                 </div>
                 <label class="admin-toggle">
-                    <input type="checkbox" {{ $settings['notif_push'] ? 'checked' : '' }} data-setting="notif_push">
+                    <input type="checkbox" name="notif_push" value="1" {{ $settings['notif_push'] ? 'checked' : '' }} data-setting="notif_push">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -107,7 +130,7 @@
                     </div>
                 </div>
                 <label class="admin-toggle">
-                    <input type="checkbox" {{ $settings['two_factor'] ? 'checked' : '' }} data-setting="two_factor">
+                    <input type="checkbox" name="two_factor" value="1" {{ $settings['two_factor'] ? 'checked' : '' }} data-setting="two_factor">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -120,7 +143,7 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <select class="form-select admin-input" style="width: auto;" id="sessionTimeout">
+                    <select class="form-select admin-input" style="width: auto;" id="sessionTimeout" name="session_timeout">
                         <option value="15" {{ $settings['session_timeout'] == 15 ? 'selected' : '' }}>15 menit</option>
                         <option value="30" {{ $settings['session_timeout'] == 30 ? 'selected' : '' }}>30 menit</option>
                         <option value="60" {{ $settings['session_timeout'] == 60 ? 'selected' : '' }}>1 jam</option>
@@ -147,7 +170,7 @@
                 </div>
             </div>
             <label class="admin-toggle">
-                <input type="checkbox" {{ $settings['maintenance_mode'] ? 'checked' : '' }} data-setting="maintenance_mode" id="maintenanceToggle">
+                <input type="checkbox" name="maintenance_mode" value="1" {{ $settings['maintenance_mode'] ? 'checked' : '' }} data-setting="maintenance_mode" id="maintenanceToggle">
                 <span class="toggle-slider"></span>
             </label>
         </div>
@@ -161,6 +184,15 @@
         </div>
     </div>
 </div>
+
+{{-- Simpan Semua --}}
+<div class="d-flex justify-content-end mb-5">
+    <button type="submit" class="btn btn-success px-5 py-2" style="border-radius: 0.5rem;">
+        <i class="bi bi-check-lg"></i> Simpan Semua Perubahan
+    </button>
+</div>
+
+</form>
 @endsection
 
 @push('scripts')

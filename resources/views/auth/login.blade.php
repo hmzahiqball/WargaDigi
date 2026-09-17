@@ -28,8 +28,8 @@
 
                     {{-- Error Alert --}}
                     @if ($errors->any())
-                        <div id="loginError" class="alert p-2 d-flex align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
-                            <i class="bi bi-exclamation-circle"></i>
+                        <div id="loginError" class="alert p-2 d-flex align-items-start gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
+                            <i class="bi bi-exclamation-circle mt-1"></i>
                             <span id="loginErrorText">{{ $errors->first() }}</span>
                         </div>
                     @elseif (session('error'))
@@ -52,8 +52,20 @@
                                 <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
                                     <i class="bi bi-person-vcard"></i>
                                 </span>
-                                <input type="text" name="nik" class="form-control" placeholder="Masukkan 16 digit NIK" required value="{{ old('nik') }}">
+                                <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" placeholder="Masukkan 16 digit NIK" inputmode="numeric" maxlength="16" required value="{{ old('nik') }}">
                             </div>
+                            @error('nik')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-dark">Nomor WhatsApp</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
+                                    <i class="bi bi-whatsapp text-success"></i>
+                                </span>
+                                <input type="text" name="no_wa" class="form-control @error('no_wa') is-invalid @enderror" placeholder="Contoh: 081234567890" inputmode="tel" required value="{{ old('no_wa') }}">
+                            </div>
+                            @error('no_wa')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="mb-3">
@@ -89,7 +101,7 @@
                         <a href="/register" class="text-decoration-none small" style="color: #3949ab; font-weight: 600;">Belum punya akun? Daftar di sini</a>
                     </div>
 
-                    {{-- Demo Credentials Hint 
+                    {{-- Demo Credentials Hint
                     <div class="mt-4 p-3" style="background: #f0f5f0; border-radius: 0.5rem; border: 1px dashed #c8e6c9;">
                         <p class="small text-muted mb-1 fw-semibold"><i class="bi bi-info-circle text-success"></i> Demo Login:</p>
                         <p class="small text-muted mb-0">Admin: <code>admin</code> / <code>admin123</code></p>
@@ -110,7 +122,7 @@
         const errorText = document.getElementById('loginErrorText');
         const togglePwd = document.getElementById('togglePassword');
         const pwdInput = document.getElementById('loginPassword');
-    
+
         // Toggle password visibility
         togglePwd.addEventListener('click', function() {
             const icon = this.querySelector('i');
@@ -133,7 +145,7 @@
         const errorText = document.getElementById('loginErrorText');
         const togglePwd = document.getElementById('togglePassword');
         const pwdInput = document.getElementById('loginPassword');
-    
+
         // Toggle password visibility
         togglePwd.addEventListener('click', function() {
             const icon = this.querySelector('i');
@@ -145,25 +157,25 @@
                 icon.classList.replace('bi-eye-slash-fill', 'bi-eye-fill');
             }
         });
-    
+
         // JS-based login (temporary — no database)
         const USERS = {
             admin: { password: 'admin123', role: 'administrator', redirect: '/admin/dashboard' },
             users: {password: 'user123', role: 'user', redirect: '/user/dashboard' }
         };
-    
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-    
+
             const username = document.getElementById('loginUsername').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
-    
+
             // Show loading
             document.getElementById('loginBtnText').classList.add('d-none');
             document.getElementById('loginBtnSpinner').classList.remove('d-none');
             document.getElementById('loginBtn').disabled = true;
             errorBox.classList.add('d-none');
-    
+
             // Simulate network delay
             setTimeout(function() {
                 if (USERS[username] && USERS[username].password === password) {
@@ -173,7 +185,7 @@
                         role: USERS[username].role,
                         loginTime: new Date().toISOString()
                     }));
-    
+
                     // Redirect based on role
                     window.location.href = USERS[username].redirect;
                 } else {
@@ -181,11 +193,11 @@
                     errorText.textContent = 'Username atau password salah. Silakan coba lagi.';
                     errorBox.classList.remove('d-none');
                     errorBox.classList.add('d-flex');
-    
+
                     document.getElementById('loginBtnText').classList.remove('d-none');
                     document.getElementById('loginBtnSpinner').classList.add('d-none');
                     document.getElementById('loginBtn').disabled = false;
-    
+
                     // Shake animation
                     form.style.animation = 'shake 0.5s ease';
                     setTimeout(() => form.style.animation = '', 500);

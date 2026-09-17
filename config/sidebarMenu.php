@@ -77,10 +77,11 @@ return [
     ],
     [
         'title' => 'Manajemen RT',
-        'url'   => '#',
+        'route' => 'rw.master-rt.index',
+        'url'   => '/rw/rt',
         'icon'  => 'bi-building',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/rt*'],
+        'active' => ['rw.master-rt.index', 'rw/rt*'],
     ],
     [
         'title' => 'Persetujuan Dokumen',

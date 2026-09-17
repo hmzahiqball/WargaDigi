@@ -19,6 +19,7 @@ use App\Http\Controllers\Warga\KelolaUmkmController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\RwController;
 use App\Http\Controllers\RtController;
+use App\Http\Controllers\Rw\MasterRtController;
 use App\Http\Controllers\OpKontenController;
 use App\Http\Controllers\OpKeuanganController;
 use App\Http\Controllers\LaporanKeuanganPublicController;
@@ -95,6 +96,7 @@ Route::get('/debug-php', function () {
     ];
 });
 
+
 Route::get('/login-rt', function () {
     $user = \App\Models\User::where('nik', '3217010101010008')->first(); // NIK RT
     if ($user) {
@@ -117,7 +119,9 @@ Route::get('/login-rw', function () {
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
+    Route::post('/pengaturan-sistem', [AdminController::class, 'updatePengaturanSistem'])->name('admin.pengaturan-sistem.update');
     Route::get('/manajemen-hak-akses', [AdminController::class, 'manajemenHakAkses'])->name('admin.manajemen-hak-akses');
+    Route::put('/manajemen-hak-akses/{id}', [AdminController::class, 'updateHakAkses'])->name('admin.manajemen-hak-akses.update');
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('admin.log-aktivitas');
     Route::get('/arsip-data-warga', [AdminController::class, 'arsipDataWarga'])->name('admin.arsip-data-warga');
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
@@ -127,7 +131,7 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
 Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')->name('rw.')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('dashboard');
     Route::get('/', [RwController::class, 'dashboard']);
-    
+
     // Pusat Informasi (Berita & Agenda Approval)
     Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('pusat-informasi.index');
     Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('pusat-informasi.berita.approve');
@@ -136,6 +140,12 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('pusat-informasi.agenda.reject');
     Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('pusat-informasi.pengumuman.approve');
     Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('pusat-informasi.pengumuman.reject');
+
+    // Master Data RT (CRUD)
+    Route::get('/rt', [MasterRtController::class, 'index'])->name('master-rt.index');
+    Route::post('/rt', [MasterRtController::class, 'store'])->name('master-rt.store');
+    Route::put('/rt/{id}', [MasterRtController::class, 'update'])->name('master-rt.update');
+    Route::delete('/rt/{id}', [MasterRtController::class, 'destroy'])->name('master-rt.destroy');
 
     // Persetujuan Dokumen
     Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('persetujuan-dokumen');
@@ -216,7 +226,7 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
         Route::delete('/laporan/{id}', [OpKeuanganController::class, 'laporanDestroy'])->name('opkeuangan.laporan.destroy');
         Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
-        
+
         // Tagihan / Iuran
         Route::get('/rekening', [TagihanController::class, 'rekeningIndex'])->name('opkeuangan.rekening.index');
         Route::post('/rekening', [TagihanController::class, 'rekeningSave'])->name('opkeuangan.rekening.save');
@@ -255,7 +265,7 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
     Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
     Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
-    
+
     // Tagihan Warga
     Route::get('/tagihan', [WargaTagihanController::class, 'index'])->name('tagihan.index');
     Route::post('/tagihan/{id}/bayar', [WargaTagihanController::class, 'bayar'])->name('tagihan.bayar');
@@ -266,7 +276,7 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/galeri/produk/{id}', [GaleriUmkmController::class, 'detailProduk'])->name('umkm.produk.detail');
     Route::get('/galeri/daftar', [GaleriUmkmController::class, 'createUsaha'])->name('umkm.daftar');
     Route::post('/galeri/daftar', [GaleriUmkmController::class, 'storeUsaha'])->name('umkm.store-usaha');
-    
+
     Route::get('/galeri/kelola', [KelolaUmkmController::class, 'index'])->name('umkm.kelola');
     Route::put('/galeri/usaha/{id}', [KelolaUmkmController::class, 'updateUsaha'])->name('umkm.update-usaha');
     Route::post('/galeri/usaha/{id}/sampul', [KelolaUmkmController::class, 'updateSampulUsaha'])->name('umkm.update-sampul');
