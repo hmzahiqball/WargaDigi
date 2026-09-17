@@ -181,24 +181,22 @@ document.addEventListener('DOMContentLoaded', function() {
             subtitle: subtitle
         });
     });
-
-    // Otomatis Munculkan Modal Berhasil jika ada flash session('success') dari Laravel
+    
     @if(session('success'))
         setTimeout(function() {
             window.showSuccessModal({
                 title: 'Berhasil!',
-                message: "{{ addslashes(session('success')) }}"
+                message: {!! json_encode(session('success')) !!}
             });
         }, 150);
     @endif
 
-    // Otomatis Munculkan Notifikasi Error jika ada flash session('error') dari Laravel
     @if(session('error'))
         setTimeout(function() {
             if (typeof window.showAdminToast === 'function') {
-                window.showAdminToast("{{ addslashes(session('error')) }}", 'error');
+                window.showAdminToast({!! json_encode(session('error')) !!}, 'error');
             } else {
-                alert("{{ addslashes(session('error')) }}");
+                alert({!! json_encode(session('error')) !!});
             }
         }, 150);
     @endif
