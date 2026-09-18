@@ -26,3 +26,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 testsprite_tests/
+
+# Docker production secrets (jangan commit)
+/.env.docker
