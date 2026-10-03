@@ -75,6 +75,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
+Route::post('/aktivasi/verifikasi', [RegisterController::class, 'prosesAktivasi'])->name('aktivasi.verifikasi');
+Route::get('/aktivasi/otp', [RegisterController::class, 'showOtp'])->name('aktivasi.otp');
+Route::post('/aktivasi/otp', [RegisterController::class, 'verifyOtp'])->name('aktivasi.otp.verify');
+Route::get('/aktivasi/password', [RegisterController::class, 'showPassword'])->name('aktivasi.password');
+Route::post('/aktivasi/password', [RegisterController::class, 'complete'])->name('aktivasi.password.complete');
 
 // Temporary Magic Login for Testing
 Route::get('/login-warga', function () {

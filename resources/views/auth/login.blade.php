@@ -37,6 +37,8 @@
                             <i class="bi bi-exclamation-circle"></i>
                             <span id="loginErrorText">{{ session('error') }}</span>
                         </div>
+                    @elseif (session('status'))
+                        <div class="alert alert-success p-2 mb-3 small">{{ session('status') }}</div>
                     @else
                         <div id="loginError" class="alert p-2 d-none align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
                             <i class="bi bi-exclamation-circle"></i>

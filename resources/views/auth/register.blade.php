@@ -14,15 +14,19 @@
                 <p class="text-muted small">Bergabunglah dan nikmati kemudahan layanan digital RW 21.</p>
             </div>
 
-            <form>
+            @if ($errors->any())
+                <div class="alert alert-danger small">{{ $errors->first() }}</div>
+            @endif
+            <form method="POST" action="{{ route('aktivasi.verifikasi') }}">
+                @csrf
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-dark">NIK (Nomor Induk Kependudukan)</label>
-                    <input type="text" class="form-control" placeholder="16 digit NIK" style="border-radius: 0.5rem;">
+                    <input type="text" name="nik" class="form-control" placeholder="16 digit NIK" inputmode="numeric" maxlength="16" required value="{{ old('nik') }}" style="border-radius: 0.5rem;">
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-dark">No. WhatsApp</label>
-                    <input type="tel" class="form-control" placeholder="Mulai dengan 08..." style="border-radius: 0.5rem;">
+                    <input type="tel" name="no_wa" class="form-control" placeholder="Mulai dengan 08..." required value="{{ old('no_wa') }}" style="border-radius: 0.5rem;">
                 </div>
                 <button type="submit" class="btn w-100 fw-bold py-2" style="background-color: #2E7D32; color: white; border-radius: 0.5rem; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#1B5E20'" onmouseout="this.style.backgroundColor='#2E7D32'">Aktivasi Akun</button>
             </form>
