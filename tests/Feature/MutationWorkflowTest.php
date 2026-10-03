@@ -50,7 +50,38 @@ class MutationWorkflowTest extends TestCase
 
         $this->actingAs($rtUser)
             ->post(route('rt.mutasi.approve', $otherMutation->id))
-            ->assertNotFound();
+            ->assertRedirect()
+            ->assertSessionHasErrors('mutasi');
+    }
+
+    public function test_rt_cannot_process_a_mutation_after_it_was_rejected(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '003', 'nama_rt' => 'RT 003']);
+        $family = $this->createFamily($rt, '3217010101010003', 'Keluarga Status');
+        $mutation = MutasiWarga::create([
+            'keluarga_id' => $family->id,
+            'jenis_mutasi' => 'tambah',
+            'data_pengajuan' => ['nama_lengkap' => 'Pengajuan Status'],
+            'status' => 'ditolak',
+        ]);
+        $rtUser = User::create([
+            'nik' => '3217010101010098',
+            'username' => 'Ketua RT Status',
+            'role' => 'Ketua RT',
+            'status_akun' => 'Active',
+            'rt_id' => $rt->id,
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($rtUser)
+            ->post(route('rt.mutasi.approve', $mutation->id))
+            ->assertRedirect()
+            ->assertSessionHasErrors('mutasi');
+
+        $this->assertDatabaseHas('mutasi_warga', [
+            'id' => $mutation->id,
+            'status' => 'ditolak',
+        ]);
     }
 
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga

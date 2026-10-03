@@ -22,8 +22,12 @@ class MutasiWargaController extends Controller
     public function approve(Request $request, $id)
     {
         $mutasi = MutasiWarga::whereHas('keluarga', fn ($query) => $query->where('rt_id', auth()->user()->rt_id))
+            ->where('status', 'menunggu_rt')
             ->where('id', $id)
-            ->firstOrFail();
+            ->first();
+        if (! $mutasi) {
+            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RT.']);
+        }
         $mutasi->status = 'menunggu_rw';
         $mutasi->save();
 
@@ -37,8 +41,12 @@ class MutasiWargaController extends Controller
         ]);
 
         $mutasi = MutasiWarga::whereHas('keluarga', fn ($query) => $query->where('rt_id', auth()->user()->rt_id))
+            ->where('status', 'menunggu_rt')
             ->where('id', $id)
-            ->firstOrFail();
+            ->first();
+        if (! $mutasi) {
+            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RT.']);
+        }
         $mutasi->status = 'ditolak';
         $mutasi->keterangan_tolak = $request->alasan_penolakan;
         $mutasi->save();
