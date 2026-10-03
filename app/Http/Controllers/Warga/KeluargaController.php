@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\MutasiWarga;
 use App\Models\Penduduk;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class KeluargaController extends Controller
 {
@@ -77,7 +78,7 @@ class KeluargaController extends Controller
 
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nik' => 'required|string|size:16',
+            'nik' => ['required', 'string', 'size:16', Rule::unique('penduduk', 'nik')],
             'status_hubungan_keluarga' => 'required|string',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'required|string|max:100',
@@ -127,7 +128,7 @@ class KeluargaController extends Controller
             'pekerjaan' => 'required|string',
             'status_perkawinan' => 'required|string',
             'nama_lengkap' => 'required|string|max:255',
-            'nik' => 'required|string|size:16',
+            'nik' => ['required', 'string', 'size:16', Rule::unique('penduduk', 'nik')->ignore($anggota->id)],
             'file_kk' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 

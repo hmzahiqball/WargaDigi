@@ -84,6 +84,47 @@ class MutationWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_rw_rejects_duplicate_nik_before_approval(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '004', 'nama_rt' => 'RT 004']);
+        $family = $this->createFamily($rt, '3217010101010004', 'Keluarga NIK');
+        $mutation = MutasiWarga::create([
+            'keluarga_id' => $family->id,
+            'jenis_mutasi' => 'tambah',
+            'data_pengajuan' => [
+                'nama_lengkap' => 'NIK Duplikat',
+                'nik' => '3217010101010004',
+                'status_hubungan_keluarga' => 'Anak',
+                'jenis_kelamin' => 'L',
+                'tempat_lahir' => 'Bandung',
+                'tanggal_lahir' => '2010-01-01',
+                'agama' => 'Islam',
+                'pendidikan_terakhir' => 'SD/Sederajat',
+                'pekerjaan' => 'Pelajar',
+                'status_perkawinan' => 'Belum Kawin',
+                'kewarganegaraan' => 'WNI',
+            ],
+            'status' => 'menunggu_rw',
+        ]);
+        $rwUser = User::create([
+            'nik' => '3217010101010097',
+            'username' => 'Admin RW NIK',
+            'role' => 'Admin RW',
+            'status_akun' => 'Active',
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($rwUser)
+            ->post(route('rw.mutasi.approve', $mutation->id))
+            ->assertRedirect()
+            ->assertSessionHasErrors('nik');
+
+        $this->assertDatabaseHas('mutasi_warga', [
+            'id' => $mutation->id,
+            'status' => 'menunggu_rw',
+        ]);
+    }
+
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga
     {
         $family = Keluarga::create([

@@ -29,6 +29,10 @@ class MutasiWargaController extends Controller
         $data = $mutasi->data_pengajuan;
 
         if ($mutasi->jenis_mutasi == 'tambah') {
+            if (Penduduk::where('nik', $data['nik'] ?? null)->exists()) {
+                return back()->withErrors(['nik' => 'NIK sudah terdaftar pada data penduduk.']);
+            }
+
             Penduduk::create([
                 'keluarga_id' => $mutasi->keluarga_id,
                 'nama_lengkap' => $data['nama_lengkap'],
@@ -48,6 +52,9 @@ class MutasiWargaController extends Controller
             ]);
         } else if ($mutasi->jenis_mutasi == 'edit') {
             $penduduk = Penduduk::findOrFail($mutasi->penduduk_id);
+            if (isset($data['nik']) && Penduduk::where('nik', $data['nik'])->where('id', '!=', $penduduk->id)->exists()) {
+                return back()->withErrors(['nik' => 'NIK sudah terdaftar pada data penduduk lain.']);
+            }
             $updateData = [];
             
             $fieldsToUpdate = [
