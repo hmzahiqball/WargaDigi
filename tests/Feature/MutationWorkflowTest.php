@@ -8,6 +8,8 @@ use App\Models\MutasiWarga;
 use App\Models\Penduduk;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MutationWorkflowTest extends TestCase
@@ -201,6 +203,33 @@ class MutationWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Penduduk Detail')
             ->assertSee('3217010101010007');
+    }
+
+    public function test_rt_can_open_uploaded_mutation_document(): void
+    {
+        Storage::fake('public');
+        $rt = MasterRt::create(['kode_rt' => '008', 'nama_rt' => 'RT 008']);
+        $family = $this->createFamily($rt, '3217010101010008', 'Penduduk Dokumen');
+        $path = UploadedFile::fake()->create('kk.pdf', 10, 'application/pdf')->store('mutasi_kk', 'public');
+        $mutation = MutasiWarga::create([
+            'keluarga_id' => $family->id,
+            'jenis_mutasi' => 'tambah',
+            'data_pengajuan' => ['nama_lengkap' => 'Dokumen'],
+            'file_bukti' => $path,
+            'status' => 'menunggu_rt',
+        ]);
+        $rtUser = User::create([
+            'nik' => '3217010101010095',
+            'username' => 'Ketua RT Dokumen',
+            'role' => 'Ketua RT',
+            'status_akun' => 'Active',
+            'rt_id' => $rt->id,
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($rtUser)
+            ->get(route('rt.mutasi.dokumen', $mutation->id))
+            ->assertOk();
     }
 
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga

@@ -84,7 +84,7 @@
                                             @if($item->file_bukti)
                                                 <div class="col-12 mt-3">
                                                     <p class="text-muted mb-1" style="font-size: 0.8rem;">File Bukti (Scan KK)</p>
-                                                    <a href="{{ asset('storage/'.$item->file_bukti) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Lihat Dokumen</a>
+                                                    <a href="{{ route('rw.mutasi.dokumen', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Lihat Dokumen</a>
                                                 </div>
                                             @endif
                                         </div>
