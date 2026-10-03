@@ -183,6 +183,26 @@ class MutationWorkflowTest extends TestCase
         $this->assertDatabaseCount('mutasi_warga', 1);
     }
 
+    public function test_authorized_rt_can_open_penduduk_detail(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '007', 'nama_rt' => 'RT 007']);
+        $family = $this->createFamily($rt, '3217010101010007', 'Penduduk Detail');
+        $rtUser = User::create([
+            'nik' => '3217010101010096',
+            'username' => 'Ketua RT Detail',
+            'role' => 'Ketua RT',
+            'status_akun' => 'Active',
+            'rt_id' => $rt->id,
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($rtUser)
+            ->get(route('rt.penduduk.show', $family->anggota->first()->id))
+            ->assertOk()
+            ->assertSee('Penduduk Detail')
+            ->assertSee('3217010101010007');
+    }
+
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga
     {
         $family = Keluarga::create([

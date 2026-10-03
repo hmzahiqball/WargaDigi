@@ -30,6 +30,7 @@ use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
 use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\Warga\TagihanController as WargaTagihanController;
+use App\Http\Controllers\PendudukController;
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -134,6 +135,7 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'index'])->name('mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'approve'])->name('mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'reject'])->name('mutasi.reject');
+    Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('penduduk.show');
 });
 
 //RT (Role: Ketua RT)
@@ -154,6 +156,7 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'index'])->name('rt.mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'approve'])->name('rt.mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'reject'])->name('rt.mutasi.reject');
+    Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('rt.penduduk.show');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
