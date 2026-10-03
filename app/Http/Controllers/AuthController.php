@@ -39,6 +39,12 @@ class AuthController extends Controller
             ])->withInput($request->only('nik', 'no_wa'));
         }
 
+        if ($user->status_akun !== 'Active') {
+            return back()->withErrors([
+                'nik' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
+            ])->withInput($request->only('nik', 'no_wa'));
+        }
+
         // 3) Validate the password and log the user in.
         if (Auth::attempt(['nik' => $request->nik, 'password' => $request->password], $request->filled('remember'))) {
             $request->session()->regenerate();
