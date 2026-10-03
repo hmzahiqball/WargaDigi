@@ -132,6 +132,16 @@ class KeluargaController extends Controller
             'file_kk' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
+        $identityChanged = $request->input('nik') !== $anggota->nik
+            || $request->input('nama_lengkap') !== $anggota->nama_lengkap;
+        if ($identityChanged && ! $request->hasFile('file_kk')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dokumen KK wajib diunggah jika NIK atau nama diubah.',
+                'errors' => ['file_kk' => ['Dokumen KK wajib diunggah jika NIK atau nama diubah.']],
+            ], 422);
+        }
+
         $filePath = null;
         if ($request->hasFile('file_kk')) {
             $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');

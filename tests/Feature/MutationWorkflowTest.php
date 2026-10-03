@@ -125,6 +125,33 @@ class MutationWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_editing_identity_requires_a_kk_document(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '005', 'nama_rt' => 'RT 005']);
+        $family = $this->createFamily($rt, '3217010101010005', 'Nama Lama');
+        $warga = User::create([
+            'nik' => '3217010101010005',
+            'username' => 'Warga Dokumen',
+            'role' => 'Warga',
+            'status_akun' => 'Active',
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($warga)
+            ->withHeader('Accept', 'application/json')
+            ->put(route('warga.keluarga.anggota.update', $family->anggota->first()->id), [
+                'pendidikan_terakhir' => 'SMA/Sederajat',
+                'pekerjaan' => 'Wiraswasta',
+                'status_perkawinan' => 'Belum Kawin',
+                'nama_lengkap' => 'Nama Baru',
+                'nik' => '3217010101010005',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file_kk');
+
+        $this->assertDatabaseCount('mutasi_warga', 0);
+    }
+
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga
     {
         $family = Keluarga::create([
