@@ -1,0 +1,80 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Keluarga;
+use App\Models\MasterRt;
+use App\Models\MutasiWarga;
+use App\Models\Penduduk;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class MutationWorkflowTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_rt_only_sees_mutations_from_its_own_area(): void
+    {
+        $rtOwn = MasterRt::create(['kode_rt' => '001', 'nama_rt' => 'RT 001']);
+        $rtOther = MasterRt::create(['kode_rt' => '002', 'nama_rt' => 'RT 002']);
+        $familyOwn = $this->createFamily($rtOwn, '3217010101010001', 'Keluarga Sendiri');
+        $familyOther = $this->createFamily($rtOther, '3217010101010002', 'Keluarga Lain');
+
+        MutasiWarga::create([
+            'keluarga_id' => $familyOwn->id,
+            'jenis_mutasi' => 'tambah',
+            'data_pengajuan' => ['nama_lengkap' => 'Pengajuan Sendiri'],
+            'status' => 'menunggu_rt',
+        ]);
+        $otherMutation = MutasiWarga::create([
+            'keluarga_id' => $familyOther->id,
+            'jenis_mutasi' => 'tambah',
+            'data_pengajuan' => ['nama_lengkap' => 'Pengajuan Lain'],
+            'status' => 'menunggu_rt',
+        ]);
+        $rtUser = User::create([
+            'nik' => '3217010101010099',
+            'username' => 'Ketua RT',
+            'role' => 'Ketua RT',
+            'status_akun' => 'Active',
+            'rt_id' => $rtOwn->id,
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($rtUser)
+            ->get(route('rt.mutasi.index'))
+            ->assertOk()
+            ->assertSee('Pengajuan Sendiri')
+            ->assertDontSee('Pengajuan Lain');
+
+        $this->actingAs($rtUser)
+            ->post(route('rt.mutasi.approve', $otherMutation->id))
+            ->assertNotFound();
+    }
+
+    private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga
+    {
+        $family = Keluarga::create([
+            'no_kk' => $nik,
+            'nik_kepala_keluarga' => $nik,
+            'alamat' => 'Alamat Uji',
+            'rt_id' => $rt->id,
+            'no_wa' => '081234567890',
+        ]);
+        Penduduk::create([
+            'keluarga_id' => $family->id,
+            'nik' => $nik,
+            'nama_lengkap' => $name,
+            'jenis_kelamin' => 'L',
+            'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => '1990-01-01',
+            'agama' => 'Islam',
+            'pekerjaan' => 'Wiraswasta',
+            'status_hubungan_keluarga' => 'Kepala Keluarga',
+            'status_perkawinan' => 'Belum Kawin',
+        ]);
+
+        return $family;
+    }
+}

@@ -11,6 +11,7 @@ class MutasiWargaController extends Controller
     public function index()
     {
         $mutasi = MutasiWarga::with(['keluarga.kepalaKeluarga', 'penduduk'])
+            ->whereHas('keluarga', fn ($query) => $query->where('rt_id', auth()->user()->rt_id))
             ->where('status', 'menunggu_rt')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -20,7 +21,9 @@ class MutasiWargaController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $mutasi = MutasiWarga::findOrFail($id);
+        $mutasi = MutasiWarga::whereHas('keluarga', fn ($query) => $query->where('rt_id', auth()->user()->rt_id))
+            ->where('id', $id)
+            ->firstOrFail();
         $mutasi->status = 'menunggu_rw';
         $mutasi->save();
 
@@ -33,7 +36,9 @@ class MutasiWargaController extends Controller
             'alasan_penolakan' => 'required|string'
         ]);
 
-        $mutasi = MutasiWarga::findOrFail($id);
+        $mutasi = MutasiWarga::whereHas('keluarga', fn ($query) => $query->where('rt_id', auth()->user()->rt_id))
+            ->where('id', $id)
+            ->firstOrFail();
         $mutasi->status = 'ditolak';
         $mutasi->keterangan_tolak = $request->alasan_penolakan;
         $mutasi->save();
