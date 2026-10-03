@@ -81,17 +81,6 @@ Route::post('/aktivasi/otp', [RegisterController::class, 'verifyOtp'])->name('ak
 Route::get('/aktivasi/password', [RegisterController::class, 'showPassword'])->name('aktivasi.password');
 Route::post('/aktivasi/password', [RegisterController::class, 'complete'])->name('aktivasi.password.complete');
 
-Route::get('/debug-php', function () {
-    return [
-        'upload_tmp_dir' => ini_get('upload_tmp_dir'),
-        'sys_temp_dir' => sys_get_temp_dir(),
-        'upload_max_filesize' => ini_get('upload_max_filesize'),
-        'post_max_size' => ini_get('post_max_size'),
-        'user' => get_current_user(),
-    ];
-});
-
-
 // Admin Routes (Role: Admin Aplikasi)
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
