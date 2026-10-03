@@ -152,6 +152,37 @@ class MutationWorkflowTest extends TestCase
         $this->assertDatabaseCount('mutasi_warga', 0);
     }
 
+    public function test_duplicate_active_edit_mutation_is_rejected(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '006', 'nama_rt' => 'RT 006']);
+        $family = $this->createFamily($rt, '3217010101010006', 'Anggota Aktif');
+        $warga = User::create([
+            'nik' => '3217010101010006',
+            'username' => 'Warga Mutasi',
+            'role' => 'Warga',
+            'status_akun' => 'Active',
+            'password' => 'password123',
+        ]);
+        $payload = [
+            'pendidikan_terakhir' => 'SMA/Sederajat',
+            'pekerjaan' => 'Wiraswasta',
+            'status_perkawinan' => 'Belum Kawin',
+            'nama_lengkap' => 'Anggota Aktif',
+            'nik' => '3217010101010006',
+        ];
+        $memberId = $family->anggota->first()->id;
+
+        $this->actingAs($warga)->withHeader('Accept', 'application/json')
+            ->put(route('warga.keluarga.anggota.update', $memberId), $payload)
+            ->assertOk();
+        $this->actingAs($warga)->withHeader('Accept', 'application/json')
+            ->put(route('warga.keluarga.anggota.update', $memberId), $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Masih terdapat pengajuan perubahan anggota yang sedang diproses.');
+
+        $this->assertDatabaseCount('mutasi_warga', 1);
+    }
+
     private function createFamily(MasterRt $rt, string $nik, string $name): Keluarga
     {
         $family = Keluarga::create([

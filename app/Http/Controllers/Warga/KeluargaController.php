@@ -93,6 +93,16 @@ class KeluargaController extends Controller
             'file_kk' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
+        if (MutasiWarga::where('keluarga_id', $keluarga->id)
+            ->where('jenis_mutasi', 'tambah')
+            ->whereIn('status', ['menunggu_rt', 'menunggu_rw'])
+            ->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Masih terdapat pengajuan penambahan anggota yang sedang diproses.',
+            ], 422);
+        }
+
         $filePath = null;
         if ($request->hasFile('file_kk')) {
             $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');
@@ -131,6 +141,16 @@ class KeluargaController extends Controller
             'nik' => ['required', 'string', 'size:16', Rule::unique('penduduk', 'nik')->ignore($anggota->id)],
             'file_kk' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
+
+        if (MutasiWarga::where('penduduk_id', $anggota->id)
+            ->where('jenis_mutasi', 'edit')
+            ->whereIn('status', ['menunggu_rt', 'menunggu_rw'])
+            ->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Masih terdapat pengajuan perubahan anggota yang sedang diproses.',
+            ], 422);
+        }
 
         $identityChanged = $request->input('nik') !== $anggota->nik
             || $request->input('nama_lengkap') !== $anggota->nama_lengkap;
