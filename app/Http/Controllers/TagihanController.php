@@ -235,14 +235,61 @@ class TagihanController extends Controller
             return redirect()->back()->with('error', 'Tagihan sudah dibayar atau sedang diverifikasi.');
         }
 
+        // Validate active notification channels from System Settings (AC-08.9)
+        $activeChannels = \App\Services\NotificationService::getActiveChannels();
+        if (empty($activeChannels)) {
+            return redirect()->back()->with('error', 'Pengiriman pengingat gagal: Seluruh kanal notifikasi (WhatsApp, Email, Push) sedang dinonaktifkan di Pengaturan Sistem.');
+        }
+
+        $channelsSent = [];
+        $channelsSkipped = [];
+
+        // 1. WhatsApp Delivery
         $kepalaKeluarga = $pembayaran->keluarga->kepalaKeluarga;
+        $targetWa = $pembayaran->keluarga->no_wa ?? ($kepalaKeluarga ? $kepalaKeluarga->nomor_telepon : null);
+
+        if (\App\Services\NotificationService::isWhatsAppEnabled()) {
+            if ($targetWa) {
+                $pesan = "Pengingat Tagihan: Tagihan \"{$pembayaran->tagihan->judul}\" sebesar {$pembayaran->tagihan->formatted_nominal} belum dibayar. Mohon segera melakukan pembayaran.";
+                \App\Services\NotificationService::sendWhatsApp($targetWa, $pesan);
+                $channelsSent[] = 'WhatsApp';
+            }
+        } else {
+            $channelsSkipped[] = 'WhatsApp (dinonaktifkan)';
+        }
+
+        // 2. In-App / Push & Email Delivery via User Notification
         if ($kepalaKeluarga) {
             $user = \App\Models\User::where('nik', $kepalaKeluarga->nik)->first();
             if ($user) {
-                $user->notify(new \App\Notifications\TagihanReminder($pembayaran));
+                if (\App\Services\NotificationService::isPushEnabled() || \App\Services\NotificationService::isEmailEnabled()) {
+                    $user->notify(new \App\Notifications\TagihanReminder($pembayaran));
+                    if (\App\Services\NotificationService::isPushEnabled()) {
+                        $channelsSent[] = 'Dashboard / Push';
+                    }
+                    if (\App\Services\NotificationService::isEmailEnabled()) {
+                        $channelsSent[] = 'Email';
+                    }
+                }
             }
         }
 
-        return redirect()->back()->with('success', 'Pengingat berhasil dikirim ke dashboard warga.');
+        if (!\App\Services\NotificationService::isPushEnabled()) {
+            $channelsSkipped[] = 'Push (dinonaktifkan)';
+        }
+        if (!\App\Services\NotificationService::isEmailEnabled()) {
+            $channelsSkipped[] = 'Email (dinonaktifkan)';
+        }
+
+        if (empty($channelsSent)) {
+            return redirect()->back()->with('warning', 'Pengingat tidak dapat dikirim karena tujuan tidak memiliki data kontak valid.');
+        }
+
+        $message = 'Pengingat tagihan berhasil dikirim melalui kanal: ' . implode(', ', $channelsSent) . '.';
+        if (!empty($channelsSkipped)) {
+            $message .= ' [Kanal dinonaktifkan: ' . implode(', ', $channelsSkipped) . ']';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 }

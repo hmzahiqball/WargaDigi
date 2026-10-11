@@ -174,7 +174,7 @@
                 <span class="toggle-slider"></span>
             </label>
         </div>
-        <div class="maintenance-warning d-none mt-3" id="maintenanceWarning">
+        <div class="maintenance-warning {{ $settings['maintenance_mode'] ? '' : 'd-none' }} mt-3" id="maintenanceWarning">
             <div class="alert alert-warning d-flex align-items-center gap-2 mb-0" style="border-radius: 0.5rem;">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 <div>

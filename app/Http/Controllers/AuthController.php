@@ -27,6 +27,8 @@ class AuthController extends Controller
         $user = \App\Models\User::where('nik', $request->nik)->first();
 
         if (! $user) {
+            event(new \Illuminate\Auth\Events\Failed('web', null, $request->only('nik', 'no_wa')));
+
             return back()->withErrors([
                 'nik' => 'NIK tidak terdaftar dalam sistem.',
             ])->withInput($request->only('nik', 'no_wa'));
@@ -34,12 +36,16 @@ class AuthController extends Controller
 
         // 2) The WhatsApp number must match the household (keluarga) linked to this NIK.
         if (! $this->whatsappMatchesNik($request->nik, $request->no_wa)) {
+            event(new \Illuminate\Auth\Events\Failed('web', $user, $request->only('nik', 'no_wa')));
+
             return back()->withErrors([
                 'no_wa' => 'Nomor WhatsApp tidak cocok dengan data NIK tersebut.',
             ])->withInput($request->only('nik', 'no_wa'));
         }
 
         if ($user->status_akun !== 'Active') {
+            event(new \Illuminate\Auth\Events\Failed('web', $user, $request->only('nik', 'no_wa')));
+
             return back()->withErrors([
                 'nik' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
             ])->withInput($request->only('nik', 'no_wa'));
@@ -47,9 +53,18 @@ class AuthController extends Controller
 
         // 3) Validate the password and log the user in.
         if (Auth::attempt(['nik' => $request->nik, 'password' => $request->password], $request->filled('remember'))) {
-            $request->session()->regenerate();
-
             $user = Auth::user();
+
+            // If system is in maintenance mode and user is not admin, deny access with 503
+            if (\App\Models\SystemSetting::get('maintenance_mode', false) && !in_array($user->role, ['Admin Aplikasi', 'Admin RW'])) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return response()->view('errors.503', [], 503);
+            }
+
+            $request->session()->regenerate();
             $user->forceFill(['last_login' => now()])->saveQuietly();
 
             foreach (config('sidebarMenu') as $item) {

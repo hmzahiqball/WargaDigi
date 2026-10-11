@@ -816,10 +816,28 @@
 
         // Sync Quill content before submit
         document.getElementById('formAgenda').addEventListener('submit', function(e) {
+            const formEl = this;
+            const textContent = quill.getText().trim();
+            if (!textContent) {
+                e.preventDefault();
+                if (window.resetFormSubmitting) {
+                    window.resetFormSubmitting(formEl);
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Deskripsi agenda wajib diisi.',
+                    confirmButtonColor: '#2E7D32'
+                });
+                return false;
+            }
             document.getElementById('deskripsiAgendaInput').value = quill.root.innerHTML;
             const action = document.getElementById('formAction').value;
             if (action === 'review') {
                 e.preventDefault();
+                if (window.resetFormSubmitting) {
+                    window.resetFormSubmitting(formEl);
+                }
                 Swal.fire({
                     title: 'Ajukan agenda ke Ketua RW?',
                     html: 'Agenda akan masuk tahap review dan menunggu persetujuan Ketua RW.',
@@ -837,7 +855,11 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         allowModalClose = true;
-                        e.target.submit();
+                        formEl.submit();
+                    } else {
+                        if (window.resetFormSubmitting) {
+                            window.resetFormSubmitting(formEl);
+                        }
                     }
                 });
             } else {
@@ -966,7 +988,9 @@
     function openBuatAgendaModal() {
         formDirty = false;
         allowModalClose = false;
-        document.getElementById('formAgenda').reset();
+        const formEl = document.getElementById('formAgenda');
+        formEl.reset();
+        if (window.resetFormSubmitting) window.resetFormSubmitting(formEl);
         document.getElementById('formMethod').value = 'POST';
         document.getElementById('formAgenda').action = "{{ route('opkonten.agenda.store') }}";
         document.getElementById('modalTitle').textContent = 'Buat Agenda Baru';
@@ -986,9 +1010,21 @@
     }
 
     function editAgenda(agenda) {
+        if (agenda.status !== 'Draft' && agenda.status !== 'Revisi') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Ditolak',
+                text: 'Agenda yang sudah berstatus ' + agenda.status + ' tidak dapat diubah secara sepihak.',
+                confirmButtonColor: '#2E7D32'
+            });
+            return;
+        }
+
         formDirty = false;
         allowModalClose = false;
-        document.getElementById('formAgenda').reset();
+        const formEl = document.getElementById('formAgenda');
+        formEl.reset();
+        if (window.resetFormSubmitting) window.resetFormSubmitting(formEl);
         document.getElementById('formMethod').value = 'PUT';
         document.getElementById('formAgenda').action = `/op-konten/agenda/${agenda.id}`;
         document.getElementById('modalTitle').textContent = 'Edit Agenda';

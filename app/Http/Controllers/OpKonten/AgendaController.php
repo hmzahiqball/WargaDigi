@@ -53,7 +53,13 @@ class AgendaController extends Controller
             'detail_pengumuman' => 'required|string',
             'banner_flyer' => 'nullable|image|max:5120',
             'action' => 'required|in:draft,review'
+        ], [
+            'detail_pengumuman.required' => 'Deskripsi agenda wajib diisi.'
         ]);
+
+        if (trim(strip_tags(str_replace('&nbsp;', ' ', $request->detail_pengumuman))) === '') {
+            return back()->withInput()->withErrors(['detail_pengumuman' => 'Deskripsi agenda wajib diisi.']);
+        }
 
         $data = $request->only(['judul_agenda', 'kategori', 'lokasi', 'latitude', 'longitude', 'detail_pengumuman']);
         $data['is_rsvp_enabled'] = $request->has('is_rsvp_enabled') ? 1 : 0;
@@ -82,7 +88,11 @@ class AgendaController extends Controller
     public function update(Request $request, Agenda $agenda)
     {
         if ($agenda->operator_id !== auth()->id()) {
-            abort(403);
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah agenda ini.');
+        }
+
+        if (! in_array($agenda->status, ['Draft', 'Revisi'])) {
+            abort(403, 'Agenda yang sudah berstatus ' . $agenda->status . ' tidak dapat diubah secara sepihak.');
         }
 
         $request->validate([
@@ -98,7 +108,13 @@ class AgendaController extends Controller
             'detail_pengumuman' => 'required|string',
             'banner_flyer' => 'nullable|image|max:5120',
             'action' => 'required|in:draft,review'
+        ], [
+            'detail_pengumuman.required' => 'Deskripsi agenda wajib diisi.'
         ]);
+
+        if (trim(strip_tags(str_replace('&nbsp;', ' ', $request->detail_pengumuman))) === '') {
+            return back()->withInput()->withErrors(['detail_pengumuman' => 'Deskripsi agenda wajib diisi.']);
+        }
 
         $data = $request->only(['judul_agenda', 'kategori', 'lokasi', 'latitude', 'longitude', 'detail_pengumuman']);
         $data['is_rsvp_enabled'] = $request->has('is_rsvp_enabled') ? 1 : 0;
@@ -109,8 +125,12 @@ class AgendaController extends Controller
             $data['tanggal_selesai'] = $request->tanggal . ' ' . $request->waktu_selesai . ':00';
         }
         
-        if (in_array($agenda->status, ['Draft', 'Revisi'])) {
+        if ($agenda->status === 'Revisi') {
+            $data['status'] = 'Review';
+            $msg = 'Agenda revisi berhasil diperbarui dan otomatis diajukan kembali untuk ditinjau oleh Ketua RW.';
+        } else {
             $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
+            $msg = $data['status'] === 'Review' ? 'Agenda berhasil diperbarui dan diajukan untuk ditinjau.' : 'Agenda berhasil diperbarui sebagai draf.';
         }
 
         if ($request->hasFile('banner_flyer')) {
@@ -130,17 +150,17 @@ class AgendaController extends Controller
 
         $agenda->update($data);
 
-        return redirect()->route('opkonten.agenda.index')->with('success', 'Agenda berhasil diperbarui.');
+        return redirect()->route('opkonten.agenda.index')->with('success', $msg);
     }
 
     public function destroy(Agenda $agenda)
     {
         if ($agenda->operator_id !== auth()->id()) {
-            abort(403);
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus agenda ini.');
         }
 
-        if (!in_array($agenda->status, ['Draft', 'Revisi'])) {
-            return back()->with('error', 'Hanya agenda berstatus Draf atau Revisi yang dapat dihapus.');
+        if ($agenda->status !== 'Draft') {
+            abort(403, 'Hanya agenda berstatus Draf yang dapat dihapus.');
         }
 
         if ($agenda->banner_flyer && file_exists(public_path($agenda->banner_flyer))) {

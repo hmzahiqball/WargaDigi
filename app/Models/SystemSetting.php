@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -83,6 +84,19 @@ class SystemSetting extends Model
         $defaults = static::defaults();
 
         return $defaults[$key]['value'] ?? $default;
+    }
+
+    /**
+     * Get the URL of the current active logo (uploaded or default fallback).
+     */
+    public static function getLogoUrl(): string
+    {
+        $logo = static::get('logo');
+        if (!empty($logo) && (Storage::disk('public')->exists($logo) || file_exists(public_path('storage/' . $logo)))) {
+            return asset('storage/' . $logo);
+        }
+
+        return asset('images/logo warga-digi.png');
     }
 
     /**

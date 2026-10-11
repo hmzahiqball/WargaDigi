@@ -2711,14 +2711,17 @@ $transition-base: all 0.3s ease;
 
     &.success {
         color: $primary;
+        background-color: rgba(46, 125, 50, 0.1);
     }
 
     &.failed {
         color: $danger;
+        background-color: rgba(211, 47, 47, 0.1);
     }
 
     &.warning {
         color: #ef6c00;
+        background-color: rgba(239, 108, 0, 0.1);
     }
 }
 

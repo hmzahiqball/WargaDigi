@@ -42,7 +42,7 @@
 <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
         <div class="sidebar-brand">
-            <img src="{{ asset('images/logo warga-digi.png') }}" alt="WargaDigi 21 Logo" style="height: 38px; width: auto; object-fit: contain;">
+            <img src="{{ \App\Models\SystemSetting::getLogoUrl() }}" alt="WargaDigi 21 Logo" style="height: 38px; width: auto; object-fit: contain;">
             <div class="sidebar-brand-text">
                 <span class="brand-name">WargaDigi</span>
                 <span class="brand-role">{{ $brandRole }}</span>

@@ -9,6 +9,26 @@
     </a>
     <h2 class="fw-bold text-dark mb-1">{{ $tagihan->judul }}</h2>
     <p class="text-muted mb-0">Total Tagihan: <span class="fw-bold text-primary">{{ $tagihan->formatted_nominal }}</span> | Tenggat: {{ $tagihan->tenggat ? \Carbon\Carbon::parse($tagihan->tenggat)->translatedFormat('d M Y') : '-' }}</p>
+    <div class="d-flex align-items-center gap-2 mt-2">
+        <span class="text-muted small fw-semibold">Kanal Notifikasi:</span>
+        @if(\App\Services\NotificationService::isWhatsAppEnabled())
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-whatsapp me-1"></i> WhatsApp Aktif</span>
+        @else
+            <span class="badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" title="Dinonaktifkan di Pengaturan Sistem"><i class="bi bi-whatsapp me-1"></i> WhatsApp Dinonaktifkan</span>
+        @endif
+
+        @if(\App\Services\NotificationService::isEmailEnabled())
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i class="bi bi-envelope me-1"></i> Email Aktif</span>
+        @else
+            <span class="badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" title="Dinonaktifkan di Pengaturan Sistem"><i class="bi bi-envelope me-1"></i> Email Dinonaktifkan</span>
+        @endif
+
+        @if(\App\Services\NotificationService::isPushEnabled())
+            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25"><i class="bi bi-bell me-1"></i> Push / Web Aktif</span>
+        @else
+            <span class="badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" title="Dinonaktifkan di Pengaturan Sistem"><i class="bi bi-bell me-1"></i> Push Dinonaktifkan</span>
+        @endif
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm rounded-4">

@@ -13,10 +13,12 @@ class GaleriController extends Controller
 {
     public function index(Request $request)
     {
+        $nowWib = Carbon::now('Asia/Jakarta')->format('Y-m-d H:i:s');
+
         // Only show agendas that are "Publish" AND whose end date has passed
         $query = Agenda::with('galeriDokumentasi')
             ->where('status', 'Publish')
-            ->where('tanggal_selesai', '<', Carbon::now());
+            ->where('tanggal_selesai', '<=', $nowWib);
 
         // Filters
         if ($request->filled('search')) {
@@ -39,7 +41,7 @@ class GaleriController extends Controller
         $agendaSelesai = $query->latest('tanggal_selesai')->paginate(9)->withQueryString();
 
         // Stats
-        $baseQuery = Agenda::where('status', 'Publish')->where('tanggal_selesai', '<', Carbon::now());
+        $baseQuery = Agenda::where('status', 'Publish')->where('tanggal_selesai', '<=', $nowWib);
         $totalSelesai = (clone $baseQuery)->count();
         $sudahDokumentasi = (clone $baseQuery)->whereHas('galeriDokumentasi')->count();
         $belumDokumentasi = $totalSelesai - $sudahDokumentasi;
@@ -89,7 +91,10 @@ class GaleriController extends Controller
 
         // Check agenda is eligible
         $agenda = Agenda::findOrFail($request->agenda_id);
-        if ($agenda->status !== 'Publish' || $agenda->tanggal_selesai > Carbon::now()) {
+        $nowWib = Carbon::now('Asia/Jakarta')->format('Y-m-d H:i:s');
+        $selesaiWib = Carbon::parse($agenda->tanggal_selesai)->format('Y-m-d H:i:s');
+
+        if ($agenda->status !== 'Publish' || $selesaiWib > $nowWib) {
             return back()->with('error', 'Agenda belum memenuhi syarat untuk dokumentasi.');
         }
 
@@ -122,6 +127,10 @@ class GaleriController extends Controller
     {
         $galeri = GaleriDokumentasi::findOrFail($id);
 
+        if ($galeri->operator_id !== auth()->id()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah dokumentasi ini.');
+        }
+
         $request->validate([
             'jumlah_peserta' => 'nullable|integer|min:0',
             'foto_baru' => 'nullable|array|max:10',
@@ -130,15 +139,19 @@ class GaleriController extends Controller
             'foto_hapus.*' => 'string',
         ]);
 
-        // Handle deleted photos
+        // Handle deleted photos: hanya file yang terdaftar sah di data galeri ini
         $existingPhotos = $galeri->foto ?? [];
         $photosToDelete = $request->input('foto_hapus', []);
+        $allowedPrefix = realpath(public_path('assets/images/galeri'));
 
         foreach ($photosToDelete as $photoPath) {
-            if (file_exists(public_path($photoPath))) {
-                unlink(public_path($photoPath));
+            if (in_array($photoPath, $existingPhotos)) {
+                $actualPath = realpath(public_path($photoPath));
+                if ($actualPath && $allowedPrefix && str_starts_with($actualPath, $allowedPrefix) && file_exists($actualPath)) {
+                    unlink($actualPath);
+                }
+                $existingPhotos = array_filter($existingPhotos, fn($p) => $p !== $photoPath);
             }
-            $existingPhotos = array_filter($existingPhotos, fn($p) => $p !== $photoPath);
         }
 
         // Handle new photos
@@ -162,13 +175,20 @@ class GaleriController extends Controller
     public function destroy($id)
     {
         $galeri = GaleriDokumentasi::findOrFail($id);
-        $agendaId = $galeri->agenda_id;
 
-        // Delete all photos from disk
+        if ($galeri->operator_id !== auth()->id()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus dokumentasi ini.');
+        }
+
+        $agendaId = $galeri->agenda_id;
+        $allowedPrefix = realpath(public_path('assets/images/galeri'));
+
+        // Delete all photos from disk securely
         if ($galeri->foto) {
             foreach ($galeri->foto as $photoPath) {
-                if (file_exists(public_path($photoPath))) {
-                    unlink(public_path($photoPath));
+                $actualPath = realpath(public_path($photoPath));
+                if ($actualPath && $allowedPrefix && str_starts_with($actualPath, $allowedPrefix) && file_exists($actualPath)) {
+                    unlink($actualPath);
                 }
             }
         }

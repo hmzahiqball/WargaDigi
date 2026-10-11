@@ -42,7 +42,13 @@ class BeritaController extends Controller
             'isi_berita' => 'required|string',
             'foto_utama' => 'nullable|image|max:5120', // 5MB max
             'action' => 'required|in:draft,review'
+        ], [
+            'isi_berita.required' => 'Isi konten berita wajib diisi.'
         ]);
+
+        if (trim(strip_tags(str_replace('&nbsp;', ' ', $request->isi_berita))) === '') {
+            return back()->withInput()->withErrors(['isi_berita' => 'Isi konten berita wajib diisi.']);
+        }
 
         $data = $request->only(['judul_berita', 'kategori', 'isi_berita']);
         $data['slug'] = \Illuminate\Support\Str::slug($request->judul_berita) . '-' . uniqid();
@@ -67,13 +73,24 @@ class BeritaController extends Controller
             abort(403);
         }
 
+        // Validate status: Only Draft and Revisi can be edited
+        if (! in_array($berita->status, ['Draft', 'Revisi'])) {
+            abort(403, 'Berita yang sudah berstatus ' . $berita->status . ' tidak dapat diubah sepihak.');
+        }
+
         $request->validate([
             'judul_berita' => 'required|string|max:255',
             'kategori' => 'required|string',
             'isi_berita' => 'required|string',
             'foto_utama' => 'nullable|image|max:5120',
             'action' => 'required|in:draft,review'
+        ], [
+            'isi_berita.required' => 'Isi konten berita wajib diisi.'
         ]);
+
+        if (trim(strip_tags(str_replace('&nbsp;', ' ', $request->isi_berita))) === '') {
+            return back()->withInput()->withErrors(['isi_berita' => 'Isi konten berita wajib diisi.']);
+        }
 
         $data = $request->only(['judul_berita', 'kategori', 'isi_berita']);
         if ($request->judul_berita !== $berita->judul_berita) {

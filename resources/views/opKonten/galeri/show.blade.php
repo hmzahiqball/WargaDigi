@@ -122,7 +122,7 @@
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h2 class="fw-bold text-dark mb-0" style="font-size: 24px; line-height: 1.3;">{{ $agenda->judul_agenda }}</h2>
                 <div class="d-flex gap-2 flex-shrink-0">
-                    @if($galeri)
+                    @if($galeri && $galeri->operator_id === auth()->id())
                         <button type="button" class="btn btn-sm fw-semibold rounded-3 px-3" style="border: 1px solid #D1D5DB; color: #374151; font-size: 13px;" onclick="openEditModal()">
                             <i class="bi bi-pencil me-1"></i> Edit Detail
                         </button>
@@ -237,7 +237,7 @@
         </div>
 
         {{-- Danger Zone --}}
-        @if($galeri)
+        @if($galeri && $galeri->operator_id === auth()->id())
         <div class="mt-3 p-3 rounded-3" style="background: #FEF2F2; border: 1px solid #FECACA;">
             <p class="text-danger small fw-medium mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Zona Berbahaya</p>
             <form action="{{ route('opkonten.galeri.destroy', $galeri->id) }}" method="POST" id="formDeleteGaleri">

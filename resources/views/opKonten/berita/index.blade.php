@@ -899,6 +899,13 @@
 
     // Sync Quill content before submit
     document.getElementById('formBuatBerita').addEventListener('submit', function(e) {
+        const textContent = quill.getText().trim();
+        if (!textContent) {
+            e.preventDefault();
+            if (window.resetFormSubmitting) window.resetFormSubmitting(this);
+            showNotification('Isi konten berita wajib diisi.', true);
+            return false;
+        }
         document.getElementById('isiBeritaInput').value = quill.root.innerHTML;
         const action = document.getElementById('actionInput').value;
         if (action === 'review') {
@@ -1101,15 +1108,20 @@
     }
 
     function editBerita() {
+        const id = document.getElementById('beritaIdInput').value;
+        const item = dummyBeritaData.find(b => b.id == id);
+
+        if (!item || (item.status !== 'Draft' && item.status !== 'Revisi')) {
+            showNotification('Berita yang berstatus ' + (item ? item.status : '') + ' tidak dapat diedit sepihak.', true);
+            return;
+        }
+
         document.getElementById('modalBuatBeritaLabel').textContent = 'Edit Berita';
         document.getElementById('footerCreateActions').classList.add('d-none');
         document.getElementById('footerEditActions').classList.remove('d-none');
 
         const detailModal = bootstrap.Modal.getInstance(document.getElementById('modalDetailBerita'));
         if (detailModal) detailModal.hide();
-        
-        const id = document.getElementById('beritaIdInput').value;
-        const item = dummyBeritaData.find(b => b.id == id);
         
         if (item) {
             document.getElementById('judulBeritaInput').value = item.judul_berita;

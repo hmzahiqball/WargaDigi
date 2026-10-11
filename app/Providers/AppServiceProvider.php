@@ -60,14 +60,32 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Failed::class, function (Failed $event) {
-            activity('auth')
-                ->withProperties([
-                    'status' => 'Gagal',
-                    'category' => 'login',
-                    'nik' => $event->credentials['nik'] ?? null,
-                ])
-                ->event('failed')
-                ->log('Percobaan login gagal.');
+            $user = $event->user;
+            $nik = $event->credentials['nik'] ?? null;
+            if (! $user && $nik) {
+                $user = \App\Models\User::where('nik', $nik)->first();
+            }
+
+            $activity = activity('auth');
+            if ($user) {
+                $activity->performedOn($user)->causedBy($user);
+            }
+
+            $userName = $user?->name ?? ($nik ? "NIK: {$nik}" : 'Pengguna Tidak Dikenal');
+            $userRole = $user?->role ?? 'Pengguna';
+
+            $activity->withProperties([
+                'status' => 'Gagal',
+                'category' => 'login',
+                'nik' => $nik,
+                'name' => $userName,
+                'role' => $userRole,
+            ])
+            ->event('failed')
+            ->log($user 
+                ? "Percobaan login gagal untuk NIK {$user->nik} ({$user->name})."
+                : ($nik ? "Percobaan login gagal: NIK {$nik} tidak terdaftar." : 'Percobaan login gagal.')
+            );
         });
     }
 }

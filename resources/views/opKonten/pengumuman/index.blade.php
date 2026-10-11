@@ -426,7 +426,7 @@
                 <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end gap-2" style="border-color: #BFCABA !important;">
                     <button type="button" class="btn btn-draft fw-semibold" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="confirmCloseModal()">Batal</button>
                     <button type="submit" class="btn btn-gradient-green fw-semibold px-4 text-white d-flex align-items-center gap-2">
-                        <i class="bi bi-save"></i> Simpan ke Draf
+                        <i class="bi bi-save"></i> <span id="submitBtnPengumumanText">Simpan ke Draf</span>
                     </button>
                 </div>
         </form>
@@ -617,6 +617,13 @@
 
         // Sync Quill on submit
         form.addEventListener('submit', function(e) {
+            const textContent = quill.getText().trim();
+            if (!textContent) {
+                e.preventDefault();
+                if (window.resetFormSubmitting) window.resetFormSubmitting(form);
+                showNotification('Isi pengumuman wajib diisi.', true);
+                return false;
+            }
             document.getElementById('isiPengumumanInput').value = quill.root.innerHTML;
         });
 
@@ -674,6 +681,8 @@
         document.getElementById('alertCatatanRevisi').classList.add('d-none');
         
         document.getElementById('modalTitle').textContent = 'Buat Pengumuman Baru';
+        const submitBtnText = document.getElementById('submitBtnPengumumanText');
+        if (submitBtnText) submitBtnText.textContent = 'Simpan ke Draf';
         pengumumanModal.show();
     }
 
@@ -687,6 +696,11 @@
         form.action = `/op-konten/pengumuman/${item.id}`;
         document.getElementById('pengumumanIdInput').value = item.id;
         document.getElementById('modalTitle').textContent = 'Edit Pengumuman';
+        
+        const submitBtnText = document.getElementById('submitBtnPengumumanText');
+        if (submitBtnText) {
+            submitBtnText.textContent = item.status === 'Revisi' ? 'Simpan & Ajukan Ulang' : 'Simpan Perubahan';
+        }
         
         document.getElementById('judulPengumuman').value = item.judul_pengumuman;
         document.getElementById('isPriorityToggle').checked = item.is_priority;

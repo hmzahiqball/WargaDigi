@@ -162,7 +162,13 @@ class AdminController extends Controller
 
         // Category filter (stored in properties->category or derived from log_name).
         if ($category = $request->input('category')) {
-            $query->where('properties->category', $category);
+            $query->where(function ($q) use ($category) {
+                $q->where('properties->category', $category)
+                    ->orWhere('log_name', $category);
+                if ($category === 'login') {
+                    $q->orWhere('log_name', 'auth');
+                }
+            });
         }
 
         $paginated = $query->paginate(15)->withQueryString();
@@ -185,16 +191,19 @@ class AdminController extends Controller
     protected function transformActivity($activity): array
     {
         $causer = $activity->causer;
-        $name = $causer?->name ?? ($causer?->username ?? 'Sistem');
-        $role = $causer?->role ?? 'SISTEM';
         $props = $activity->properties ?? collect();
+        $targetNik = $props['nik'] ?? null;
+        $targetUser = (! $causer && $targetNik) ? \App\Models\User::where('nik', $targetNik)->first() : null;
+
+        $name = $causer?->name ?? ($causer?->username ?? ($props['name'] ?? ($targetUser?->name ?? ($targetNik ? "NIK: {$targetNik}" : 'Sistem'))));
+        $role = $causer?->role ?? ($props['role'] ?? ($targetUser?->role ?? ($targetNik ? 'Tamu' : 'SISTEM')));
         $status = $props['status'] ?? 'Sukses';
         $category = $props['category'] ?? ($activity->log_name ?: 'lainnya');
 
         // Icon + display type by log_name / event.
         [$activityType, $icon] = $this->activityDisplay($activity->log_name, $activity->event);
 
-        $created = $activity->created_at;
+        $created = $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->timezone('Asia/Jakarta') : null;
 
         return [
             'date' => $created?->translatedFormat('d M Y') ?? '-',
@@ -209,7 +218,7 @@ class AdminController extends Controller
             'activity_icon' => $icon,
             'description' => $activity->description,
             'status' => $status,
-            'status_class' => $status === 'Gagal' ? 'danger' : 'success',
+            'status_class' => in_array($status, ['Gagal', 'Failed']) ? 'failed' : 'success',
             'category' => $category,
         ];
     }
@@ -217,7 +226,11 @@ class AdminController extends Controller
     protected function activityDisplay(?string $logName, ?string $event): array
     {
         return match ($logName) {
-            'auth'       => ['Login / Logout', 'bi-box-arrow-in-right'],
+            'auth'       => match ($event) {
+                'logout' => ['Logout', 'bi-box-arrow-right'],
+                'failed' => ['Login Gagal', 'bi-shield-x'],
+                default  => ['Login', 'bi-box-arrow-in-right'],
+            },
             'pengaturan' => ['Mengubah Pengaturan', 'bi-gear'],
             'master_rt'  => ['Manajemen RT', 'bi-building'],
             'pengguna'   => ['Manajemen Pengguna', 'bi-person-gear'],
