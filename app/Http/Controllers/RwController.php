@@ -384,9 +384,9 @@ class RwController extends Controller
      */
     public function persetujuanDokumen()
     {
-        // Ambil data pengajuan yang sudah disetujui RT dari database
+        // Ambil data pengajuan dari database
         $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
-            ->whereIn('status', ['Disetujui RT', 'Ditolak RW', 'Selesai'])
+            ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Selesai', 'Ditolak RW', 'Ditolak RT'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -411,6 +411,13 @@ class RwController extends Controller
                 'tipe_surat' => $item->tipe_surat,
                 'tanggal_pengajuan' => $item->created_at->format('d M Y'),
                 'status' => $item->status,
+                'catatan_rt' => $item->catatan_rt,
+                'catatan_rw' => $item->catatan_rw,
+                'ttd_rt' => $item->ttd_rt,
+                'stempel_rt' => $item->stempel_rt,
+                'ttd_rw' => $item->ttd_rw,
+                'stempel_rw' => $item->stempel_rw,
+                'tanggal_selesai' => $item->tanggal_selesai ? $item->tanggal_selesai->format('d M Y') : null,
                 'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
                 'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d-m-Y')) : '-',
                 'agama' => $p->agama ?? '-',
@@ -552,8 +559,8 @@ class RwController extends Controller
             'nama_ketua_rw' => $namaKetuaRw,
             'ttd_rt' => $item->ttd_rt,
             'stempel_rt' => $item->stempel_rt,
-            'ttd_rw' => null, // Sembunyikan ttd RW untuk preview sebelum disahkan
-            'stempel_rw' => null,
+            'ttd_rw' => $item->ttd_rw,
+            'stempel_rw' => $item->stempel_rw,
             'is_preview' => true,
         ];
 

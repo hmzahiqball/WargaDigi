@@ -46,18 +46,159 @@
                     <div class="d-flex align-items-center gap-2">
                         @php
                             $sc = match($item->status) {
-                                'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#856404', 'label' => 'Menunggu RT'],
-                                'Disetujui RT' => ['bg' => '#D1ECF1', 'color' => '#0C5460', 'label' => 'Menunggu RW'],
-                                'Selesai' => ['bg' => '#D4EDDA', 'color' => '#155724', 'label' => 'Selesai'],
-                                'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RT'],
-                                'Ditolak RW' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RW'],
-                                default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status],
+                                'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#856404', 'label' => 'Menunggu RT', 'icon' => 'bi-hourglass-split'],
+                                'Disetujui RT' => ['bg' => '#D1ECF1', 'color' => '#0C5460', 'label' => 'Menunggu RW', 'icon' => 'bi-hourglass-split'],
+                                'Selesai' => ['bg' => '#D4EDDA', 'color' => '#155724', 'label' => 'Selesai', 'icon' => 'bi-check-circle-fill'],
+                                'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RT', 'icon' => 'bi-x-circle-fill'],
+                                'Ditolak RW' => ['bg' => '#F8D7DA', 'color' => '#721C24', 'label' => 'Ditolak RW', 'icon' => 'bi-x-circle-fill'],
+                                default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status, 'icon' => 'bi-info-circle'],
                             };
                         @endphp
-                        <span class="badge rounded-pill px-3 py-1" style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px;">{{ $sc['label'] }}</span>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 border-0 shadow-none" 
+                                style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px; cursor:pointer;" 
+                                data-bs-toggle="modal" data-bs-target="#modalStatusWarga{{ $item->id }}"
+                                title="Klik untuk melihat detail dan alasan status">
+                            <i class="bi {{ $sc['icon'] }}"></i>
+                            <span>{{ $sc['label'] }}</span>
+                        </button>
                         @if($item->status === 'Selesai')
                             <a href="{{ route('warga.surat.download-pdf', $item->id) }}" class="btn btn-sm btn-success rounded-pill px-3"><i class="bi bi-download me-1"></i>PDF</a>
                         @endif
+                    </div>
+                </div>
+
+                {{-- Modal Detail Status & Alasan Penolakan untuk Warga --}}
+                <div class="modal fade" id="modalStatusWarga{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
+                            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                                <h5 class="modal-title fw-bold">
+                                    @if(in_array($item->status, ['Ditolak RT', 'Ditolak RW']))
+                                        <i class="bi bi-x-circle-fill text-danger me-2"></i>Alasan Penolakan Surat
+                                    @elseif($item->status === 'Selesai')
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>Surat Telah Selesai
+                                    @else
+                                        <i class="bi bi-clock-history text-warning me-2"></i>Status Peninjauan Surat
+                                    @endif
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body px-4 pt-3 pb-3">
+                                <div class="mb-3 p-3 rounded-3" style="background:#f8f9fa;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold text-dark">{{ $item->tipe_surat }}</span>
+                                        <span class="badge rounded-pill px-3 py-1" style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px;">{{ $sc['label'] }}</span>
+                                    </div>
+                                    <div class="text-muted small"><i class="bi bi-calendar3 me-1"></i>Diajukan pada {{ $item->created_at->format('d M Y, H:i') }} WIB</div>
+                                </div>
+
+                                @if($item->status === 'Ditolak RT' || $item->status === 'Ditolak RW')
+                                    <div class="alert alert-danger border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                                        <i class="bi bi-exclamation-triangle-fill fs-5 mt-n1"></i>
+                                        <div>
+                                            <strong>Pengajuan Ditolak oleh {{ $item->status === 'Ditolak RT' ? 'Ketua RT' : 'Ketua RW' }}</strong>
+                                            <div class="small mt-1">Berikut adalah alasan penolakan atau catatan yang diberikan oleh pengurus:</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Alasan / Catatan Penolakan:</label>
+                                        <div class="p-3 rounded-3 border small" style="min-height: 70px; border-color: #f1aeb5 !important; background-color: #fff8f8 !important;">
+                                            @php
+                                                $alasan = $item->status === 'Ditolak RT' ? ($item->catatan_rt ?: null) : ($item->catatan_rw ?: null);
+                                            @endphp
+                                            @if($alasan)
+                                                <p class="mb-0 fw-semibold text-danger">{{ $alasan }}</p>
+                                            @else
+                                                <p class="mb-0 text-muted fst-italic">Tidak ada catatan alasan penolakan yang disertakan oleh pengurus. Silakan hubungi pengurus RT/RW Anda untuk informasi lebih lanjut.</p>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="p-2 rounded-3 bg-light text-muted small d-flex align-items-center gap-2">
+                                        <i class="bi bi-lightbulb-fill text-warning"></i>
+                                        <span>Anda dapat mengajukan permohonan surat baru setelah memperbaiki persyaratan atau data di atas.</span>
+                                    </div>
+
+                                @elseif($item->status === 'Diajukan')
+                                    <div class="alert alert-warning border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                                        <i class="bi bi-hourglass-split fs-5 mt-n1 text-warning"></i>
+                                        <div>
+                                            <strong>Masih Menunggu Peninjauan RT</strong>
+                                            <div class="small mt-1">Surat permohonan Anda telah berhasil diajukan dan saat ini sedang menunggu peninjauan serta tanda tangan dari Ketua RT setempat.</div>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 rounded-3 bg-light border small">
+                                        <div class="fw-bold text-muted mb-2">Alur Verifikasi Surat:</div>
+                                        <div class="d-flex align-items-center justify-content-between text-center gap-1">
+                                            <div class="p-2 rounded bg-success text-white small flex-fill">1. Diajukan &check;</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-warning text-dark small fw-bold flex-fill shadow-sm">2. Verifikasi RT &bull;</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-white border text-muted small flex-fill">3. Pengesahan RW</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-white border text-muted small flex-fill">4. Selesai</div>
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted mt-3">
+                                        <i class="bi bi-info-circle me-1 text-primary"></i>Setelah Ketua RT menyetujui, surat akan otomatis diteruskan ke Ketua RW untuk ditandatangani dan disahkan.
+                                    </div>
+
+                                @elseif($item->status === 'Disetujui RT')
+                                    <div class="alert alert-info border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                                        <i class="bi bi-clock-history fs-5 mt-n1 text-info"></i>
+                                        <div>
+                                            <strong>Disetujui RT &bull; Menunggu Pengesahan RW</strong>
+                                            <div class="small mt-1">Surat permohonan Anda telah <strong>disetujui dan ditandatangani oleh Ketua RT</strong>. Saat ini surat sedang menunggu peninjauan dan pengesahan tanda tangan dari Ketua RW.</div>
+                                        </div>
+                                    </div>
+                                    @if($item->catatan_rt)
+                                        <div class="mb-3 p-3 rounded-3 bg-light border small">
+                                            <span class="text-muted fw-bold">Catatan dari RT:</span>
+                                            <p class="mb-0 text-dark">{{ $item->catatan_rt }}</p>
+                                        </div>
+                                    @endif
+                                    <div class="p-3 rounded-3 bg-light border small">
+                                        <div class="fw-bold text-muted mb-2">Alur Verifikasi Surat:</div>
+                                        <div class="d-flex align-items-center justify-content-between text-center gap-1">
+                                            <div class="p-2 rounded bg-success text-white small flex-fill">1. Diajukan &check;</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-success text-white small flex-fill">2. Disetujui RT &check;</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-info text-dark small fw-bold flex-fill shadow-sm">3. Pengesahan RW &bull;</div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="p-2 rounded bg-white border text-muted small flex-fill">4. Selesai</div>
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted mt-3">
+                                        <i class="bi bi-info-circle me-1 text-primary"></i>Setelah disahkan oleh Ketua RW, Anda dapat langsung mengunduh surat resmi dalam format PDF berstempel dan bertanda tangan lengkap.
+                                    </div>
+
+                                @elseif($item->status === 'Selesai')
+                                    <div class="alert alert-success border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                                        <i class="bi bi-check-circle-fill fs-5 mt-n1 text-success"></i>
+                                        <div>
+                                            <strong>Surat Telah Selesai & Disahkan</strong>
+                                            <div class="small mt-1">Dokumen telah disahkan secara resmi oleh Ketua RT dan Ketua RW. Silakan unduh dokumen surat resmi Anda di bawah ini.</div>
+                                        </div>
+                                    </div>
+                                    @if($item->catatan_rw)
+                                        <div class="mb-3 p-3 rounded-3 bg-light border small">
+                                            <span class="text-muted fw-bold">Catatan dari RW:</span>
+                                            <p class="mb-0 text-dark">{{ $item->catatan_rw }}</p>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                            <div class="modal-footer border-0 px-4 pb-4">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                                @if($item->status === 'Selesai')
+                                    <a href="{{ route('warga.surat.download-pdf', $item->id) }}" class="btn btn-success rounded-pill px-4 fw-bold"><i class="bi bi-download me-1"></i>Unduh PDF</a>
+                                @elseif(in_array($item->status, ['Ditolak RT', 'Ditolak RW']))
+                                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" data-bs-dismiss="modal" onclick="document.getElementById('jenisSuratSelect').scrollIntoView({behavior: 'smooth'});"><i class="bi bi-arrow-repeat me-1"></i>Ajukan Surat Baru</button>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @empty
