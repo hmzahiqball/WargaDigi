@@ -86,7 +86,7 @@
                     {{ $deskripsiUsaha }}
                 </p>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ $linkDirectChatUsaha }}" target="_blank" class="btn {{ $messagingBtnHeroClass }} rounded-pill px-4 py-2 fw-semibold text-decoration-none shadow-sm text-white d-inline-flex align-items-center gap-2" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
+                    <a href="{{ $linkDirectChatUsaha }}" target="_blank" onclick="trackWaClick('{{ $usaha->id ?? '' }}')" class="btn {{ $messagingBtnHeroClass }} rounded-pill px-4 py-2 fw-semibold text-decoration-none shadow-sm text-white d-inline-flex align-items-center gap-2" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                         <i class="{{ $messagingIcon }}"></i> Hubungi via {{ $messagingLabel }}
                     </a>
                 </div>
@@ -120,3 +120,24 @@
     @include('warga.umkm.components.footerUmkm')
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function trackWaClick(usahaId) {
+    if (!usahaId) return;
+    const url = "{{ route('umkm.usaha.track-wa', ['id' => ':id']) }}".replace(':id', encodeURIComponent(usahaId));
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token || '',
+            'Accept': 'application/json'
+        },
+        keepalive: true
+    }).catch(function() {
+        fetch(url, { method: 'GET', keepalive: true }).catch(function(){});
+    });
+}
+</script>
+@endpush

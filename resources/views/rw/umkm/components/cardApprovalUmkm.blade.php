@@ -61,18 +61,32 @@
 
                 @if(!$isPimpinan && $statusVerifikasi === 'Pending')
                     <div class="d-flex justify-content-end gap-2 pt-1">
-                        <form action="{{ route('rw.umkm.reject', $item->id) }}" method="POST" onclick="event.stopPropagation();">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-danger rounded-3 px-3 py-2 small fw-semibold text-dark">
-                                Reject
-                            </button>
-                        </form>
+                        <button type="button" 
+                                class="btn btn-outline-danger rounded-3 px-3 py-2 small fw-semibold" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalRejectUmkm{{ $item->id }}"
+                                onclick="event.stopPropagation();">
+                            Reject
+                        </button>
                         <form action="{{ route('rw.umkm.approve', $item->id) }}" method="POST" onclick="event.stopPropagation();">
                             @csrf
                             <button type="submit" class="btn text-white rounded-3 px-4 py-2 small fw-semibold shadow-sm" style="background-color: #5b9b76; border-color: #5b9b76;">
                                 <i class="bi bi-check-circle me-1"></i> Approve Profile
                             </button>
                         </form>
+                    </div>
+                @elseif($statusVerifikasi === 'Rejected')
+                    <div class="d-flex justify-content-between align-items-center pt-1 flex-wrap gap-2">
+                        @if(!empty($item->catatan_verifikasi))
+                            <span class="text-danger small" style="font-size: 11.5px;">
+                                <i class="bi bi-info-circle me-1"></i><strong>Alasan:</strong> {{ \Illuminate\Support\Str::limit($item->catatan_verifikasi, 50) }}
+                            </span>
+                        @else
+                            <span></span>
+                        @endif
+                        <span class="text-danger small fw-semibold d-inline-flex align-items-center gap-1">
+                            <span>Lihat Rincian Penolakan</span> <i class="bi bi-chevron-right small"></i>
+                        </span>
                     </div>
                 @elseif($isPimpinan)
                     <div class="d-flex justify-content-end pt-1">

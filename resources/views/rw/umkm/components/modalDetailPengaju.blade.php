@@ -119,6 +119,14 @@
                                             </span>
                                         </td>
                                     </tr>
+                                    @if($statusVerifikasi === 'Rejected' && !empty($item->catatan_verifikasi))
+                                    <tr>
+                                        <td class="text-danger small fw-semibold">Alasan Penolakan</td>
+                                        <td class="small text-danger fw-semibold">
+                                            {{ $item->catatan_verifikasi }}
+                                        </td>
+                                    </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -139,21 +147,72 @@
                 <div class="d-flex gap-2">
                     
                     @if(!$isPimpinan && $statusVerifikasi === 'Pending')
-                        <form action="{{ route('rw.umkm.reject', $item->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-danger rounded-3 px-3 py-2 small fw-semibold">
-                                Tolak
-                            </button>
-                        </form>
+                        <button type="button" 
+                                class="btn btn-outline-danger rounded-3 px-3 py-2 small fw-semibold"
+                                data-bs-dismiss="modal"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalRejectUmkm{{ $item->id }}">
+                            Tolak
+                        </button>
                         <form action="{{ route('rw.umkm.approve', $item->id) }}" method="POST" class="d-inline">
                             @csrf
                             <button type="submit" class="btn btn-success rounded-3 px-3 py-2 small fw-semibold text-white" style="background-color: #5b9b76; border-color: #5b9b76;">
                                 Setujui Profil
                             </button>
                         </form>
+                    @elseif($statusVerifikasi === 'Rejected')
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill small fw-semibold">
+                            <i class="bi bi-x-circle me-1"></i> Pengajuan Ditolak
+                        </span>
+                    @elseif($statusVerifikasi === 'Approved')
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill small fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i> Telah Disetujui
+                        </span>
                     @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@if(!$isPimpinan && $statusVerifikasi === 'Pending')
+{{-- Modal Konfirmasi Penolakan UMKM --}}
+<div class="modal fade" id="modalRejectUmkm{{ $item->id }}" tabindex="-1" aria-labelledby="modalRejectUmkmLabel{{ $item->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-bottom px-4 py-3 align-items-center">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="modalRejectUmkmLabel{{ $item->id }}">
+                        Tolak Pendaftaran UMKM
+                    </h5>
+                    <p class="text-muted small mb-0">{{ $item->nama_usaha }} &bull; {{ $item->pemilik->penduduk->nama_lengkap ?? $item->pemilik->username ?? 'Warga' }}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('rw.umkm.reject', $item->id) }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning border-0 rounded-3 p-3 mb-3 d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-5 flex-shrink-0"></i>
+                        <div class="small text-dark">
+                            Pengajuan yang ditolak akan diarsipkan ke tab <strong>Pengajuan Ditolak</strong> dan catatan verifikasi akan ditampilkan kepada warga pemohon dan pengurus RW.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Alasan Penolakan / Catatan Verifikasi <span class="text-danger">*</span></label>
+                        <textarea name="catatan_verifikasi" class="form-control rounded-3" rows="3" placeholder="Contoh: Kategori usaha tidak sesuai, data KTP/identitas belum valid, atau izin usaha belum memenuhi pedoman RW." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-3 py-2 small fw-semibold" data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-danger rounded-3 px-4 py-2 small fw-semibold shadow-sm">
+                        <i class="bi bi-x-circle me-1"></i> Tolak Pengajuan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif

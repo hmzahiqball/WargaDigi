@@ -2282,7 +2282,13 @@ $transition-base: all 0.3s ease;
     }
 }
 
-// --- Notification Panel ---
+// ==========================================================================
+// [KOMPONEN] TOPBAR: PANEL NOTIFIKASI
+// File Blade: resources/views/components/topbar.blade.php
+// Deskripsi : Styling panel drawer notifikasi, full-height body,
+//             scrollbar minimalis, tombol sembunyikan (icon mata),
+//             dan item notifikasi dengan wrapping optimal.
+// ==========================================================================
 .admin-notif-panel {
     position: fixed;
     top: 0;
@@ -2293,12 +2299,15 @@ $transition-base: all 0.3s ease;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
     z-index: 1050;
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
 
     &.open {
         right: 0;
     }
 
     .notif-panel-header {
+        flex-shrink: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -2326,14 +2335,69 @@ $transition-base: all 0.3s ease;
     }
 
     .notif-panel-body {
+        flex: 1 1 auto;
+        height: calc(100vh - 65px);
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
         padding: 0.5rem 0;
+
+        /* Minimalist & Subtle Scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.12);
+            border-radius: 999px;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.25);
+            }
+        }
     }
 
-    .notif-item {
+    /* Tombol Sembunyikan Notifikasi (Icon Mata di Pojok Kanan Atas) */
+    .notif-hide-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
         display: flex;
-        gap: 0.75rem;
-        padding: 1rem 1.5rem;
-        transition: $transition-base;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        z-index: 5;
+
+        &:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
+    }
+
+    /* Item Notifikasi */
+    .notif-item {
+        position: relative;
+        display: flex;
+        gap: 0.85rem;
+        padding: 0.95rem 1.15rem;
+        padding-right: 2.1rem;
+        transition: background 0.2s ease, opacity 0.25s ease, transform 0.25s ease;
         cursor: pointer;
 
         &:hover {
@@ -2342,7 +2406,25 @@ $transition-base: all 0.3s ease;
 
         &.unread {
             background: rgba($primary, 0.03);
-            border-left: 3px solid $primary;
+            border-left: none;
+        }
+
+        .notif-content {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .notif-text {
+            font-size: 0.85rem;
+            margin-bottom: 0.15rem;
+            font-weight: 500;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .notif-time {
+            font-size: 0.75rem;
+            color: #999;
         }
     }
 
@@ -2370,17 +2452,11 @@ $transition-base: all 0.3s ease;
             background: #e3f2fd;
             color: #1565c0;
         }
-    }
 
-    .notif-text {
-        font-size: 0.85rem;
-        margin-bottom: 0.15rem;
-        font-weight: 500;
-    }
-
-    .notif-time {
-        font-size: 0.75rem;
-        color: #999;
+        &.danger {
+            background: #ffebee;
+            color: #c62828;
+        }
     }
 }
 
@@ -3438,3 +3514,39 @@ $transition-base: all 0.3s ease;
 // 6. Module Styles
 // ==========================================
 @import "pages/umkm";
+
+// ==========================================================================
+// [HALAMAN] KELOLA UMKM: DROPDOWN PILIH USAHA
+// File Blade: resources/views/warga/umkm/kelola_umkm.blade.php
+// Deskripsi : Rotasi ikon chevron 180 derajat saat dropdown terbuka,
+//             penghapusan caret bawaan Bootstrap, dan scrollbar minimalis.
+// ==========================================================================
+#dropdownPilihUsaha.dropdown-toggle::after {
+    display: none !important;
+}
+
+#dropdownPilihUsaha[aria-expanded="true"] .dropdown-arrow-icon {
+    transform: rotate(180deg);
+}
+
+.custom-dropdown-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+
+        &:hover {
+            background: #94a3b8;
+        }
+    }
+}

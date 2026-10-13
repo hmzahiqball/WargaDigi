@@ -174,6 +174,8 @@ class RwController extends Controller
         if (!$tab) {
             if ($request->has('terdaftar_page') || $request->has('q') || $request->has('kategori') || $request->has('status') || $request->has('q_terdaftar') || $request->has('search')) {
                 $tab = 'terdaftar';
+            } elseif ($request->has('ditolak_page')) {
+                $tab = 'ditolak';
             } elseif ($request->has('approval_page')) {
                 $tab = 'persetujuan';
             } else {
@@ -190,13 +192,21 @@ class RwController extends Controller
             ->withQueryString();
         $pendingUsaha->appends(['tab' => 'persetujuan']);
 
-        // Data untuk Pimpinan RW (History yang sedang pending dan sudah diapprove) - 4 per pagination
-        $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved'])
+        // Data untuk Pimpinan RW (History pengajuan: Pending, Approved, dan Rejected) - 4 per pagination
+        $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved', 'Rejected'])
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
             ->latest()
             ->paginate(4, ['*'], 'approval_page')
             ->withQueryString();
         $historyUsaha->appends(['tab' => 'persetujuan']);
+
+        // Data Usaha yang Ditolak (Rejected) untuk Admin RW dan Pimpinan RW
+        $rejectedUsaha = UmkmUsaha::where('status_verifikasi', 'Rejected')
+            ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
+            ->latest()
+            ->paginate(4, ['*'], 'ditolak_page')
+            ->withQueryString();
+        $rejectedUsaha->appends(['tab' => 'ditolak']);
 
         $daftarKategoriUmkm = KategoriUmkm::all();
 
@@ -267,6 +277,7 @@ class RwController extends Controller
         return view('rw.umkm.umkm', compact(
             'pendingUsaha', 
             'historyUsaha', 
+            'rejectedUsaha',
             'daftarUsahaTerdaftar', 
             'daftarKategoriUmkm',
             'tab', 
@@ -358,10 +369,20 @@ class RwController extends Controller
     public function approveUmkm($id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
+
+        if ($usaha->status_verifikasi !== 'Pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan UMKM dengan status Pending yang dapat disetujui.');
+        }
+
         $usaha->update([
             'status_verifikasi' => 'Approved',
             'is_active' => true,
         ]);
+
+        $pemilik = \App\Models\User::where('nik', $usaha->nik)->first();
+        if ($pemilik) {
+            $pemilik->notify(new \App\Notifications\UmkmStatusNotification($usaha, 'Approved'));
+        }
 
         return redirect()->back()->with('success', 'Profil UMKM ' . $usaha->nama_usaha . ' berhasil disetujui.');
     }
@@ -369,12 +390,26 @@ class RwController extends Controller
     public function rejectUmkm(Request $request, $id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
+
+        if ($usaha->status_verifikasi !== 'Pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan UMKM dengan status Pending yang dapat diproses.');
+        }
+
+        $request->validate([
+            'catatan_verifikasi' => 'nullable|string|max:500',
+        ]);
+
         $catatan = strip_tags($request->input('catatan_verifikasi', 'Pendaftaran UMKM belum memenuhi persyaratan RW.'));
         $usaha->update([
             'status_verifikasi' => 'Rejected',
             'is_active' => false,
             'catatan_verifikasi' => $catatan,
         ]);
+
+        $pemilik = \App\Models\User::where('nik', $usaha->nik)->first();
+        if ($pemilik) {
+            $pemilik->notify(new \App\Notifications\UmkmStatusNotification($usaha, 'Rejected', $catatan));
+        }
 
         return redirect()->back()->with('success', 'Profil UMKM ' . $usaha->nama_usaha . ' telah ditolak.');
     }
