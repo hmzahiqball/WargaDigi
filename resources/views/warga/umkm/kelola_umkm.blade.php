@@ -4,6 +4,27 @@
 
 @section('content')
 <div class="container-fluid px-0">
+    @if(!$usaha)
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4 bg-white">
+            <div class="py-4">
+                <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                    <i class="bi bi-shop fs-1"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Belum Ada Usaha yang Didaftarkan</h4>
+                <p class="text-muted small mx-auto mb-4" style="max-width: 500px;">
+                    Anda belum memiliki UMKM yang terdaftar di RW 21. Daftarkan usaha Anda sekarang untuk mulai mempromosikan produk dan menjangkau seluruh warga!
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-light border rounded-pill px-4 py-2 fw-semibold small">
+                        Kembali ke Galeri
+                    </a>
+                    <a href="{{ route('warga.umkm.daftar') }}" class="btn btn-success rounded-pill px-4 py-2 fw-semibold small text-white" style="background-color: #5b9b76; border-color: #5b9b76;">
+                        <i class="bi bi-plus-circle me-1"></i> Daftarkan Usaha Saya
+                    </a>
+                </div>
+            </div>
+        </div>
+    @else
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
             <h2 class="fw-bold text-success mb-1">{{ $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom' }}</h2>
@@ -35,68 +56,97 @@
 
         <div class="d-flex align-items-center gap-2 flex-wrap">
             @if(isset($daftarUsaha) && $daftarUsaha->count() > 0)
-            <div class="dropdown">
-                <button class="btn btn-white bg-white border shadow-sm rounded-3 px-3 py-2 dropdown-toggle d-flex align-items-center gap-2 text-dark" type="button" id="dropdownPilihUsaha" data-bs-toggle="dropdown" aria-expanded="false" style="height: 46px;">
-                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+            <div class="dropdown" style="width: 360px; max-width: 100%;">
+                <button class="btn btn-white bg-white border shadow-sm rounded-3 px-3 py-2 dropdown-toggle d-flex align-items-center text-dark w-100" type="button" id="dropdownPilihUsaha" data-bs-toggle="dropdown" aria-expanded="false" style="height: 48px;">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 me-2" style="width: 32px; height: 32px;">
                         <i class="bi bi-shop"></i>
                     </div>
-                    <div class="text-start me-2">
-                        <div class="small fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="max-width: 180px; line-height: 1.2;">
-                            <span class="text-truncate">{{ $usaha->nama_usaha ?? 'Pilih Toko' }}</span>
+                    <div class="text-start me-auto overflow-hidden" style="min-width: 0; flex: 1;">
+                        <div class="small fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="line-height: 1.2;">
+                            <span class="text-truncate" style="max-width: 230px;">{{ $usaha->nama_usaha ?? 'Pilih Toko' }}</span>
                             @if(isset($usaha) && $usaha->status_verifikasi === 'Pending')
                                 <span class="badge bg-warning text-dark rounded-pill flex-shrink-0" style="font-size: 9px; padding: 2px 6px;">Pending</span>
                             @endif
                         </div>
-                        <div class="text-muted" style="font-size: 11px; line-height: 1.2;">Ganti Usaha ({{ $daftarUsaha->count() }})</div>
+                        <div class="text-muted text-truncate" style="font-size: 11px; line-height: 1.2;">Ganti Usaha ({{ $daftarUsaha->where('status_verifikasi', '!=', 'Rejected')->count() }})</div>
                     </div>
+                    <i class="bi bi-chevron-down ms-2 text-muted dropdown-arrow-icon flex-shrink-0" style="transition: transform 0.25s ease-in-out; font-size: 13px;"></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-2 mt-1" aria-labelledby="dropdownPilihUsaha" style="min-width: 290px; z-index: 1050;">
-                    <li class="dropdown-header small text-uppercase text-muted fw-bold px-3 py-2" style="font-size: 11px; letter-spacing: 0.5px;">
-                        <i class="bi bi-collection me-1"></i> Pilih Usaha Anda
-                    </li>
-                    @foreach($daftarUsaha as $itemUsaha)
-                        @php
-                            $isSelected = $usaha && ($usaha->id === $itemUsaha->id);
-                            $isPending = $itemUsaha->status_verifikasi === 'Pending';
-                        @endphp
-                        <li>
-                            @if($isPending)
-                                <div class="dropdown-item rounded-2 py-2 px-3 mb-1 d-flex align-items-center justify-content-between text-muted" 
-                                     style="cursor: not-allowed; background-color: #f8fafc; opacity: 0.85;" 
-                                     title="Usaha sedang dalam peninjauan RW (Pending) dan belum dapat dipilih">
-                                    <div class="d-flex align-items-center gap-2 text-truncate me-2">
-                                        <i class="bi bi-clock-history text-warning"></i>
-                                        <div class="text-truncate">
-                                            <div class="fw-semibold small text-truncate text-muted" style="max-width: 140px;">{{ $itemUsaha->nama_usaha }}</div>
-                                            <div class="text-muted" style="font-size: 10px;">
-                                                {{ $itemUsaha->kategori_umkm->nama_kategori ?? 'UMKM' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span class="badge bg-white text-dark fw-bold rounded-pill px-2 py-1 flex-shrink-0 border" style="font-size: 10px;">
-                                        Pending
-                                    </span>
-                                </div>
-                            @else
-                                <a class="dropdown-item rounded-2 py-2 px-3 mb-1 d-flex align-items-center justify-content-between {{ $isSelected ? 'active bg-success text-white' : 'text-dark' }}" 
-                                   href="{{ route('warga.umkm.kelola', ['usaha_id' => $itemUsaha->id]) }}">
-                                    <div class="d-flex align-items-center gap-2 text-truncate">
-                                        <i class="bi bi-shop {{ $isSelected ? 'text-white' : 'text-success' }}"></i>
-                                        <div class="text-truncate">
-                                            <div class="fw-semibold small text-truncate" style="max-width: 160px;">{{ $itemUsaha->nama_usaha }}</div>
-                                            <div class="{{ $isSelected ? 'text-white-50' : 'text-muted' }}" style="font-size: 11px;">
-                                                {{ $itemUsaha->kategori_umkm->nama_kategori ?? 'UMKM' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @if($isSelected)
-                                        <i class="bi bi-check2 fs-5 ms-2"></i>
-                                    @endif
-                                </a>
+                <div class="dropdown-menu bg-white dropdown-menu-end shadow-sm border-0 rounded-3 p-2 mt-1 w-100" aria-labelledby="dropdownPilihUsaha" style="min-width: 360px; z-index: 1050;">
+                    <div class="d-flex align-items-center justify-content-between px-2 pt-1 pb-2">
+                        <span class="small text-uppercase text-muted fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">
+                            <i class="bi bi-collection me-1"></i> Pilih Usaha Anda
+                        </span>
+                        <span class="badge bg-light text-muted border rounded-pill small" style="font-size: 10px;">
+                            {{ $daftarUsaha->where('status_verifikasi', '!=', 'Rejected')->count() }} Toko
+                        </span>
+                    </div>
+
+                    {{-- Search Input di dalam Dropdown --}}
+                    <div class="px-1 pb-2" onclick="event.stopPropagation();">
+                        <div class="input-group input-group-sm">
+                            <input type="text" 
+                                   class="form-control bg-white border-start-0 ps-1" 
+                                   id="searchUsahaDropdownInput" 
+                                   placeholder="Cari toko / usaha..." 
+                                   autocomplete="off"
+                                   style="font-size: 12px; border-radius: 8px 8px 8px 8px;">
+                        </div>
+                    </div>
+
+                    {{-- Container Scrollable untuk Daftar Toko (Dibatasi Ketinggiannya) --}}
+                    <div id="dropdownUsahaItemsList" class="custom-dropdown-scroll pe-1" style="max-height: 220px; overflow-y: auto;">
+                        @foreach($daftarUsaha->sortByDesc(fn($item) => $item->status_verifikasi === 'Pending') as $itemUsaha)
+                            @if($itemUsaha->status_verifikasi === 'Rejected')
+                                @continue
                             @endif
-                        </li>
-                    @endforeach
-                </ul>
+                            @php
+                                $isSelected = $usaha && ($usaha->id === $itemUsaha->id);
+                                $isPending = $itemUsaha->status_verifikasi === 'Pending';
+                            @endphp
+                            <div class="usaha-dropdown-item mb-1" data-nama="{{ strtolower($itemUsaha->nama_usaha . ' ' . ($itemUsaha->kategori_umkm->nama_kategori ?? '')) }}">
+                                @if($isPending)
+                                    <div class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between text-muted" 
+                                         style="cursor: not-allowed; background-color: #f8fafc; opacity: 0.85;" 
+                                         title="Usaha sedang dalam peninjauan RW (Pending) dan belum dapat dipilih">
+                                        <div class="d-flex align-items-center gap-2 text-truncate me-2" style="min-width: 0; flex: 1;">
+                                            <i class="bi bi-clock-history text-warning flex-shrink-0"></i>
+                                            <div class="text-truncate" style="min-width: 0; flex: 1;">
+                                                <div class="fw-semibold small text-truncate text-muted">{{ $itemUsaha->nama_usaha }}</div>
+                                                <div class="text-muted text-truncate" style="font-size: 10px;">
+                                                    {{ $itemUsaha->kategori_umkm->nama_kategori ?? 'UMKM' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-white text-dark fw-bold rounded-pill px-2 py-1 flex-shrink-0 border" style="font-size: 10px;">
+                                            Pending
+                                        </span>
+                                    </div>
+                                @else
+                                    <a class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between {{ $isSelected ? 'active bg-success text-white' : 'text-dark' }}" 
+                                       href="{{ route('warga.umkm.kelola', ['usaha_id' => $itemUsaha->id]) }}">
+                                        <div class="d-flex align-items-center gap-2 text-truncate" style="min-width: 0; flex: 1;">
+                                            <i class="bi bi-shop {{ $isSelected ? 'text-white' : 'text-success' }} flex-shrink-0"></i>
+                                            <div class="text-truncate" style="min-width: 0; flex: 1;">
+                                                <div class="fw-semibold small text-truncate">{{ $itemUsaha->nama_usaha }}</div>
+                                                <div class="{{ $isSelected ? 'text-white-50' : 'text-muted' }} text-truncate" style="font-size: 11px;">
+                                                    {{ $itemUsaha->kategori_umkm->nama_kategori ?? 'UMKM' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if($isSelected)
+                                            <i class="bi bi-check2 fs-5 ms-2 flex-shrink-0"></i>
+                                        @endif
+                                    </a>
+                                @endif
+                            </div>
+                        @endforeach
+
+                        <div id="dropdownUsahaNoResults" class="text-center py-3 text-muted small" style="display: none;">
+                            <i class="bi bi-search me-1 text-muted"></i> Toko tidak ditemukan
+                        </div>
+                    </div>
+                </div>
             </div>
             @endif
 
@@ -310,6 +360,7 @@
         </div>
     </div>
 </div>
+@endif
 
 @push('scripts')
 <script>
@@ -321,6 +372,45 @@ function previewFileName(input, labelId) {
         label.classList.add('text-success', 'fw-bold');
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchUsahaDropdownInput');
+    const itemsList = document.getElementById('dropdownUsahaItemsList');
+    const noResultsMsg = document.getElementById('dropdownUsahaNoResults');
+    const dropdownToggle = document.getElementById('dropdownPilihUsaha');
+
+    if (searchInput && itemsList) {
+        searchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const items = itemsList.querySelectorAll('.usaha-dropdown-item');
+            let visibleCount = 0;
+
+            items.forEach(function (item) {
+                const searchTarget = item.getAttribute('data-nama') || item.textContent.toLowerCase();
+                if (searchTarget.includes(query)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (noResultsMsg) {
+                noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        });
+
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('shown.bs.dropdown', function () {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                setTimeout(function () {
+                    searchInput.focus();
+                }, 50);
+            });
+        }
+    }
+});
 </script>
 @endpush
 @endsection

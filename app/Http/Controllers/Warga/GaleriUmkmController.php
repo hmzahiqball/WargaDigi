@@ -21,6 +21,10 @@ class GaleriUmkmController extends Controller
 
         $query = UmkmProduk::with(['usaha.kategori_umkm', 'usaha.user.penduduk'])
             ->where('status_produk', 'Aktif')
+            ->whereHas('usaha', function ($q) {
+                $q->where('status_verifikasi', 'Approved')
+                  ->where('is_active', true);
+            })
             ->search($search)
             ->filterCategory($kategori)
             ->sortBy($sort);
@@ -117,13 +121,29 @@ class GaleriUmkmController extends Controller
     public function detailUsaha($id = null, ?Request $request = null)
     {
         $request = $request ?? request();
+        $userNik = Auth::check() ? Auth::user()->nik : null;
+
         $usaha = null;
         if ($id) {
-            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk', 'kategori_umkm', 'kategori_produk'])->find($id);
-        }
+            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk', 'kategori_umkm', 'kategori_produk'])
+                ->where('id', $id)
+                ->where(function ($q) use ($userNik) {
+                    $q->where('status_verifikasi', 'Approved')
+                      ->where('is_active', true);
+                    if ($userNik) {
+                        $q->orWhere('nik', $userNik);
+                    }
+                })
+                ->first();
 
-        if (!$usaha) {
-            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk', 'kategori_umkm', 'kategori_produk'])->first();
+            if (!$usaha) {
+                abort(404, 'Usaha tidak ditemukan atau belum disetujui.');
+            }
+        } else {
+            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk', 'kategori_umkm', 'kategori_produk'])
+                ->where('status_verifikasi', 'Approved')
+                ->where('is_active', true)
+                ->first();
         }
 
         if (!$usaha) {
@@ -159,17 +179,38 @@ class GaleriUmkmController extends Controller
 
     public function detailProduk($id)
     {
-        $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->find($id);
+        $userNik = Auth::check() ? Auth::user()->nik : null;
+
+        $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])
+            ->where('id', $id)
+            ->whereHas('usaha', function ($q) use ($userNik) {
+                $q->where(function ($sq) use ($userNik) {
+                    $sq->where('status_verifikasi', 'Approved')
+                       ->where('is_active', true);
+                    if ($userNik) {
+                        $sq->orWhere('nik', $userNik);
+                    }
+                });
+            })
+            ->where(function ($q) use ($userNik) {
+                $q->where('status_produk', 'Aktif');
+                if ($userNik) {
+                    $q->orWhereHas('usaha', function ($uq) use ($userNik) {
+                        $uq->where('nik', $userNik);
+                    });
+                }
+            })
+            ->first();
 
         if (!$produk) {
-            $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->first();
+            abort(404, 'Produk tidak ditemukan atau belum aktif.');
         }
 
-        if (!$produk) {
-            abort(404, 'Produk tidak ditemukan');
+        $sessionKey = 'viewed_umkm_produk_' . $produk->id;
+        if (!session()->has($sessionKey)) {
+            $produk->increment('jumlah_akses');
+            session()->put($sessionKey, true);
         }
-
-        $produk->increment('jumlah_akses');
 
         $usaha = $produk->usaha;
         $isDashboard = true;
@@ -231,13 +272,16 @@ class GaleriUmkmController extends Controller
         
         $file = $request->file('foto_sampul') ?? $request->file('foto_usaha');
         if ($file) {
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('umkm-photos', $fileName, 'public');
+            $path = $file->store('umkm-photos', 'public');
             $validated['foto_usaha'] = $path;
         }
         unset($validated['foto_sampul']);
 
         $usahaBaru = UmkmUsaha::create($validated);
+
+        if (Auth::check()) {
+            Auth::user()->notify(new \App\Notifications\UmkmStatusNotification($usahaBaru, 'Pending'));
+        }
 
         KategoriProduk::firstOrCreate([
             'umkm_usaha_id' => $usahaBaru->id,

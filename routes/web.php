@@ -51,6 +51,9 @@ Route::get('/pojok-umkm/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->n
 Route::get('/public/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
 Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->name('public.umkm.produk.show');
 Route::get('/galeri/detail-usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
+Route::match(['get', 'post'], '/usaha/{id}/klik-wa', [UmkmController::class, 'trackWaClick'])
+    ->middleware('throttle:30,1')
+    ->name('umkm.usaha.track-wa');
 
 // Redirect /warga/galeri routes
 Route::redirect('/warga/galeri', '/galeri')->name('warga.umkm.galeri');

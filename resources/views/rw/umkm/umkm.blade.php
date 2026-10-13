@@ -15,11 +15,12 @@
         @php
             $pendingCount = ($pendingUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $pendingUsaha->total() : count($pendingUsaha ?? []);
             $terdaftarCount = ($daftarUsahaTerdaftar instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $daftarUsahaTerdaftar->total() : count($daftarUsahaTerdaftar ?? []);
+            $rejectedCount = ($rejectedUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $rejectedUsaha->total() : count($rejectedUsaha ?? []);
         @endphp
         <div class="d-flex align-items-center gap-2 pb-2 flex-wrap">
             <a href="{{ route('rw.umkm.index', ['tab' => 'persetujuan']) }}" 
-               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab !== 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
-               style="{{ $tab !== 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
+               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'persetujuan' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
+               style="{{ $tab === 'persetujuan' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
                 <i class="bi bi-shield-check"></i>
                 <span>{{ $isPimpinan ? 'Riwayat Persetujuan UMKM' : 'Persetujuan UMKM' }}</span>
                 @if(!$isPimpinan && $pendingCount > 0)
@@ -31,15 +32,25 @@
                class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
                style="{{ $tab === 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
                 <i class="bi bi-shop"></i>
-                <span>Daftar UMKM yang Terdaftar</span>
+                <span>Daftar UMKM Terdaftar</span>
                 @if($terdaftarCount > 0)
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">{{ $terdaftarCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route('rw.umkm.index', ['tab' => 'ditolak']) }}" 
+               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'ditolak' ? 'text-danger border-danger' : 'text-muted border-transparent hover-danger' }}"
+               style="{{ $tab === 'ditolak' ? 'color: #dc3545 !important; border-color: #dc3545 !important;' : '' }}">
+                <i class="bi bi-x-circle"></i>
+                <span>Pengajuan Ditolak</span>
+                @if($rejectedCount > 0)
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 small">{{ $rejectedCount }}</span>
                 @endif
             </a>
         </div>
     </div>
 
-    @if($tab !== 'terdaftar')
+    @if($tab === 'persetujuan')
         <div class="row g-4">
             <div class="col-lg-8">
                 @if($isPimpinan)
@@ -49,7 +60,7 @@
                         </div>
                         <div>
                             <h6 class="fw-bold mb-0 text-dark">Mode Monitoring Pimpinan RW</h6>
-                            <p class="text-muted small mb-0">Menampilkan seluruh history pengajuan UMKM (Pending & Approved). Klik kartu untuk melihat rincian pemohon.</p>
+                            <p class="text-muted small mb-0">Menampilkan seluruh history pengajuan UMKM (Pending, Approved, & Rejected). Klik kartu untuk melihat rincian pemohon.</p>
                         </div>
                     </div>
                 @endif
@@ -115,6 +126,72 @@
                     <p class="text-muted small mb-3">Ingin melihat toko dan katalog etalase UMKM yang sudah disetujui?</p>
                     <a href="{{ route('rw.umkm.index', ['tab' => 'terdaftar']) }}" class="btn btn-outline-success rounded-3 px-3 py-2 small fw-semibold">
                         Buka Daftar Usaha Terdaftar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    @elseif($tab === 'ditolak')
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="alert shadow-sm rounded-4 p-3 mb-4 d-flex align-items-center gap-3" style="background-color: #fff5f5; border: 1px solid #fed7d7;">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(239, 68, 68, 0.2); width: 40px; height: 40px;">
+                        <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Daftar Pengajuan UMKM yang Ditolak</h6>
+                        <p class="text-muted small mb-0">Menampilkan seluruh pendaftaran UMKM yang ditolak oleh RW beserta catatan verifikasinya.</p>
+                    </div>
+                </div>
+
+                @if(isset($rejectedUsaha) && $rejectedUsaha->count() > 0)
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        @foreach($rejectedUsaha as $item)
+                            @include('rw.umkm.components.cardApprovalUmkm', ['item' => $item, 'isPimpinan' => $isPimpinan])
+                            @include('rw.umkm.components.modalDetailPengaju', ['item' => $item, 'isPimpinan' => $isPimpinan])
+                        @endforeach
+                    </div>
+
+                    @if(isset($rejectedUsaha) && method_exists($rejectedUsaha, 'total') && $rejectedUsaha->total() > 0)
+                        @include('components.pagination', ['paginator' => $rejectedUsaha, 'label' => 'pengajuan ditolak'])
+                    @endif
+                @else
+                    <div class="card border shadow-sm rounded-4 p-5 bg-white text-center">
+                        <div class="p-3 mb-3 mx-auto">
+                            <i class="bi bi-check2-circle text-success fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">Tidak Ada Pengajuan Ditolak</h5>
+                        <p class="text-muted small mb-0">Saat ini belum terdapat pengajuan UMKM yang berstatus ditolak oleh RW.</p>
+                    </div>
+                @endif
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-info-circle fs-4 text-danger"></i>
+                        <h5 class="fw-bold text-dark mb-0">Arsip Pengajuan Ditolak</h5>
+                    </div>
+                    <p class="text-muted small mb-4" style="line-height: 1.6;">
+                        Halaman ini mendokumentasikan pendaftaran usaha warga yang ditolak karena tidak memenuhi ketentuan RW.
+                    </p>
+
+                    <div class="p-3 rounded-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                        <h6 class="fw-bold text-dark small mb-2">Transparansi Penolakan</h6>
+                        <p class="text-muted mb-0" style="font-size: 13px; line-height: 1.5;">
+                            Setiap berkas penolakan memuat catatan verifikasi agar pengurus dapat memberikan klarifikasi jika pemohon mengajukan kembali.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card border shadow-sm rounded-4 p-4 bg-white text-center">
+                    <div class="d-inline-flex p-3 mb-1 mx-auto text-success">
+                        <i class="bi bi-shield-check fs-2"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Persetujuan UMKM</h6>
+                    <p class="text-muted small mb-3">Kembali ke daftar pengajuan yang sedang menunggu verifikasi.</p>
+                    <a href="{{ route('rw.umkm.index', ['tab' => 'persetujuan']) }}" class="btn btn-outline-success rounded-3 px-3 py-2 small fw-semibold">
+                        Buka Persetujuan UMKM
                     </a>
                 </div>
             </div>

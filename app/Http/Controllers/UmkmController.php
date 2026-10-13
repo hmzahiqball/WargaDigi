@@ -46,22 +46,37 @@ class UmkmController extends Controller
 
     public function detailUsaha(Request $request, $id = null)
     {
-        $usaha = null;
+        $userNik = auth()->check() ? auth()->user()->nik : null;
+
+        $usahaQuery = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk.kategori_produk', 'kategori_umkm', 'kategori_produk']);
+
         if ($id) {
-            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk.kategori_produk', 'kategori_umkm', 'kategori_produk'])->find($id);
+            $usaha = (clone $usahaQuery)->where('id', $id)
+                ->where(function ($q) use ($userNik) {
+                    $q->where('status_verifikasi', 'Approved')
+                      ->where('is_active', true);
+                    if ($userNik) {
+                        $q->orWhere('nik', $userNik);
+                    }
+                })
+                ->first();
+        } else {
+            $usaha = (clone $usahaQuery)
+                ->where('status_verifikasi', 'Approved')
+                ->where('is_active', true)
+                ->first();
         }
 
         if (!$usaha) {
-            $usaha = UmkmUsaha::with(['user.penduduk.keluarga.rt', 'produk.kategori_produk', 'kategori_umkm', 'kategori_produk'])->first();
+            abort(404, 'Profil usaha tidak ditemukan atau belum disetujui.');
         }
 
-        $query = UmkmProduk::with(['usaha.kategori_produk', 'usaha.kategori_umkm', 'kategori_produk']);
+        $query = UmkmProduk::with(['usaha.kategori_produk', 'usaha.kategori_umkm', 'kategori_produk'])
+            ->where('umkm_usaha_id', $usaha->id);
 
-        if ($usaha) {
-            $query->where('umkm_usaha_id', $usaha->id);
+        if (!$userNik || $usaha->nik !== $userNik) {
+            $query->where('status_produk', 'Aktif');
         }
-
-        $query->where('status_produk', 'Aktif');
 
         $search = trim((string) ($request->get('q') ?? $request->get('search')));
         if ($search !== '') {
@@ -101,21 +116,64 @@ class UmkmController extends Controller
 
     public function detailProduk($id)
     {
-        $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->find($id);
+        $userNik = auth()->check() ? auth()->user()->nik : null;
+
+        $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])
+            ->where('id', $id)
+            ->whereHas('usaha', function ($q) use ($userNik) {
+                $q->where(function ($sq) use ($userNik) {
+                    $sq->where('status_verifikasi', 'Approved')
+                       ->where('is_active', true);
+                    if ($userNik) {
+                        $sq->orWhere('nik', $userNik);
+                    }
+                });
+            })
+            ->where(function ($q) use ($userNik) {
+                $q->where('status_produk', 'Aktif');
+                if ($userNik) {
+                    $q->orWhereHas('usaha', function ($uq) use ($userNik) {
+                        $uq->where('nik', $userNik);
+                    });
+                }
+            })
+            ->first();
 
         if (!$produk) {
-            $produk = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt', 'usaha.kategori_umkm', 'kategori_produk'])->first();
+            abort(404, 'Produk tidak ditemukan atau belum aktif.');
         }
 
-        if (!$produk) {
-            abort(404, 'Produk tidak ditemukan');
+        // Mencegah manipulasi counter jumlah_akses dengan session lock per session
+        $sessionKey = 'viewed_umkm_produk_' . $produk->id;
+        if (!session()->has($sessionKey)) {
+            $produk->increment('jumlah_akses');
+            session()->put($sessionKey, true);
         }
-
-        $produk->increment('jumlah_akses');
 
         $usaha = $produk->usaha;
         $isDashboard = auth()->check();
 
         return view('pages.detail_produk', compact('produk', 'usaha', 'isDashboard'));
     }
+
+    public function trackWaClick($id)
+    {
+        $usaha = UmkmUsaha::find($id);
+
+        if (!$usaha) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usaha tidak ditemukan',
+            ], 404);
+        }
+
+        $usaha->increment('klikWA');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Klik WhatsApp berhasil dicatat',
+            'klikWA'  => $usaha->klikWA,
+        ]);
+    }
 }
+

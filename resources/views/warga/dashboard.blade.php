@@ -25,7 +25,17 @@
                 <li>
                     <a class="dropdown-item py-3 {{ $notification->read_at ? '' : 'bg-light' }}" href="{{ route('warga.notifications.read', $notification->id) }}">
                         <div class="d-flex gap-3">
-                            <div class="mt-1"><i class="bi bi-info-circle text-warning fs-5"></i></div>
+                            @php
+                                $dType = $notification->data['type'] ?? 'info';
+                                $dIcon = $notification->data['icon'] ?? ($dType === 'success' ? 'bi-check-circle-fill' : ($dType === 'danger' ? 'bi-x-circle-fill' : 'bi-info-circle-fill'));
+                                $dColorClass = match($dType) {
+                                    'success' => 'text-success',
+                                    'danger'  => 'text-danger',
+                                    'warning' => 'text-warning',
+                                    default   => 'text-primary'
+                                };
+                            @endphp
+                            <div class="mt-1"><i class="bi {{ $dIcon }} {{ $dColorClass }} fs-5"></i></div>
                             <div>
                                 <span class="d-block fw-bold mb-1">{{ $notification->data['judul'] ?? 'Pemberitahuan' }}</span>
                                 <small class="text-muted text-wrap d-block" style="white-space: normal;">{{ $notification->data['pesan'] ?? '' }}</small>
