@@ -21,6 +21,16 @@ class OpKeuanganController extends Controller
         if ($user->role === 'Op Keuangan RT') {
             $unit = 'RT';
             $rt_id = $user->rt_id;
+            if (!$rt_id) {
+                $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
+                if ($penduduk && $penduduk->keluarga) {
+                    $rt_id = $penduduk->keluarga->rt_id;
+                }
+                if (!$rt_id) {
+                    $rt01 = MasterRt::where('kode_rt', '01')->first() ?? MasterRt::first();
+                    $rt_id = $rt01 ? $rt01->id : null;
+                }
+            }
         } elseif ($user->role === 'Op Keuangan RW') {
             $unit = 'RW';
         } elseif ($user->role === 'DKM') {
@@ -39,7 +49,13 @@ class OpKeuanganController extends Controller
         $query = TransaksiKeuangan::where('status', '!=', 'Rejected');
 
         if ($unit === 'RT') {
-            $query->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
+            $query->where('unit_sumber', 'RT')->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         } elseif ($unit === 'DKM') {
             $query->where('unit_sumber', 'DKM');
         } elseif ($unit === 'RW') {
@@ -68,7 +84,13 @@ class OpKeuanganController extends Controller
         // Kas RT (scoped by rt_id if Op RT)
         $kasRtQuery = TransaksiKeuangan::where('unit_sumber', 'RT')->where('status', '!=', 'Rejected');
         if ($unit === 'RT') {
-            $kasRtQuery->where('rt_id', $rt_id);
+            $kasRtQuery->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         }
         $kasRtPemasukan = (clone $kasRtQuery)->pemasukan()->sum('jumlah');
         $kasRtPengeluaran = (clone $kasRtQuery)->pengeluaran()->sum('jumlah');
@@ -88,10 +110,21 @@ class OpKeuanganController extends Controller
             ->whereMonth('tanggal', $now->month)->whereYear('tanggal', $now->year)
             ->pengeluaran()->sum('jumlah');
 
+        // Sheet Saldo: terisolasi per unit kerja aktif agar aset unit lain tidak nyasar ke neraca saldo
+        if ($unit === 'RT') {
+            $totalAssets = $totalKasRt;
+        } elseif ($unit === 'DKM') {
+            $totalAssets = $totalDanaDkm;
+        } else {
+            // Unit RW
+            $totalAssets = $totalKasRw;
+        }
+
+        // Stat Cards: Tetap transparan & terlihat oleh ketiga bendahara
         $stats = [
             'kas_rw' => [
                 'total' => 'Rp ' . number_format($totalKasRw, 0, ',', '.'),
-                'subtext' => 'Total saldo terkini',
+                'subtext' => $unit === 'RW' ? 'Saldo kas operasional RW' : 'Dikelola oleh Bendahara RW',
             ],
             'kas_rt' => [
                 'total' => 'Rp ' . number_format($totalKasRt, 0, ',', '.'),
@@ -99,7 +132,7 @@ class OpKeuanganController extends Controller
             ],
             'dana_kematian' => [
                 'total' => 'Rp ' . number_format($totalDanaDkm, 0, ',', '.'),
-                'subtext' => 'Alokasi santunan warga',
+                'subtext' => $unit === 'DKM' ? 'Saldo kas DKM Anda' : 'Alokasi santunan warga (DKM)',
             ],
             'pemasukan_bulan_ini' => 'Rp ' . number_format($pemasukanBulanIni, 0, ',', '.'),
             'pengeluaran_bulan_ini' => 'Rp ' . number_format($pengeluaranBulanIni, 0, ',', '.'),
@@ -112,7 +145,13 @@ class OpKeuanganController extends Controller
             ->orderBy('tanggal', 'desc')->orderBy('created_at', 'desc')->take(3);
 
         if ($unit === 'RT') {
-            $queryTx->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
+            $queryTx->where('unit_sumber', 'RT')->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         } elseif ($unit === 'DKM') {
             $queryTx->where('unit_sumber', 'DKM');
         } elseif ($unit === 'RW') {
@@ -137,12 +176,11 @@ class OpKeuanganController extends Controller
         // ──────────────────────────────
         // Sheet Saldo
         // ──────────────────────────────
-        $totalAssets = $totalKasRw + $totalKasRt + $totalDanaDkm;
         $sheetSaldo = [
             'assets' => 'Rp ' . number_format($totalAssets, 0, ',', '.'),
             'liabilitas' => 'Rp 0',
             'ekuitas' => 'Rp ' . number_format($totalAssets, 0, ',', '.'),
-            'status' => 'Balanced',
+            'status' => $totalAssets < 0 ? 'Defisit' : 'Balanced',
         ];
 
         // ──────────────────────────────
@@ -281,7 +319,18 @@ class OpKeuanganController extends Controller
         $query = TransaksiKeuangan::with(['rt', 'pencatat'])->orderBy('tanggal', 'desc')->orderBy('created_at', 'desc');
 
         if ($unit === 'RT') {
-            $query->where('unit_sumber', 'RT')->where('rt_id', $rt_id);
+            // Auto-heal legacy RT transactions that have rt_id = null so they are stamped with proper rt_id
+            if ($rt_id) {
+                TransaksiKeuangan::where('unit_sumber', 'RT')->whereNull('rt_id')->update(['rt_id' => $rt_id]);
+            }
+
+            $query->where('unit_sumber', 'RT')->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         } elseif ($unit === 'DKM') {
             $query->where('unit_sumber', 'DKM');
         } elseif ($unit === 'RW') {
@@ -315,7 +364,12 @@ class OpKeuanganController extends Controller
         $query = LaporanKeuangan::with(['rt', 'pembuat', 'penyetuju'])->orderBy('periode_tahun', 'desc')->orderBy('periode_bulan', 'desc');
 
         if ($unit === 'RT') {
-            $query->where('rt_id', $rt_id);
+            $query->where('unit', 'RT');
+            if ($rt_id) {
+                $query->where(function ($q) use ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                });
+            }
         } elseif ($unit === 'DKM') {
             $query->where('unit', 'DKM');
         } elseif ($unit === 'RW') {
@@ -395,10 +449,16 @@ class OpKeuanganController extends Controller
         $transaksi = TransaksiKeuangan::findOrFail($id);
 
         // Verify ownership: Op RT can only edit their RT's transactions
-        if ($unit === 'RT' && $transaksi->rt_id !== $rt_id) {
+        if ($unit === 'RT') {
+            if ($transaksi->unit_sumber !== 'RT') {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit transaksi ini.');
+            }
+            if ($rt_id && $transaksi->rt_id && $transaksi->rt_id !== $rt_id) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit transaksi RT lain.');
+            }
+        } elseif ($unit === 'DKM' && $transaksi->unit_sumber !== 'DKM') {
             abort(403, 'Anda tidak memiliki akses untuk mengedit transaksi ini.');
-        }
-        if ($unit === 'DKM' && $transaksi->unit_sumber !== 'DKM') {
+        } elseif ($unit === 'RW' && $transaksi->unit_sumber !== 'RW') {
             abort(403, 'Anda tidak memiliki akses untuk mengedit transaksi ini.');
         }
 
@@ -410,6 +470,10 @@ class OpKeuanganController extends Controller
             'jumlah' => $request->jumlah,
             'tanggal' => $request->tanggal,
         ];
+
+        if ($unit === 'RT' && !$transaksi->rt_id && $rt_id) {
+            $data['rt_id'] = $rt_id;
+        }
 
         if ($request->hasFile('bukti_file')) {
             $data['bukti_file'] = $request->file('bukti_file')->store('bukti_transaksi', 'public');
@@ -431,17 +495,30 @@ class OpKeuanganController extends Controller
         $unit = $roleData['unit'] ?? 'RW';
         $rt_id = $roleData['rt_id'];
 
-        // Cek apakah laporan sudah ada
-        $exists = LaporanKeuangan::where('periode_bulan', $request->bulan)
+        // Cek apakah ada laporan sebelumnya untuk periode ini
+        $existingQuery = LaporanKeuangan::where('periode_bulan', $request->bulan)
             ->where('periode_tahun', $request->tahun)
             ->where('unit', $unit);
 
         if ($unit === 'RT') {
-            $exists->where('rt_id', $rt_id);
+            $existingQuery->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         }
 
-        if ($exists->exists()) {
-            return back()->with('error', 'Laporan untuk periode ini sudah ada.');
+        $existing = $existingQuery->first();
+
+        if ($existing) {
+            if ($existing->status === 'Rejected') {
+                // Auto-cleanup laporan yang ditolak agar laporan revisi baru dapat langsung diajukan tanpa hapus manual
+                $existing->delete();
+            } else {
+                return back()->with('error', 'Laporan untuk periode ini sudah ada (Status: ' . $existing->status . ').');
+            }
         }
 
         // Hitung total dari transaksi valid (semua kecuali Rejected)
@@ -451,7 +528,13 @@ class OpKeuanganController extends Controller
             ->where('status', '!=', 'Rejected');
 
         if ($unit === 'RT') {
-            $queryTx->where('rt_id', $rt_id);
+            $queryTx->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         }
 
         $pemasukan = (clone $queryTx)->pemasukan()->sum('jumlah');
@@ -464,7 +547,13 @@ class OpKeuanganController extends Controller
             ->where('status', '!=', 'Rejected');
 
         if ($unit === 'RT') {
-            $saldoAwalQuery->where('rt_id', $rt_id);
+            $saldoAwalQuery->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
         }
 
         $saldoAwalPemasukan = (clone $saldoAwalQuery)->pemasukan()->sum('jumlah');
@@ -572,8 +661,13 @@ class OpKeuanganController extends Controller
 
         $tx = TransaksiKeuangan::findOrFail($id);
 
-        if ($unit === 'RT' && $tx->rt_id !== $rt_id) {
-            abort(403, 'Unauthorized action.');
+        if ($unit === 'RT') {
+            if ($tx->unit_sumber !== 'RT') {
+                abort(403, 'Unauthorized action.');
+            }
+            if ($rt_id && $tx->rt_id && $tx->rt_id !== $rt_id) {
+                abort(403, 'Unauthorized action.');
+            }
         } elseif ($unit === 'DKM' && $tx->unit_sumber !== 'DKM') {
             abort(403, 'Unauthorized action.');
         } elseif ($unit === 'RW' && $tx->unit_sumber !== 'RW') {
@@ -594,8 +688,13 @@ class OpKeuanganController extends Controller
 
         $laporan = LaporanKeuangan::findOrFail($id);
 
-        if ($unit === 'RT' && $laporan->rt_id !== $rt_id) {
-            abort(403, 'Unauthorized action.');
+        if ($unit === 'RT') {
+            if ($laporan->unit !== 'RT') {
+                abort(403, 'Unauthorized action.');
+            }
+            if ($rt_id && $laporan->rt_id && $laporan->rt_id !== $rt_id) {
+                abort(403, 'Unauthorized action.');
+            }
         } elseif ($unit === 'DKM' && $laporan->unit !== 'DKM') {
             abort(403, 'Unauthorized action.');
         } elseif ($unit === 'RW' && $laporan->unit !== 'RW') {

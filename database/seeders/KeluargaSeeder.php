@@ -42,7 +42,7 @@ class KeluargaSeeder extends Seeder
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000003',
                 'no_kk' => '3217010101000003',
-                'nik_kepala_keluarga' => '3217010101010008',
+                'nik_kepala_keluarga' => '3217010101010008', // nik login
                 'alamat' => 'Jl. Melati No. 05, RT 01 / RW 21, Tanimulya',
                 'rt_id' => $rt01 ? $rt01->id : null,
                 'no_wa' => '081398765432',
@@ -98,7 +98,7 @@ class KeluargaSeeder extends Seeder
                 'no_wa' => '081111111119',
                 'status_aktivasi' => 'Active',
             ],
-            // Keluarga DKM - RT 01
+            // Keluarga Op Keuangan DKM - RT 01
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000008',
                 'no_kk' => '3217010101000008',

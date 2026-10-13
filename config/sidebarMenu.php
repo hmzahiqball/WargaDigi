@@ -94,12 +94,12 @@ return [
     ],
     [
         'title' => 'Persetujuan Keuangan',
-        'icon' => 'bi-cash-coin',
+        'icon'  => 'bi-cash-coin',
         'route' => 'rw.persetujuan-keuangan.index',
         'url'   => '/rw/persetujuan-keuangan',
-        'active' => ['rw.persetujuan-keuangan*'],
+        'active' => ['rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*'],
         'position' => 'main',
-        'roles' => ['Admin RW', 'Pimpinan RW'],
+        'roles' => ['Admin RW', 'Pimpinan RW', 'Pimpinan', 'Ketua RW'],
     ],
     [
         'title' => 'Mutasi Warga',
@@ -160,9 +160,10 @@ return [
     ],
     [
         'title' => 'Persetujuan Keuangan',
-        'icon' => 'bi-cash-coin',
+        'icon'  => 'bi-cash-coin',
         'route' => 'rt.persetujuan-keuangan.index',
-        'active' => ['rt.persetujuan-keuangan.index'],
+        'url'   => '/rt/persetujuan-keuangan',
+        'active' => ['rt.persetujuan-keuangan*', 'rt/persetujuan-keuangan*'],
         'position' => 'main',
         'roles' => ['Ketua RT'],
     ],

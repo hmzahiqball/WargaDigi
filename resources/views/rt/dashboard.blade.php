@@ -117,7 +117,7 @@
         <div class="card card-custom p-4 shadow-sm border-0 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold mb-0">Aktivitas Laporan Keuangan</h5>
-                <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
+                <a href="{{ route('rt.persetujuan-keuangan.index') }}" class="text-success text-decoration-none small fw-semibold">Lihat Semua</a>
             </div>
 
             <div class="d-flex flex-column gap-3">

@@ -60,6 +60,12 @@ class RwController extends Controller
                 'link' => route('rw.persetujuan-dokumen'),
             ],
             [
+                'title' => 'Persetujuan Keuangan',
+                'icon' => 'bi-cash-coin',
+                'bg' => 'icon-yellow',
+                'link' => route('rw.persetujuan-keuangan.index'),
+            ],
+            [
                 'title' => 'Verifikasi UMKM',
                 'icon' => 'bi-shop',
                 'bg' => 'icon-green',

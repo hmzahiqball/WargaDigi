@@ -10,6 +10,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first();
+        $rt01Id = $rt01 ? $rt01->id : null;
+
         $users = [
             [
                 'nik' => '3217010101010001',
@@ -72,6 +75,7 @@ class UserSeeder extends Seeder
                 'username' => 'ketuart01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Ketua RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],
@@ -80,6 +84,7 @@ class UserSeeder extends Seeder
                 'username' => 'opkeuanganrt01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Keuangan RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],
@@ -88,6 +93,7 @@ class UserSeeder extends Seeder
                 'username' => 'opkontenrt01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Konten RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],

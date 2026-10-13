@@ -12,18 +12,110 @@ class RtController extends Controller
 {
     public function dashboard()
     {
+        $user = auth()->user();
+        $rtId = $user ? $user->rt_id : null;
+        if (!$rtId && $user) {
+            $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
+            if ($penduduk && $penduduk->keluarga) {
+                $rtId = $penduduk->keluarga->rt_id;
+            }
+            if (!$rtId) {
+                $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first() ?? \App\Models\MasterRt::first();
+                $rtId = $rt01 ? $rt01->id : null;
+            }
+        }
+
+        // Hitung laporan keuangan RT berstatus Submitted yang menunggu persetujuan
+        $pendingLaporanQuery = \App\Models\LaporanKeuangan::where('unit', 'RT')
+            ->where('status', 'Submitted');
+        if ($rtId) {
+            $pendingLaporanQuery->where(function ($q) use ($rtId) {
+                $q->where('rt_id', $rtId)->orWhereNull('rt_id');
+            });
+        }
+        $totalLaporanPending = $pendingLaporanQuery->count();
+
+        // Hitung tagihan/iuran aktif untuk RT
+        $totalTagihanRt = \App\Models\Tagihan::where('unit', 'RT')
+            ->when($rtId, fn($q) => $q->where('rt_id', $rtId))
+            ->count();
+
         $stats = [
-            'total_warga' => ['total' => '1.248', 'change' => '+12 bulan ini', 'laki_laki' => 610, 'perempuan' => 638],
-            'dokumen_menunggu' => ['total' => PengajuanSurat::where('status', 'Diajukan')->count(), 'status' => 'Perlu ditinjau segera', 'surat_domisili' => 15, 'kartu_keluarga' => 9],
-            'persetujuan_keuangan' => ['total' => 5, 'status' => 'Menunggu tanda tangan RT', 'iuran_bulanan' => 3, 'laporan_kas' => 2],
+            'total_warga' => [
+                'total' => \App\Models\Penduduk::count(),
+                'change' => 'Warga terdaftar',
+                'laki_laki' => \App\Models\Penduduk::where('jenis_kelamin', 'L')->count(),
+                'perempuan' => \App\Models\Penduduk::where('jenis_kelamin', 'P')->count(),
+            ],
+            'dokumen_menunggu' => [
+                'total' => PengajuanSurat::where('status', 'Diajukan')->count(),
+                'status' => 'Perlu ditinjau segera',
+                'surat_domisili' => PengajuanSurat::where('status', 'Diajukan')->where('tipe_surat', 'like', '%Domisili%')->count(),
+                'kartu_keluarga' => PengajuanSurat::where('status', 'Diajukan')->where('tipe_surat', 'like', '%Keluarga%')->count(),
+            ],
+            'persetujuan_keuangan' => [
+                'total' => $totalLaporanPending,
+                'status' => $totalLaporanPending > 0 ? $totalLaporanPending . ' laporan menunggu persetujuan RT' : 'Semua laporan telah ditinjau',
+                'iuran_bulanan' => $totalTagihanRt,
+                'laporan_kas' => $totalLaporanPending,
+            ],
         ];
+
         $chartData = ['labels' => ['Mei','Jun','Jul','Agu','Sep','Okt','Nov'], 'values' => [1205,1218,1220,1228,1236,1240,1248]];
-        $aktivitasKeuangan = [
-            ['title' => 'Laporan Iuran Keamanan Bulanan untuk Blok A diserahkan.', 'time' => '5 jam yang lalu', 'badge' => 'Disetujui', 'badge_class' => 'bg-success text-white', 'icon' => 'bi-check-circle-fill text-success', 'bg_icon' => 'bg-success bg-opacity-10'],
-        ];
+
+        // Ambil aktivitas laporan keuangan riil
+        $latestLaporan = \App\Models\LaporanKeuangan::where('unit', 'RT')
+            ->when($rtId, fn($q) => $q->where(fn($sub) => $sub->where('rt_id', $rtId)->orWhereNull('rt_id')))
+            ->orderByDesc('updated_at')
+            ->take(3)
+            ->get();
+
+        $aktivitasKeuangan = [];
+        if ($latestLaporan->isNotEmpty()) {
+            foreach ($latestLaporan as $item) {
+                $badgeClass = match ($item->status) {
+                    'Approved' => 'bg-success text-white',
+                    'Rejected' => 'bg-danger text-white',
+                    'Submitted' => 'bg-warning text-dark',
+                    default => 'bg-secondary text-white',
+                };
+                $icon = match ($item->status) {
+                    'Approved' => 'bi-check-circle-fill text-success',
+                    'Rejected' => 'bi-x-circle-fill text-danger',
+                    default => 'bi-hourglass-split text-warning',
+                };
+                $bgIcon = match ($item->status) {
+                    'Approved' => 'bg-success bg-opacity-10',
+                    'Rejected' => 'bg-danger bg-opacity-10',
+                    default => 'bg-warning bg-opacity-10',
+                };
+
+                $aktivitasKeuangan[] = [
+                    'title' => $item->judul,
+                    'time' => $item->updated_at ? $item->updated_at->diffForHumans() : 'Baru saja',
+                    'badge' => $item->status,
+                    'badge_class' => $badgeClass,
+                    'icon' => $icon,
+                    'bg_icon' => $bgIcon,
+                ];
+            }
+        } else {
+            $aktivitasKeuangan = [
+                [
+                    'title' => 'Belum ada aktivitas laporan keuangan RT.',
+                    'time' => '-',
+                    'badge' => 'Nihil',
+                    'badge_class' => 'bg-light text-muted',
+                    'icon' => 'bi-wallet2 text-muted',
+                    'bg_icon' => 'bg-light',
+                ],
+            ];
+        }
+
         $aktivitasDokumen = [
             ['title' => 'Pengajuan surat baru menunggu verifikasi.', 'time' => 'Hari ini', 'badge' => 'Menunggu', 'badge_class' => 'bg-warning bg-opacity-20 text-dark', 'icon' => 'bi-person-vcard text-primary', 'bg_icon' => 'bg-primary bg-opacity-10'],
         ];
+
         return view('rt.dashboard', compact('stats', 'chartData', 'aktivitasKeuangan', 'aktivitasDokumen'));
     }
 

@@ -75,6 +75,33 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's rt_id, falling back to their Keluarga or MasterRt if null.
+     */
+    public function getRtIdAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+
+        if (in_array($this->role, ['Ketua RT', 'Op Keuangan RT', 'Op Konten RT', 'Warga'])) {
+            $penduduk = \App\Models\Penduduk::where('nik', $this->nik)->first();
+            if ($penduduk && $penduduk->keluarga_id) {
+                $keluarga = \App\Models\Keluarga::find($penduduk->keluarga_id);
+                if ($keluarga && $keluarga->rt_id) {
+                    return $keluarga->rt_id;
+                }
+            }
+
+            $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first() ?? \App\Models\MasterRt::first();
+            if ($rt01) {
+                return $rt01->id;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

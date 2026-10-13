@@ -54,9 +54,12 @@
         <ul class="sidebar-menu">
             @foreach($mainMenus as $item)
                 @php
-                    $url = isset($item['route']) && Route::has($item['route']) 
-                        ? route($item['route']) 
-                        : ($item['url'] ?? '#');
+                    $url = '#';
+                    if (!empty($item['route']) && Route::has($item['route'])) {
+                        $url = route($item['route']);
+                    } elseif (!empty($item['url']) && $item['url'] !== '#') {
+                        $url = url($item['url']);
+                    }
                     
                     $isActive = false;
                     if (isset($item['active'])) {
@@ -81,9 +84,12 @@
             <ul class="sidebar-menu sidebar-menu-bottom">
                 @foreach($bottomMenus as $item)
                     @php
-                        $url = isset($item['route']) && Route::has($item['route']) 
-                            ? route($item['route']) 
-                            : ($item['url'] ?? '#');
+                        $url = '#';
+                        if (!empty($item['route']) && Route::has($item['route'])) {
+                            $url = route($item['route']);
+                        } elseif (!empty($item['url']) && $item['url'] !== '#') {
+                            $url = url($item['url']);
+                        }
 
                         $isActive = false;
                         if (isset($item['active'])) {
