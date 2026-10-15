@@ -20,13 +20,23 @@ class TagihanController extends Controller
         $unit = null;
         $rt_id = null;
 
-        if ($user->role === 'Op Keuangan RT') {
+        $role = trim($user->role ?? '');
+
+        if (in_array($role, ['Op Keuangan RT', 'Op. Keuangan RT', 'Bendahara RT'])) {
             $unit = 'RT';
             $rt_id = $user->rt_id;
-        } elseif ($user->role === 'Op Keuangan RW') {
+            if (!$rt_id) {
+                $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
+                if ($penduduk && $penduduk->keluarga) {
+                    $rt_id = $penduduk->keluarga->rt_id;
+                }
+            }
+        } elseif (in_array($role, ['Op Keuangan RW', 'Op. Keuangan RW', 'Bendahara RW', 'Admin RW', 'Pimpinan RW'])) {
             $unit = 'RW';
-        } elseif ($user->role === 'DKM') {
+            $rt_id = null;
+        } elseif (in_array($role, ['DKM', 'Bendahara DKM', 'Op Keuangan DKM', 'Op. Keuangan DKM'])) {
             $unit = 'DKM';
+            $rt_id = null;
         }
 
         return compact('unit', 'rt_id');
@@ -35,11 +45,30 @@ class TagihanController extends Controller
     public function rekeningIndex()
     {
         extract($this->getRoleFilterData());
+        if (!$unit) {
+            return redirect()->route('opkeuangan.dashboard')->with('error', 'Unit keuangan tidak terdefinisi.');
+        }
+
         $query = RekeningBendahara::where('unit', $unit);
         if ($unit === 'RT') {
             $query->where('rt_id', $rt_id);
+        } else {
+            $query->whereNull('rt_id');
         }
         $rekening = $query->first();
+
+        // Pastikan file QRIS tersinkronisasi ke public/storage untuk akses langsung browser
+        if ($rekening && $rekening->qris_file) {
+            $src = storage_path('app/public/' . $rekening->qris_file);
+            $dst = public_path('storage/' . $rekening->qris_file);
+            if (file_exists($src) && !file_exists($dst)) {
+                $dstDir = dirname($dst);
+                if (!is_dir($dstDir)) {
+                    @mkdir($dstDir, 0755, true);
+                }
+                @copy($src, $dst);
+            }
+        }
 
         return view('opKeuangan.rekening', compact('rekening', 'unit', 'rt_id'));
     }
@@ -47,22 +76,54 @@ class TagihanController extends Controller
     public function rekeningSave(Request $request)
     {
         extract($this->getRoleFilterData());
+        if (!$unit) {
+            return redirect()->back()->with('error', 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
+
         $request->validate([
             'bank' => 'required|string|max:50',
             'no_rek' => 'required|string|max:50',
             'nama_rek' => 'required|string|max:100',
-            'qris_file' => 'nullable|image|max:2048',
+        ], [
+            'bank.required' => 'Nama bank wajib diisi.',
+            'no_rek.required' => 'Nomor rekening wajib diisi.',
+            'nama_rek.required' => 'Atas nama rekening wajib diisi.',
         ]);
 
         $query = RekeningBendahara::where('unit', $unit);
         if ($unit === 'RT') {
             $query->where('rt_id', $rt_id);
+        } else {
+            $query->whereNull('rt_id');
         }
         $rekening = $query->first();
 
         $qrisPath = $rekening ? $rekening->qris_file : null;
-        if ($request->hasFile('qris_file')) {
-            $qrisPath = $request->file('qris_file')->store('rekening', 'public');
+
+        // Prioritas 1: Base64 payload (anti-gagal jika PHP temp directory bermasalah)
+        if ($request->filled('qris_base64') && str_starts_with($request->qris_base64, 'data:image')) {
+            $savedBase64 = $this->saveBase64Image($request->qris_base64, 'rekening');
+            if ($savedBase64) {
+                $qrisPath = $savedBase64;
+            }
+        }
+        // Prioritas 2: Multipart file upload standar
+        elseif ($request->hasFile('qris_file')) {
+            $file = $request->file('qris_file');
+            if ($file->isValid()) {
+                $qrisPath = $file->store('rekening', 'public');
+                // Sinkronkan juga langsung ke public/storage
+                try {
+                    $dst = public_path('storage/' . $qrisPath);
+                    $dstDir = dirname($dst);
+                    if (!is_dir($dstDir)) {
+                        @mkdir($dstDir, 0755, true);
+                    }
+                    @copy(storage_path('app/public/' . $qrisPath), $dst);
+                } catch (\Throwable $e) {}
+            } else {
+                return redirect()->back()->with('error', 'Gagal memproses file QRIS: ' . $file->getErrorMessage())->withInput();
+            }
         }
 
         if ($rekening) {
@@ -76,7 +137,7 @@ class TagihanController extends Controller
             RekeningBendahara::create([
                 'id' => Str::uuid(),
                 'unit' => $unit,
-                'rt_id' => $rt_id,
+                'rt_id' => $unit === 'RT' ? $rt_id : null,
                 'bank' => $request->bank,
                 'no_rek' => $request->no_rek,
                 'nama_rek' => $request->nama_rek,
@@ -111,6 +172,21 @@ class TagihanController extends Controller
         // Ensure access control
         if ($tagihan->unit !== $unit || ($unit === 'RT' && $tagihan->rt_id !== $rt_id)) {
             abort(403);
+        }
+
+        // Auto-sync seluruh bukti pembayaran warga ke public/storage agar langsung tampil di browser
+        foreach ($tagihan->pembayaran as $p) {
+            if ($p->bukti_file) {
+                $src = storage_path('app/public/' . $p->bukti_file);
+                $dst = public_path('storage/' . $p->bukti_file);
+                if (file_exists($src) && !file_exists($dst)) {
+                    $dstDir = dirname($dst);
+                    if (!is_dir($dstDir)) {
+                        @mkdir($dstDir, 0755, true);
+                    }
+                    @copy($src, $dst);
+                }
+            }
         }
 
         return view('opKeuangan.iuran.detail', compact('tagihan', 'unit'));
@@ -292,4 +368,40 @@ class TagihanController extends Controller
 
         return redirect()->back()->with('success', $message);
     }
+
+    private function saveBase64Image(string $base64Data, string $folder): ?string
+    {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+            $data = substr($base64Data, strpos($base64Data, ',') + 1);
+            $type = strtolower($type[1]);
+
+            if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp', 'svg+xml'])) {
+                $type = 'jpg';
+            }
+            if ($type === 'svg+xml') $type = 'svg';
+
+            $data = base64_decode($data);
+            if ($data === false) {
+                return null;
+            }
+
+            $filename = $folder . '/' . Str::uuid() . '.' . $type;
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $data);
+
+            // Simpan juga langsung ke public/storage untuk web native serving
+            try {
+                $dst = public_path('storage/' . $filename);
+                $dstDir = dirname($dst);
+                if (!is_dir($dstDir)) {
+                    @mkdir($dstDir, 0755, true);
+                }
+                @file_put_contents($dst, $data);
+            } catch (\Throwable $e) {}
+
+            return $filename;
+        }
+
+        return null;
+    }
 }
+

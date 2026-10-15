@@ -278,3 +278,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/laporan-keuangan', [LaporanKeuanganPublicController::class, 'index'])->name('laporan-keuangan.publik');
     Route::get('/laporan-keuangan/{id}/pdf', [LaporanKeuanganPublicController::class, 'downloadPdf'])->name('laporan-keuangan.pdf');
 });
+
+// Storage File Serving Fallback (Windows Dev Server compatibility)
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+    return response()->file($filePath, ['Content-Type' => $mime]);
+})->where('path', '.*')->name('storage.file');
+
+
+

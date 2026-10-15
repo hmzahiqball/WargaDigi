@@ -43,8 +43,9 @@
         } elseif ($userRole === 'Warga') {
             try {
                 // 1. Notifikasi resmi dari Database Notifications
-                $dbNotifs = Auth::user()->notifications()->take(5)->get();
+                $dbNotifs = Auth::user()->notifications()->take(10)->get();
                 $existingUmkmNotifKeys = [];
+                $existingPembayaranNotifIds = [];
                 foreach ($dbNotifs as $dbN) {
                     $type = $dbN->data['type'] ?? 'info';
                     $icon = $dbN->data['icon'] ?? 'bi-bell-fill';
@@ -54,6 +55,10 @@
 
                     if (!empty($dbN->data['umkm_usaha_id'])) {
                         $existingUmkmNotifKeys[] = $dbN->data['umkm_usaha_id'] . '_' . ($dbN->data['status'] ?? '');
+                    }
+
+                    if (!empty($dbN->data['pembayaran_id'])) {
+                        $existingPembayaranNotifIds[] = $dbN->data['pembayaran_id'];
                     }
 
                     $dynamicNotifs[] = [
@@ -66,7 +71,32 @@
                     ];
                 }
 
-                // 2. Query status usaha warga (Approved, Rejected, Pending)
+                // 2. Sinkronisasi Realtime Tagihan Belum Dibayar Warga (EV-018)
+                if (Auth::user()->nik) {
+                    $pendudukWarga = \App\Models\Penduduk::with('keluarga')->where('nik', Auth::user()->nik)->first();
+                    if ($pendudukWarga && $pendudukWarga->keluarga) {
+                        $unpaidPembayaran = \App\Models\PembayaranTagihan::with('tagihan')
+                            ->where('keluarga_id', $pendudukWarga->keluarga->id)
+                            ->where('status', 'Unpaid')
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+
+                        foreach ($unpaidPembayaran as $up) {
+                            if ($up->tagihan && !in_array($up->id, $existingPembayaranNotifIds)) {
+                                $dynamicNotifs[] = [
+                                    'type'   => 'warning',
+                                    'icon'   => 'bi-receipt-cutoff',
+                                    'text'   => "Tagihan Belum Lunas: {$up->tagihan->judul} ({$up->tagihan->formatted_nominal})",
+                                    'time'   => $up->created_at ? $up->created_at->diffForHumans() : 'Belum Dibayar',
+                                    'unread' => true,
+                                    'url'    => route('warga.tagihan.index'),
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // 3. Query status usaha warga (Approved, Rejected, Pending)
                 if (Auth::user()->nik) {
                     $usahaWarga = \App\Models\UmkmUsaha::where('nik', Auth::user()->nik)
                         ->whereIn('status_verifikasi', ['Pending', 'Approved', 'Rejected'])

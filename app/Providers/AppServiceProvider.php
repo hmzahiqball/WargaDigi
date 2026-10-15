@@ -27,7 +27,40 @@ class AppServiceProvider extends ServiceProvider
         // The project UI is built on Bootstrap 5, so render pagination with the matching theme.
         Paginator::useBootstrapFive();
 
+        $this->ensureStorageSynced();
+
         $this->registerActivityLogListeners();
+    }
+
+    /**
+     * Ensure storage files from storage/app/public are available in public/storage
+     * for direct static serving on Windows environments without symlink privilege.
+     */
+    protected function ensureStorageSynced(): void
+    {
+        try {
+            $folders = ['bukti_pembayaran', 'rekening', 'bukti_transaksi'];
+            foreach ($folders as $folder) {
+                $srcDir = storage_path('app/public/' . $folder);
+                $dstDir = public_path('storage/' . $folder);
+                if (is_dir($srcDir)) {
+                    if (!is_dir($dstDir)) {
+                        @mkdir($dstDir, 0755, true);
+                    }
+                    $files = @scandir($srcDir);
+                    if ($files) {
+                        foreach ($files as $file) {
+                            if ($file === '.' || $file === '..' || $file === '.gitkeep') continue;
+                            $srcFile = $srcDir . DIRECTORY_SEPARATOR . $file;
+                            $dstFile = $dstDir . DIRECTORY_SEPARATOR . $file;
+                            if (is_file($srcFile) && !file_exists($dstFile)) {
+                                @copy($srcFile, $dstFile);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
     }
 
     /**
