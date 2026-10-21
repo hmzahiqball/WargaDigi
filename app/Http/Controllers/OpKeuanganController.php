@@ -8,6 +8,9 @@ use App\Models\LaporanKeuangan;
 use App\Models\MasterRt;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class OpKeuanganController extends Controller
@@ -120,18 +123,24 @@ class OpKeuanganController extends Controller
             $totalAssets = $totalKasRw;
         }
 
-        // Stat Cards: Tetap transparan & terlihat oleh ketiga bendahara
+        // Stat Cards: Tetap transparan & terlihat oleh ketiga bendahara (EV-001: Breakdown Pemasukan & Pengeluaran)
         $stats = [
             'kas_rw' => [
                 'total' => 'Rp ' . number_format($totalKasRw, 0, ',', '.'),
+                'masuk' => 'Rp ' . number_format($kasRwPemasukan, 0, ',', '.'),
+                'keluar' => 'Rp ' . number_format($kasRwPengeluaran, 0, ',', '.'),
                 'subtext' => $unit === 'RW' ? 'Saldo kas operasional RW' : 'Dikelola oleh Bendahara RW',
             ],
             'kas_rt' => [
                 'total' => 'Rp ' . number_format($totalKasRt, 0, ',', '.'),
+                'masuk' => 'Rp ' . number_format($kasRtPemasukan, 0, ',', '.'),
+                'keluar' => 'Rp ' . number_format($kasRtPengeluaran, 0, ',', '.'),
                 'subtext' => $unit === 'RT' ? 'Saldo kas RT Anda' : 'Total dana seluruh RT',
             ],
             'dana_kematian' => [
                 'total' => 'Rp ' . number_format($totalDanaDkm, 0, ',', '.'),
+                'masuk' => 'Rp ' . number_format($danaDkmPemasukan, 0, ',', '.'),
+                'keluar' => 'Rp ' . number_format($danaDkmPengeluaran, 0, ',', '.'),
                 'subtext' => $unit === 'DKM' ? 'Saldo kas DKM Anda' : 'Alokasi santunan warga (DKM)',
             ],
             'pemasukan_bulan_ini' => 'Rp ' . number_format($pemasukanBulanIni, 0, ',', '.'),
@@ -165,7 +174,7 @@ class OpKeuanganController extends Controller
 
             return [
                 'title' => $tx->judul,
-                'time' => $tx->tanggal->format('d M Y') . ' • ' . $tx->created_at->format('H:i'),
+                'time' => $tx->tanggal->format('d M Y') . ' • ' . $tx->created_at->timezone('Asia/Jakarta')->format('H:i'),
                 'amount' => $amountSign . ' Rp ' . number_format($tx->jumlah, 0, ',', '.'),
                 'type' => $tx->tipe == 'pemasukan' ? 'income' : 'expense',
                 'icon' => $icon,
@@ -174,13 +183,39 @@ class OpKeuanganController extends Controller
         });
 
         // ──────────────────────────────
-        // Sheet Saldo
+        // Sheet Saldo (EV-003 Revisi IR06: Dinamis Liabilitas & Status Icon)
         // ──────────────────────────────
+        $pendingExpenses = (clone $this->scopedTransaksiQuery($unit, $rt_id))
+            ->where('tipe', 'pengeluaran')
+            ->where('status', 'Pending')
+            ->sum('jumlah');
+
+        if ($totalAssets < 0) {
+            // Kondisi Defisit: Nilai liabilitas mencerminkan defisit kas + kewajiban tertunda
+            $calculatedLiabilitas = abs($totalAssets) + $pendingExpenses;
+            $calculatedEkuitas = 0;
+            $statusSaldo = 'Defisit';
+            $statusIcon = 'bi-exclamation-triangle-fill text-danger';
+            $statusTextClass = 'text-danger';
+            $statusBoxClass = 'bg-danger bg-opacity-10 border border-danger-subtle';
+        } else {
+            // Kondisi Balanced / Surplus
+            $calculatedLiabilitas = $pendingExpenses;
+            $calculatedEkuitas = $totalAssets - $calculatedLiabilitas;
+            $statusSaldo = 'Balanced';
+            $statusIcon = 'bi-check-circle-fill text-success';
+            $statusTextClass = 'text-success';
+            $statusBoxClass = 'bg-success bg-opacity-10 border border-success-subtle';
+        }
+
         $sheetSaldo = [
             'assets' => 'Rp ' . number_format($totalAssets, 0, ',', '.'),
-            'liabilitas' => 'Rp 0',
-            'ekuitas' => 'Rp ' . number_format($totalAssets, 0, ',', '.'),
-            'status' => $totalAssets < 0 ? 'Defisit' : 'Balanced',
+            'liabilitas' => 'Rp ' . number_format($calculatedLiabilitas, 0, ',', '.'),
+            'ekuitas' => 'Rp ' . number_format($calculatedEkuitas, 0, ',', '.'),
+            'status' => $statusSaldo,
+            'status_icon' => $statusIcon,
+            'status_text_class' => $statusTextClass,
+            'status_box_class' => $statusBoxClass,
         ];
 
         // ──────────────────────────────
@@ -310,6 +345,81 @@ class OpKeuanganController extends Controller
         return $steps;
     }
 
+    /**
+     * Helper to save base64 uploaded image/pdf directly to storage (dual write)
+     * Solves Windows PHP built-in server temporary upload directory issues (EV-006, EV-016, EV-021)
+     */
+    private function saveBase64Bukti(?string $base64Data, string $folder = 'bukti_transaksi'): ?string
+    {
+        if (!$base64Data) {
+            return null;
+        }
+
+        if (preg_match('/^data:(image\/(\w+)|application\/(pdf));base64,/', $base64Data, $matches)) {
+            $data = substr($base64Data, strpos($base64Data, ',') + 1);
+            if (!empty($matches[3])) {
+                $ext = 'pdf';
+            } else {
+                $ext = strtolower($matches[2]);
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $ext = 'jpg';
+                }
+            }
+
+            $decoded = base64_decode($data);
+            if ($decoded === false) {
+                return null;
+            }
+
+            $filename = $folder . '/' . Str::uuid() . '.' . $ext;
+            Storage::disk('public')->put($filename, $decoded);
+
+            // Dual write to public/storage for immediate web serving
+            try {
+                $dst = public_path('storage/' . $filename);
+                $dstDir = dirname($dst);
+                if (!is_dir($dstDir)) {
+                    @mkdir($dstDir, 0755, true);
+                }
+                @file_put_contents($dst, $decoded);
+            } catch (\Throwable $e) {
+                Log::warning('Dual-storage sync failed for base64 bukti: ' . $e->getMessage());
+            }
+
+            return $filename;
+        }
+
+        return null;
+    }
+
+    /**
+     * EV-009: Cek apakah periode (bulan & tahun) untuk unit transaksi terkait terkunci.
+     * Periode dianggap terkunci jika laporan keuangannya berstatus 'Submitted', 'Approved',
+     * atau 'is_published' == true.
+     */
+    private function isPeriodLocked(string $unit, ?string $rt_id, int $bulan, int $tahun): bool
+    {
+        $query = LaporanKeuangan::where('unit', $unit)
+            ->where('periode_bulan', $bulan)
+            ->where('periode_tahun', $tahun)
+            ->where(function ($q) {
+                $q->whereIn('status', ['Submitted', 'Approved'])
+                  ->orWhere('is_published', true);
+            });
+
+        if ($unit === 'RT') {
+            $query->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
+        }
+
+        return $query->exists();
+    }
+
     public function transaksiIndex(Request $request)
     {
         $roleData = $this->getRoleFilterData();
@@ -352,10 +462,38 @@ class OpKeuanganController extends Controller
 
         $transaksi = $query->paginate(10);
 
+        // EV-009: Ambil semua periode terkunci (Submitted, Approved, Published) untuk unit ini
+        $lockedPeriodsQuery = LaporanKeuangan::where('unit', $unit)
+            ->where(function ($q) {
+                $q->whereIn('status', ['Submitted', 'Approved'])
+                  ->orWhere('is_published', true);
+            });
+
+        if ($unit === 'RT') {
+            $lockedPeriodsQuery->where(function ($q) use ($rt_id) {
+                if ($rt_id) {
+                    $q->where('rt_id', $rt_id)->orWhereNull('rt_id');
+                } else {
+                    $q->whereNull('rt_id');
+                }
+            });
+        }
+
+        $lockedPeriods = $lockedPeriodsQuery->get()->map(function ($lap) {
+            return sprintf('%04d-%02d', $lap->periode_tahun, $lap->periode_bulan);
+        })->unique()->toArray();
+
+        // Tandai is_locked pada setiap transaksi di halaman aktif
+        $transaksi->getCollection()->transform(function ($tx) use ($lockedPeriods) {
+            $txPeriod = $tx->tanggal->format('Y-m');
+            $tx->is_locked = in_array($txPeriod, $lockedPeriods);
+            return $tx;
+        });
+
         return view('opKeuangan.transaksi', compact('transaksi', 'unit'));
     }
 
-    public function laporanIndex()
+    public function laporanIndex(Request $request)
     {
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
@@ -374,6 +512,18 @@ class OpKeuanganController extends Controller
             $query->where('unit', 'DKM');
         } elseif ($unit === 'RW') {
             $query->where('unit', 'RW');
+        }
+
+        if ($request->filled('tahun')) {
+            $query->where('periode_tahun', $request->tahun);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'Pending') {
+                $query->where('status', 'Submitted');
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         $laporans = $query->paginate(10);
@@ -396,16 +546,36 @@ class OpKeuanganController extends Controller
             'tanggal' => 'required|date',
             'jumlah' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
-            'bukti_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'] ?? 'RW';
         $rt_id = $roleData['rt_id'];
 
+        // EV-009: Cegah penambahan transaksi pada periode yang laporannya sudah terkunci
+        $bulanTx = (int) Carbon::parse($request->tanggal)->format('m');
+        $tahunTx = (int) Carbon::parse($request->tanggal)->format('Y');
+
+        if ($this->isPeriodLocked($unit, $rt_id, $bulanTx, $tahunTx)) {
+            $periodeLabel = Carbon::parse($request->tanggal)->locale('id')->translatedFormat('F Y');
+            return back()->with('error', "Tidak dapat mencatat transaksi pada periode {$periodeLabel} karena laporan keuangan periode tersebut sudah diajukan, disetujui, atau dipublikasikan.")->withInput();
+        }
+
+        // EV-006: Prioritas 1 - Base64 payload (anti-gagal jika PHP temp directory Windows bermasalah)
         $buktiPath = null;
-        if ($request->hasFile('bukti_file')) {
+        if ($request->filled('bukti_base64')) {
+            $buktiPath = $this->saveBase64Bukti($request->bukti_base64, 'bukti_transaksi');
+        } elseif ($request->hasFile('bukti_file') && $request->file('bukti_file')->isValid()) {
             $buktiPath = $request->file('bukti_file')->store('bukti_transaksi', 'public');
+            try {
+                $destDir = public_path('storage/bukti_transaksi');
+                if (!file_exists($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                copy(storage_path('app/public/' . $buktiPath), public_path('storage/' . $buktiPath));
+            } catch (\Exception $e) {
+                Log::warning('Dual-storage sync failed for bukti_transaksi store: ' . $e->getMessage());
+            }
         }
 
         // Generate Kode Transaksi
@@ -439,7 +609,6 @@ class OpKeuanganController extends Controller
             'tanggal' => 'required|date',
             'jumlah' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
-            'bukti_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
         $roleData = $this->getRoleFilterData();
@@ -462,6 +631,24 @@ class OpKeuanganController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengedit transaksi ini.');
         }
 
+        // EV-009: Cek apakah transaksi asal berada dalam periode yang terkunci
+        $oldBulan = (int) Carbon::parse($transaksi->tanggal)->format('m');
+        $oldTahun = (int) Carbon::parse($transaksi->tanggal)->format('Y');
+
+        if ($this->isPeriodLocked($transaksi->unit_sumber, $transaksi->rt_id, $oldBulan, $oldTahun)) {
+            $periodeLabel = Carbon::parse($transaksi->tanggal)->locale('id')->translatedFormat('F Y');
+            return back()->with('error', "Transaksi tidak dapat diubah karena laporan keuangan periode {$periodeLabel} sudah diajukan, disetujui, atau dipublikasikan.");
+        }
+
+        // Cek juga jika tanggal baru dipindahkan ke periode lain yang juga terkunci
+        $newBulan = (int) Carbon::parse($request->tanggal)->format('m');
+        $newTahun = (int) Carbon::parse($request->tanggal)->format('Y');
+
+        if (($newBulan !== $oldBulan || $newTahun !== $oldTahun) && $this->isPeriodLocked($transaksi->unit_sumber, $transaksi->rt_id, $newBulan, $newTahun)) {
+            $periodeBaruLabel = Carbon::parse($request->tanggal)->locale('id')->translatedFormat('F Y');
+            return back()->with('error', "Tanggal transaksi tidak dapat dipindahkan ke periode {$periodeBaruLabel} karena laporan periode tersebut sudah diajukan, disetujui, atau dipublikasikan.");
+        }
+
         $data = [
             'tipe' => $request->tipe,
             'kategori' => $request->kategori,
@@ -475,8 +662,20 @@ class OpKeuanganController extends Controller
             $data['rt_id'] = $rt_id;
         }
 
-        if ($request->hasFile('bukti_file')) {
+        // EV-006: Prioritas Base64 payload lalu standard file
+        if ($request->filled('bukti_base64')) {
+            $data['bukti_file'] = $this->saveBase64Bukti($request->bukti_base64, 'bukti_transaksi');
+        } elseif ($request->hasFile('bukti_file') && $request->file('bukti_file')->isValid()) {
             $data['bukti_file'] = $request->file('bukti_file')->store('bukti_transaksi', 'public');
+            try {
+                $destDir = public_path('storage/bukti_transaksi');
+                if (!file_exists($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                copy(storage_path('app/public/' . $data['bukti_file']), public_path('storage/' . $data['bukti_file']));
+            } catch (\Exception $e) {
+                Log::warning('Dual-storage sync failed for bukti_transaksi update: ' . $e->getMessage());
+            }
         }
 
         $transaksi->update($data);
@@ -574,11 +773,45 @@ class OpKeuanganController extends Controller
             'total_pengeluaran' => $pengeluaran,
             'saldo_awal' => max(0, $saldoAwal),
             'saldo_akhir' => max(0, $saldoAkhir),
-            'status' => 'Submitted', // Langsung diajukan untuk approval
+            'status' => 'Draft', // EV-007: Menggunakan status awal Draft untuk review mandiri
             'dibuat_oleh' => Auth::id(),
         ]);
 
-        return back()->with('success', 'Laporan berhasil di-generate dan diajukan untuk approval.');
+        return back()->with('success', 'Laporan berhasil dibuat dalam status Draft. Silakan review laporan terlebih dahulu, lalu klik tombol "Ajukan" untuk mengirimkannya ke Ketua.');
+    }
+
+    public function submitLaporan($id)
+    {
+        $roleData = $this->getRoleFilterData();
+        $unit = $roleData['unit'];
+        $rt_id = $roleData['rt_id'];
+
+        $laporan = LaporanKeuangan::findOrFail($id);
+
+        // Verify ownership
+        if ($unit === 'RT' && $laporan->rt_id && $rt_id && $laporan->rt_id !== $rt_id) {
+            abort(403, 'Anda tidak memiliki akses ke laporan RT ini.');
+        }
+        if ($unit === 'DKM' && $laporan->unit !== 'DKM') {
+            abort(403, 'Anda tidak memiliki akses ke laporan DKM.');
+        }
+        if ($unit === 'RW' && $laporan->unit !== 'RW') {
+            abort(403, 'Anda tidak memiliki akses ke laporan RW.');
+        }
+
+        if (!in_array($laporan->status, ['Draft', 'Rejected'])) {
+            return back()->with('error', 'Hanya laporan berstatus Draft atau Rejected yang dapat diajukan.');
+        }
+
+        // Sinkronisasi data mutakhir sebelum submit
+        $this->syncLaporanKeuangan($laporan);
+
+        $laporan->update([
+            'status' => 'Submitted',
+            'catatan' => null, // Reset catatan jika sebelumnya ada revisi penolakan
+        ]);
+
+        return back()->with('success', 'Laporan berhasil diajukan ke Ketua untuk peninjauan dan persetujuan.');
     }
 
     public function publishLaporan($id)
@@ -674,6 +907,15 @@ class OpKeuanganController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // EV-009: Cek apakah transaksi berada dalam periode yang terkunci
+        $bulanTx = (int) Carbon::parse($tx->tanggal)->format('m');
+        $tahunTx = (int) Carbon::parse($tx->tanggal)->format('Y');
+
+        if ($this->isPeriodLocked($tx->unit_sumber, $tx->rt_id, $bulanTx, $tahunTx)) {
+            $periodeLabel = Carbon::parse($tx->tanggal)->locale('id')->translatedFormat('F Y');
+            return back()->with('error', "Transaksi tidak dapat dihapus karena laporan keuangan periode {$periodeLabel} sudah diajukan, disetujui, atau dipublikasikan.");
+        }
+
         // Hard delete
         $tx->delete();
 
@@ -703,6 +945,9 @@ class OpKeuanganController extends Controller
 
         if ($laporan->status === 'Approved') {
             return back()->with('error', 'Laporan yang sudah disetujui tidak dapat dihapus.');
+        }
+        if ($laporan->is_published) {
+            return back()->with('error', 'Laporan yang sudah dipublikasikan tidak dapat dihapus.');
         }
 
         $laporan->delete();

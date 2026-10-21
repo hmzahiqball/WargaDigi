@@ -211,6 +211,7 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
         Route::delete('/laporan/{id}', [OpKeuanganController::class, 'laporanDestroy'])->name('opkeuangan.laporan.destroy');
         Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
+        Route::put('/laporan/{id}/submit', [OpKeuanganController::class, 'submitLaporan'])->name('opkeuangan.laporan.submit');
 
         // Tagihan / Iuran
         Route::get('/rekening', [TagihanController::class, 'rekeningIndex'])->name('opkeuangan.rekening.index');

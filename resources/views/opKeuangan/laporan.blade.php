@@ -18,29 +18,38 @@
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
         <!-- Filter Bar -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <label class="form-label text-muted small">Tahun</label>
-                <select class="form-select bg-light border-0">
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                </select>
+        <form method="GET" action="{{ route('opkeuangan.laporan.index') }}" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Tahun</label>
+                    <select name="tahun" class="form-select bg-light border-0">
+                        <option value="">Semua Tahun</option>
+                        <option value="2026" {{ request('tahun') == '2026' ? 'selected' : '' }}>2026</option>
+                        <option value="2025" {{ request('tahun') == '2025' ? 'selected' : '' }}>2025</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Status</label>
+                    <select name="status" class="form-select bg-light border-0">
+                        <option value="">Semua Status</option>
+                        <option value="Draft" {{ request('status') == 'Draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="Submitted" {{ request('status') == 'Submitted' ? 'selected' : '' }}>Pending Review (Submitted)</option>
+                        <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected (Ditolak)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                    @if(request()->anyFilled(['tahun', 'status']))
+                    <a href="{{ route('opkeuangan.laporan.index') }}" class="btn btn-light border text-danger" title="Reset Filter">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    @endif
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label text-muted small">Status</label>
-                <select class="form-select bg-light border-0">
-                    <option value="">Semua Status</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Draft">Draft</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-secondary w-100">
-                    <i class="bi bi-funnel me-1"></i> Filter
-                </button>
-            </div>
-        </div>
+        </form>
 
         <!-- Table -->
         <div class="table-responsive">
@@ -65,6 +74,9 @@
                         <td class="py-3">
                             <div class="text-dark">{{ $lap->judul }}</div>
                             <div class="text-muted small">Dibuat: {{ $lap->created_at->format('d M Y') }}</div>
+                            @if($lap->status == 'Rejected' && $lap->catatan)
+                                <div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i> Catatan: {{ $lap->catatan }}</div>
+                            @endif
                         </td>
                         <td class="py-3 text-success fw-medium">+ {{ $lap->formatted_total_pemasukan }}</td>
                         <td class="py-3 text-danger fw-medium">- {{ $lap->formatted_total_pengeluaran }}</td>
@@ -76,19 +88,29 @@
                                 <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle me-1"></i> Approved</span>
                             @elseif($lap->status == 'Submitted')
                                 <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill"><i class="bi bi-hourglass me-1"></i> Pending Review</span>
+                            @elseif($lap->status == 'Rejected')
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill"><i class="bi bi-x-circle me-1"></i> Ditolak</span>
                             @else
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">{{ $lap->status }}</span>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill"><i class="bi bi-file-earmark me-1"></i> Draft</span>
                             @endif
                         </td>
                         <td class="py-3 text-end">
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('laporan-keuangan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
                                 
+                                @if(in_array($lap->status, ['Draft', 'Rejected']))
+                                <form action="{{ route('opkeuangan.laporan.submit', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengajukan laporan ini ke Ketua untuk persetujuan?');">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Ajukan Laporan"><i class="bi bi-send me-1"></i> Ajukan</button>
+                                </form>
+                                @endif
+
                                 @if($lap->status == 'Approved' && !$lap->is_published)
                                 <form action="{{ route('opkeuangan.laporan.publish', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mempublish laporan ini? Laporan yang dipublish dapat dilihat oleh Warga.');">
                                     @csrf
                                     @method('PUT')
-                                    <button type="submit" class="btn btn-sm btn-primary" title="Publish Laporan"><i class="bi bi-upload me-1"></i> Publish</button>
+                                    <button type="submit" class="btn btn-sm btn-success" title="Publish Laporan"><i class="bi bi-upload me-1"></i> Publish</button>
                                 </form>
                                 @endif
 
@@ -104,7 +126,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">Belum ada laporan yang di-generate.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">Belum ada laporan yang ditemukan.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -133,7 +155,7 @@
                     <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-3 align-items-start rounded-3 mb-4">
                         <i class="bi bi-info-circle-fill text-info mt-1"></i>
                         <div>
-                            Sistem akan secara otomatis menghitung total pemasukan, pengeluaran, dan saldo akhir berdasarkan transaksi yang telah diverifikasi pada periode yang dipilih.
+                            Laporan akan dibuat dalam status <strong>Draft</strong> agar Anda dapat meninjau angka arus kas terlebih dahulu sebelum mengajukannya ke Ketua untuk persetujuan.
                         </div>
                     </div>
 

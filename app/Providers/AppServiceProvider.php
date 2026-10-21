@@ -24,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Enforce application timezone Asia/Jakarta (WIB)
+        date_default_timezone_set(config('app.timezone', 'Asia/Jakarta'));
+
         // The project UI is built on Bootstrap 5, so render pagination with the matching theme.
         Paginator::useBootstrapFive();
 
