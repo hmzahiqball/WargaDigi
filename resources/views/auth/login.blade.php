@@ -48,16 +48,7 @@
 
                     <form id="loginForm" method="POST" action="{{ route('login') }}">
                         @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark">Nomor Induk Kependudukan (NIK)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
-                                    <i class="bi bi-person-vcard"></i>
-                                </span>
-                                <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" placeholder="Masukkan 16 digit NIK" inputmode="numeric" maxlength="16" required value="{{ old('nik') }}">
-                            </div>
-                            @error('nik')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                        </div>
+
 
                         <div class="mb-3">
                             <label class="form-label small fw-semibold text-dark">Nomor WhatsApp</label>

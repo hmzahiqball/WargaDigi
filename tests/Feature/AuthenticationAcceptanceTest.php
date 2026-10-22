@@ -91,10 +91,9 @@ class AuthenticationAcceptanceTest extends TestCase
         ]);
 
         $this->post(route('login'), [
-            'nik' => $this->nik,
             'no_wa' => '081234567890',
             'password' => 'password123',
         ])->assertRedirect()
-            ->assertSessionHasErrors('nik');
+            ->assertSessionHasErrors('no_wa');
     }
 }

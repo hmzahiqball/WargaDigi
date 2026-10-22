@@ -15,44 +15,36 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'nik'      => ['required', 'string', 'digits:16'],
             'no_wa'    => ['required', 'string'],
             'password' => ['required', 'string'],
         ], [
-            'nik.digits' => 'NIK harus terdiri dari 16 digit angka.',
             'no_wa.required' => 'Nomor WhatsApp wajib diisi.',
         ]);
 
-        // 1) The NIK must belong to a registered user.
-        $user = \App\Models\User::where('nik', $request->nik)->first();
+        $normalizedWa = $this->normalizeWhatsapp($request->no_wa);
+
+        // 1) Find the user via keluarga.no_wa -> penduduk.nik -> users.nik
+        $user = $this->findUserByWhatsapp($normalizedWa);
 
         if (! $user) {
-            event(new \Illuminate\Auth\Events\Failed('web', null, $request->only('nik', 'no_wa')));
+            event(new \Illuminate\Auth\Events\Failed('web', null, $request->only('no_wa')));
 
             return back()->withErrors([
-                'nik' => 'NIK tidak terdaftar dalam sistem.',
-            ])->withInput($request->only('nik', 'no_wa'));
+                'no_wa' => 'Nomor WhatsApp tidak terdaftar dalam sistem.',
+            ])->withInput($request->only('no_wa'));
         }
 
-        // 2) The WhatsApp number must match the household (keluarga) linked to this NIK.
-        if (! $this->whatsappMatchesNik($request->nik, $request->no_wa)) {
-            event(new \Illuminate\Auth\Events\Failed('web', $user, $request->only('nik', 'no_wa')));
-
-            return back()->withErrors([
-                'no_wa' => 'Nomor WhatsApp tidak cocok dengan data NIK tersebut.',
-            ])->withInput($request->only('nik', 'no_wa'));
-        }
-
+        // 2) Check account activation status.
         if ($user->status_akun !== 'Active') {
-            event(new \Illuminate\Auth\Events\Failed('web', $user, $request->only('nik', 'no_wa')));
+            event(new \Illuminate\Auth\Events\Failed('web', $user, $request->only('no_wa')));
 
             return back()->withErrors([
-                'nik' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
-            ])->withInput($request->only('nik', 'no_wa'));
+                'no_wa' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
+            ])->withInput($request->only('no_wa'));
         }
 
         // 3) Validate the password and log the user in.
-        if (Auth::attempt(['nik' => $request->nik, 'password' => $request->password], $request->filled('remember'))) {
+        if (Auth::attempt(['nik' => $user->nik, 'password' => $request->password], $request->filled('remember'))) {
             $user = Auth::user();
 
             // If system is in maintenance mode and user is not admin, deny access with 503
@@ -78,35 +70,41 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'password' => 'Password yang Anda masukkan salah.',
-        ])->withInput($request->only('nik', 'no_wa'));
+        ])->withInput($request->only('no_wa'));
     }
 
     /**
-     * Check whether the given WhatsApp number matches the household (keluarga)
-     * associated with the given NIK.
+     * Find a User by their household WhatsApp number.
      *
-     * Chain: users.nik -> penduduk.nik -> penduduk.keluarga_id -> keluarga.no_wa
-     * The head of family's NIK on the keluarga record is also accepted.
+     * Chain: keluarga.no_wa -> penduduk.nik -> users.nik
+     * Checks all keluarga records whose normalized no_wa matches,
+     * then finds a registered user among the household members.
      */
-    protected function whatsappMatchesNik(string $nik, string $noWa): bool
+    protected function findUserByWhatsapp(string $normalizedWa): ?\App\Models\User
     {
-        $noWa = $this->normalizeWhatsapp($noWa);
+        // Find all keluarga with matching normalized WhatsApp number.
+        $keluargaRecords = \App\Models\Keluarga::all()->filter(function ($k) use ($normalizedWa) {
+            return $this->normalizeWhatsapp((string) $k->no_wa) === $normalizedWa;
+        });
 
-        // a) Via the resident (penduduk) -> household relationship.
-        $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $nik)->first();
-        if ($penduduk && $penduduk->keluarga) {
-            if ($this->normalizeWhatsapp((string) $penduduk->keluarga->no_wa) === $noWa) {
-                return true;
+        foreach ($keluargaRecords as $keluarga) {
+            // a) Check household members (penduduk -> user).
+            $niks = $keluarga->anggota()->pluck('nik')->toArray();
+
+            // b) Also check the head of family NIK directly.
+            if ($keluarga->nik_kepala_keluarga) {
+                $niks[] = $keluarga->nik_kepala_keluarga;
+            }
+
+            $niks = array_unique($niks);
+
+            $user = \App\Models\User::whereIn('nik', $niks)->first();
+            if ($user) {
+                return $user;
             }
         }
 
-        // b) Fallback: the NIK is the head of a household directly.
-        $asHead = \App\Models\Keluarga::where('nik_kepala_keluarga', $nik)->first();
-        if ($asHead && $this->normalizeWhatsapp((string) $asHead->no_wa) === $noWa) {
-            return true;
-        }
-
-        return false;
+        return null;
     }
 
     /**
