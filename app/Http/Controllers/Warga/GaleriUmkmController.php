@@ -258,6 +258,12 @@ class GaleriUmkmController extends Controller
             $defaultKat = KategoriUmkm::firstOrCreate(['nama_kategori' => 'Lainnya']);
             $kategoriId = $defaultKat->id;
         }
+
+        $katDipilih = KategoriUmkm::find($kategoriId);
+        if ($katDipilih && strtolower(trim($katDipilih->nama_kategori)) === 'koperasi') {
+            return back()->with('error', 'Kategori Koperasi saat ini dinonaktifkan dan tidak dapat dipilih untuk pendaftaran usaha baru.');
+        }
+
         $validated['kategori_umkm_id'] = $kategoriId;
 
         $userNik = Auth::user()->nik ?? null;
