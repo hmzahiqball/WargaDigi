@@ -88,6 +88,13 @@ Format kolom: **ID · Prioritas · Prasyarat · Langkah · Data Uji · Hasil Dih
 | UAT-AUTH-07 | Tinggi | Login valid sebagai Warga | NIK=`3217010101010003`, WA=`081987654321`, pw=`password` | Diarahkan ke dashboard Warga (`/warga/...`) | | |
 | UAT-AUTH-08 | Sedang | Setelah login berhasil, buka Log Aktivitas sebagai Admin | akun Admin Aplikasi | Terdapat entri log kategori login dengan pelaku = pengguna terkait dan waktu login | | |
 | UAT-AUTH-09 | Sedang | Klik Logout | sesi login aktif | Sesi berakhir; diarahkan ke `/login`; entri logout tercatat | | |
+| UAT-AUTH-10 | Tinggi | Buka `/register`, isi NIK dan WA yang berasal dari keluarga yang sama | NIK=`3217010101010003`, WA=`081987654321` | Diarahkan ke `/aktivasi/otp`; sistem menampilkan mock OTP UAT | | |
+| UAT-AUTH-11 | Tinggi | Kirim OTP yang salah atau kedaluwarsa | OTP=`000000` | Aktivasi ditolak dan muncul pesan kode OTP tidak valid | | |
+| UAT-AUTH-12 | Tinggi | Kirim mock OTP yang benar | OTP=`123456` | Diarahkan ke form pembuatan password | | |
+| UAT-AUTH-13 | Tinggi | Isi password baru dan konfirmasi yang sama | Password=`password123` | User dibuat/diaktifkan sebagai `Warga`; `status_akun=Active`; status keluarga menjadi `Active`; diarahkan ke `/login` | | |
+| UAT-AUTH-14 | Tinggi | Aktivasi dengan NIK dan WA dari keluarga berbeda | NIK valid, WA tidak cocok | Aktivasi ditolak; user tidak dibuat dan muncul pesan ketidakcocokan data | | |
+
+> Catatan implementasi UAT: OTP masih berupa mock `123456`, disimpan di session selama 5 menit, dan belum dikirim melalui WhatsApp. Integrasi provider WhatsApp dilakukan pada tahap berikutnya.
 ### 5.2 Modul Pengaturan Sistem (mengacu AC-02)
 
 | ID | Prio | Langkah Uji | Data Uji | Hasil Diharapkan (Terukur) | Hasil Aktual | Status |

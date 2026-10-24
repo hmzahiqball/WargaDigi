@@ -37,7 +37,7 @@ class DashboardController extends Controller
             ],
             'peran' => [
                 'label' => 'HAK AKSES',
-                'value' => $user->role ?? 'Warga',
+                'value' => $user->activeRole() ?? 'Warga',
                 'color' => '#198754',
             ],
             'jumlah_tanggungan' => [
@@ -52,13 +52,25 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $agendaList = [
-            [
-                'title' => 'Rembug Warga & Pengurus',
-                'time' => 'Balai Pertemuan RW 21',
-                'icon' => 'bi-calendar-check',
-            ]
-        ];
+        // Agenda mendatang (Publish, tanggal_mulai >= sekarang). Struktur
+        // dipertahankan: title, time, icon. Bila kosong -> array kosong.
+        $agendaList = Agenda::where('status', 'Publish')
+            ->where('tanggal_mulai', '>=', now())
+            ->orderBy('tanggal_mulai')
+            ->take(5)
+            ->get()
+            ->map(function (Agenda $a) {
+                $mulai = $a->tanggal_mulai;
+                $waktu = $mulai ? $mulai->translatedFormat('d M Y H:i') : '';
+                $lokasi = $a->lokasi ? ' - ' . $a->lokasi : '';
+
+                return [
+                    'title' => $a->judul_agenda,
+                    'time' => trim($waktu . $lokasi),
+                    'icon' => 'bi-calendar-check',
+                ];
+            })
+            ->all();
 
         if ($user && $user->nik) {
             $pendingUmkmListCount = UmkmUsaha::where('nik', $user->nik)
@@ -75,7 +87,7 @@ class DashboardController extends Controller
             ->latest()
             ->limit(8)
             ->get();
-            
+
         $pengumumanPin = Pengumuman::where('status', 'Publish')
             ->orderBy('is_priority', 'desc')
             ->orderBy('updated_at', 'desc')
@@ -134,12 +146,12 @@ class DashboardController extends Controller
         return view('warga.dashboard', compact(
             'pengumumanPin',
             'semuaAgenda',
-            'user', 
-            'stats', 
-            'anggotaKeluarga', 
-            'beritaTerkini', 
+            'user',
+            'stats',
+            'anggotaKeluarga',
+            'beritaTerkini',
             'agendaList',
-            'pendingUmkmListCount', 
+            'pendingUmkmListCount',
             'daftarProdukTerbaru',
             'suratNotif'));
     }

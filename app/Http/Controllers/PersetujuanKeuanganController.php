@@ -18,10 +18,23 @@ class PersetujuanKeuanganController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'Ketua RT') {
+        if (trim($user->activeRole() ?? '') === 'Ketua RT') {
+            $rtId = $user->rt_id;
+            if (!$rtId) {
+                // Fallback: cari rt_id dari relasi Penduduk -> Keluarga jika belum terisi di users
+                $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
+                if ($penduduk && $penduduk->keluarga) {
+                    $rtId = $penduduk->keluarga->rt_id;
+                }
+                if (!$rtId) {
+                    $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first() ?? \App\Models\MasterRt::first();
+                    $rtId = $rt01 ? $rt01->id : null;
+                }
+            }
+
             return [
                 'type' => 'RT',
-                'rt_id' => $user->rt_id,
+                'rt_id' => $rtId,
                 'label' => 'Ketua RT',
             ];
         }
@@ -47,18 +60,18 @@ class PersetujuanKeuanganController extends Controller
             ->orderBy('periode_bulan', 'desc');
 
         if ($scope['type'] === 'RT') {
-            // Ketua RT: only see RT reports from their RT that are Submitted
+            // Ketua RT: see RT reports for their RT (and legacy reports where rt_id is null) that are Submitted
             $pendingQuery->where('status', 'Submitted')
-                         ->where('unit', 'RT')
-                         ->where('rt_id', $scope['rt_id']);
+                         ->where('unit', 'RT');
+            if ($scope['rt_id']) {
+                $pendingQuery->where(function ($q) use ($scope) {
+                    $q->where('rt_id', $scope['rt_id'])
+                      ->orWhereNull('rt_id');
+                });
+            }
         } else {
-            // Pimpinan RW: see Submitted for RW & DKM, and Disetujui RT for RT
-            $pendingQuery->where(function ($q) {
-                $q->whereIn('unit', ['RW', 'DKM'])->where('status', 'Submitted')
-                  ->orWhere(function ($q2) {
-                      $q2->where('unit', 'RT')->where('status', 'Disetujui RT');
-                  });
-            });
+            // Pimpinan RW: see Submitted for RW & DKM
+            $pendingQuery->whereIn('unit', ['RW', 'DKM'])->where('status', 'Submitted');
         }
 
         $pending = $pendingQuery->paginate(10, ['*'], 'pending_page');
@@ -69,7 +82,13 @@ class PersetujuanKeuanganController extends Controller
             ->orderBy('tanggal_disetujui', 'desc');
 
         if ($scope['type'] === 'RT') {
-            $historyQuery->where('unit', 'RT')->where('rt_id', $scope['rt_id']);
+            $historyQuery->where('unit', 'RT');
+            if ($scope['rt_id']) {
+                $historyQuery->where(function ($q) use ($scope) {
+                    $q->where('rt_id', $scope['rt_id'])
+                      ->orWhereNull('rt_id');
+                });
+            }
         } else {
             $historyQuery->whereIn('unit', ['RW', 'DKM']);
         }
@@ -97,22 +116,23 @@ class PersetujuanKeuanganController extends Controller
 
         $this->authorizeAction($laporan, $scope);
 
-        if ($scope['type'] === 'RT' && $laporan->status !== 'Submitted') {
+        if ($laporan->status !== 'Submitted') {
             return back()->with('error', 'Laporan ini tidak dalam status Submitted.');
         }
 
-        if ($scope['type'] === 'RW' && !in_array($laporan->status, ['Submitted', 'Disetujui RT'])) {
-            return back()->with('error', 'Laporan ini tidak dapat diproses.');
-        }
-
-        $newStatus = $scope['type'] === 'RT' ? 'Disetujui RT' : 'Approved';
-
-        $laporan->update([
-            'status' => $newStatus,
+        $updateData = [
+            'status' => 'Approved',
             'disetujui_oleh' => Auth::id(),
             'tanggal_disetujui' => Carbon::now(),
             'catatan' => $request->input('catatan'),
-        ]);
+        ];
+
+        // Auto-heal rt_id jika sebelumnya tersimpan null
+        if (!$laporan->rt_id && $scope['rt_id']) {
+            $updateData['rt_id'] = $scope['rt_id'];
+        }
+
+        $laporan->update($updateData);
 
         return back()->with('success', 'Laporan berhasil disetujui.');
     }
@@ -133,20 +153,23 @@ class PersetujuanKeuanganController extends Controller
 
         $this->authorizeAction($laporan, $scope);
 
-        if ($scope['type'] === 'RT' && $laporan->status !== 'Submitted') {
+        if ($laporan->status !== 'Submitted') {
             return back()->with('error', 'Laporan ini tidak dalam status Submitted.');
         }
 
-        if ($scope['type'] === 'RW' && !in_array($laporan->status, ['Submitted', 'Disetujui RT'])) {
-            return back()->with('error', 'Laporan ini tidak dapat diproses.');
-        }
-
-        $laporan->update([
+        $updateData = [
             'status' => 'Rejected',
             'disetujui_oleh' => Auth::id(),
             'tanggal_disetujui' => Carbon::now(),
             'catatan' => $request->input('catatan'),
-        ]);
+        ];
+
+        // Auto-heal rt_id jika sebelumnya tersimpan null
+        if (!$laporan->rt_id && $scope['rt_id']) {
+            $updateData['rt_id'] = $scope['rt_id'];
+        }
+
+        $laporan->update($updateData);
 
         return back()->with('success', 'Laporan berhasil ditolak.');
     }
@@ -157,16 +180,15 @@ class PersetujuanKeuanganController extends Controller
     private function authorizeAction(LaporanKeuangan $laporan, array $scope)
     {
         if ($scope['type'] === 'RT') {
-            if ($laporan->unit !== 'RT' || $laporan->rt_id !== $scope['rt_id']) {
+            if ($laporan->unit !== 'RT') {
                 abort(403, 'Anda tidak memiliki akses untuk laporan ini.');
+            }
+            if ($scope['rt_id'] && $laporan->rt_id && $laporan->rt_id !== $scope['rt_id']) {
+                abort(403, 'Anda tidak memiliki akses untuk laporan RT lain.');
             }
         } else {
-            // RW can access RW, DKM, and RT (if RT has been approved by Ketua RT)
-            if (!in_array($laporan->unit, ['RW', 'DKM', 'RT'])) {
+            if (!in_array($laporan->unit, ['RW', 'DKM'])) {
                 abort(403, 'Anda tidak memiliki akses untuk laporan ini.');
-            }
-            if ($laporan->unit === 'RT' && $laporan->status === 'Submitted') {
-                abort(403, 'Laporan RT ini harus disetujui oleh Ketua RT terlebih dahulu.');
             }
         }
     }

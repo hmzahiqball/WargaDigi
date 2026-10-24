@@ -63,7 +63,7 @@ $transition-base: all 0.3s ease;
 // Global Button Overrides (Fix text color on hover/active)
 .btn {
     font-weight: 600;
-    
+
     // Prevent black text color change on active/hover for outline buttons
     &.btn-outline-danger {
         &:hover, &:active, &.active {
@@ -79,7 +79,7 @@ $transition-base: all 0.3s ease;
             border-color: $success;
         }
     }
-    
+
     // Solid buttons
     &.btn-success {
         color: $white !important;
@@ -1429,7 +1429,7 @@ $transition-base: all 0.3s ease;
             background: $light-green;
             color: $primary-dark;
             border-right-color: $primary-dark;
-            
+
             i {
                 color: $primary-dark;
             }
@@ -1533,6 +1533,15 @@ $transition-base: all 0.3s ease;
         cursor: pointer;
         transition: $transition-base;
         position: relative;
+
+        i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
 
         &:hover {
             background: rgba($primary, 0.08);
@@ -2282,7 +2291,13 @@ $transition-base: all 0.3s ease;
     }
 }
 
-// --- Notification Panel ---
+// ==========================================================================
+// [KOMPONEN] TOPBAR: PANEL NOTIFIKASI
+// File Blade: resources/views/components/topbar.blade.php
+// Deskripsi : Styling panel drawer notifikasi, full-height body,
+//             scrollbar minimalis, tombol sembunyikan (icon mata),
+//             dan item notifikasi dengan wrapping optimal.
+// ==========================================================================
 .admin-notif-panel {
     position: fixed;
     top: 0;
@@ -2293,12 +2308,15 @@ $transition-base: all 0.3s ease;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
     z-index: 1050;
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
 
     &.open {
         right: 0;
     }
 
     .notif-panel-header {
+        flex-shrink: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -2326,14 +2344,69 @@ $transition-base: all 0.3s ease;
     }
 
     .notif-panel-body {
+        flex: 1 1 auto;
+        height: calc(100vh - 65px);
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
         padding: 0.5rem 0;
+
+        /* Minimalist & Subtle Scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.12);
+            border-radius: 999px;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.25);
+            }
+        }
     }
 
-    .notif-item {
+    /* Tombol Sembunyikan Notifikasi (Icon Mata di Pojok Kanan Atas) */
+    .notif-hide-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
         display: flex;
-        gap: 0.75rem;
-        padding: 1rem 1.5rem;
-        transition: $transition-base;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        z-index: 5;
+
+        &:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
+    }
+
+    /* Item Notifikasi */
+    .notif-item {
+        position: relative;
+        display: flex;
+        gap: 0.85rem;
+        padding: 0.95rem 1.15rem;
+        padding-right: 2.1rem;
+        transition: background 0.2s ease, opacity 0.25s ease, transform 0.25s ease;
         cursor: pointer;
 
         &:hover {
@@ -2342,7 +2415,25 @@ $transition-base: all 0.3s ease;
 
         &.unread {
             background: rgba($primary, 0.03);
-            border-left: 3px solid $primary;
+            border-left: none;
+        }
+
+        .notif-content {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .notif-text {
+            font-size: 0.85rem;
+            margin-bottom: 0.15rem;
+            font-weight: 500;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .notif-time {
+            font-size: 0.75rem;
+            color: #999;
         }
     }
 
@@ -2370,17 +2461,11 @@ $transition-base: all 0.3s ease;
             background: #e3f2fd;
             color: #1565c0;
         }
-    }
 
-    .notif-text {
-        font-size: 0.85rem;
-        margin-bottom: 0.15rem;
-        font-weight: 500;
-    }
-
-    .notif-time {
-        font-size: 0.75rem;
-        color: #999;
+        &.danger {
+            background: #ffebee;
+            color: #c62828;
+        }
     }
 }
 
@@ -2566,18 +2651,37 @@ $transition-base: all 0.3s ease;
     }
 }
 
+// --- Sidebar Overlay (drawer mobile) ---
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1035;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.show {
+        display: block;
+        opacity: 1;
+    }
+}
+
 // --- Admin Responsive ---
 @media (max-width: 991px) {
+    // Di mobile, sidebar menjadi drawer off-canvas: tersembunyi secara default,
+    // dan muncul hanya ketika memiliki class .open (dikontrol tombol hamburger).
     .admin-sidebar {
         transform: translateX(-250px);
+        box-shadow: 2px 0 16px rgba(0, 0, 0, 0.12);
 
-        &:not(.collapsed) {
+        &.open {
             transform: translateX(0);
         }
     }
 
     .admin-main {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
 
     .admin-content {
@@ -2598,6 +2702,13 @@ $transition-base: all 0.3s ease;
     }
 }
 
+// Overlay hanya relevan di viewport mobile.
+@media (min-width: 992px) {
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
 @media (max-width: 575px) {
     .admin-topbar .topbar-search {
         display: none;
@@ -2605,6 +2716,168 @@ $transition-base: all 0.3s ease;
 
     .admin-stat-card .stat-card-value {
         font-size: 1.75rem;
+    }
+}
+
+// --- Header tabel: putih (bukan hijau pucat dari $light) ---
+// Variabel tema $light bernuansa hijau, sehingga .table-light pada <thead>
+// tampak kehijauan. Paksa header tabel menjadi putih agar bersih.
+// Baris tabel (tbody) dipaksa putih; header tabel (.table-light) dibiarkan
+// memakai warna tema semula.
+.table > tbody {
+    --bs-table-bg: #ffffff;
+    --bs-table-accent-bg: #ffffff;
+
+    > tr,
+    > tr > th,
+    > tr > td {
+        background-color: #ffffff !important;
+    }
+}
+
+// --- Card: latar putih untuk card standar ---
+// Variabel tema Bootstrap (mis. --bs-tertiary/secondary-bg yang berasal dari $light
+// bernuansa hijau) dapat membuat .card tampak kehijauan. Paksa card standar putih.
+// Card yang memang sengaja berwarna memakai kelas khusus dan tidak terpengaruh.
+.card:not(.card-warga):not(.card-umkm):not(.bg-finance-green):not(.bg-finance-red):not(.card-dashed):not(.bg-success):not(.bg-primary):not(.bg-warning):not(.bg-danger):not(.bg-info) {
+    --bs-card-bg: #ffffff;
+    background-color: #ffffff;
+
+    .card-body,
+    .card-footer {
+        background-color: transparent;
+    }
+}
+
+// --- Footer aksi modal detail konten (Op Konten) ---
+#detailFooterActions {
+    display: flex;
+    flex-wrap: nowrap; // tombol aksi tetap dalam satu baris
+    align-items: center;
+    gap: 0.5rem;
+
+    .btn {
+        white-space: nowrap;
+    }
+}
+
+// Label tombol footer modal.
+// Desktop: tampil teks pendek (.label-short), sembunyikan versi panjang.
+.modal-action-footer .label-full {
+    display: none;
+}
+
+.modal-action-footer .label-short {
+    display: inline;
+}
+
+// Mobile: tombol footer hanya ikon (semua teks disembunyikan), satu baris,
+// info tetap tersedia lewat tooltip.
+@media (max-width: 575px) {
+    .modal-action-footer > .d-flex {
+        flex-wrap: nowrap !important;
+        align-items: center;
+    }
+
+    .modal-action-footer .btn {
+        padding-left: 0.65rem !important;
+        padding-right: 0.65rem !important;
+        gap: 0 !important;
+    }
+
+    .modal-action-footer .btn .label-full,
+    .modal-action-footer .btn .label-short {
+        display: none; // ikon saja
+    }
+
+    // Rapatkan ikon (buang margin ikon "me-1" pada tombol pratinjau).
+    .modal-action-footer .btn i {
+        margin: 0 !important;
+    }
+}
+
+// --- Form Fields: background putih + border seragam ---
+// Memaksa seluruh input/select/textarea berlatar putih dan memiliki border jelas
+// (termasuk yang memakai util .bg-light / .border-0), kecuali disabled/readonly.
+.form-control,
+.form-select,
+textarea.form-control,
+.admin-input {
+    border: 1px solid #d1d5db !important;
+
+    &:not(:disabled):not([readonly]) {
+        background-color: #ffffff !important;
+    }
+
+    &:focus {
+        border-color: $primary !important;
+        box-shadow: 0 0 0 0.2rem rgba($primary, 0.15) !important;
+    }
+}
+
+// Input group (mis. search dengan ikon) ikut punya border yang menyatu.
+.input-group-text {
+    border: 1px solid #d1d5db !important;
+}
+
+// --- Header: sembunyikan ikon kotak di mobile (mis. Verifikasi Mutasi Warga) ---
+@media (max-width: 767px) {
+    .header-icon-box {
+        display: none !important;
+    }
+}
+
+// --- Dashboard Mobile-Friendly ---
+// Kartu statistik dashboard: 2 kolom di tablet, 1 kolom penuh di HP.
+@media (max-width: 991px) {
+    .dash-stats > [class*="col-"] {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (max-width: 575px) {
+    .dash-stats > [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+// Header dashboard (judul + tombol + badge status).
+// Desktop: teks di kiri; tombol lalu status di kanan.
+.dash-header {
+    .dash-header-title { order: 1; }
+    .dash-header-actions { order: 2; }
+    .dash-header-status { order: 3; margin-left: 0.5rem; }
+}
+
+// Mobile/tablet kecil: tersusun vertikal dengan urutan STATUS -> TEKS -> TOMBOL.
+@media (max-width: 767px) {
+    .dash-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+
+        .dash-header-status { order: 1; margin-left: 0; }
+        .dash-header-title { order: 2; }
+        .dash-header-actions {
+            order: 3;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+
+            // Tombol memenuhi lebar & menumpuk rapi di layar kecil
+            > .btn,
+            > .dropdown,
+            > form {
+                flex: 1 1 100%;
+            }
+
+            > .btn {
+                width: 100%;
+            }
+        }
     }
 }
 
@@ -2711,14 +2984,17 @@ $transition-base: all 0.3s ease;
 
     &.success {
         color: $primary;
+        background-color: rgba(46, 125, 50, 0.1);
     }
 
     &.failed {
         color: $danger;
+        background-color: rgba(211, 47, 47, 0.1);
     }
 
     &.warning {
         color: #ef6c00;
+        background-color: rgba(239, 108, 0, 0.1);
     }
 }
 
@@ -3387,6 +3663,7 @@ $transition-base: all 0.3s ease;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
     }
 }
@@ -3435,3 +3712,50 @@ $transition-base: all 0.3s ease;
 // 6. Module Styles
 // ==========================================
 @import "pages/umkm";
+
+// ==========================================================================
+// [HALAMAN] KELOLA UMKM: DROPDOWN PILIH USAHA
+// File Blade: resources/views/warga/umkm/kelola_umkm.blade.php
+// Deskripsi : Rotasi ikon chevron 180 derajat saat dropdown terbuka,
+//             penghapusan caret bawaan Bootstrap, dan scrollbar minimalis.
+// ==========================================================================
+#dropdownPilihUsaha.dropdown-toggle::after {
+    display: none !important;
+}
+
+#dropdownPilihUsaha[aria-expanded="true"] .dropdown-arrow-icon {
+    transform: rotate(180deg);
+}
+
+.custom-dropdown-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+
+        &:hover {
+            background: #94a3b8;
+        }
+    }
+}
+
+// --- Kartu yang bisa diklik (mis. Daftar Tanggungan di dashboard warga) ---
+.card-clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+}

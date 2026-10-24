@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\MutasiWarga;
 use App\Models\Penduduk;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class KeluargaController extends Controller
 {
@@ -15,7 +16,7 @@ class KeluargaController extends Controller
     {
         $user = Auth::user();
         $penduduk = $user->penduduk;
-        
+
         if (!$penduduk || !$penduduk->keluarga) {
             return redirect()->route('warga.dashboard')->with('error', 'Data keluarga tidak ditemukan.');
         }
@@ -30,7 +31,7 @@ class KeluargaController extends Controller
     {
         $user = Auth::user();
         $penduduk = $user->penduduk;
-        
+
         if (!$penduduk || !$penduduk->keluarga) {
             return redirect()->route('warga.dashboard')->with('error', 'Data keluarga tidak ditemukan.');
         }
@@ -44,7 +45,7 @@ class KeluargaController extends Controller
     {
         $user = Auth::user();
         $penduduk = $user->penduduk;
-        
+
         if (!$penduduk || !$penduduk->keluarga) {
             return redirect()->route('warga.dashboard')->with('error', 'Data keluarga tidak ditemukan.');
         }
@@ -68,16 +69,26 @@ class KeluargaController extends Controller
     {
         $user = Auth::user();
         $penduduk = $user->penduduk;
-        
+
         if (!$penduduk || !$penduduk->keluarga) {
             return response()->json(['success' => false, 'message' => 'Data keluarga tidak ditemukan.'], 404);
         }
 
         $keluarga = $penduduk->keluarga;
 
+        // Hanya Kepala Keluarga yang boleh mengajukan penambahan anggota.
+        // (Akun warga memang hanya dimiliki Kepala Keluarga, namun kita tetap
+        // memverifikasi secara eksplisit sebagai pertahanan berlapis.)
+        if ($penduduk->nik !== $keluarga->nik_kepala_keluarga) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Kepala Keluarga yang dapat menambah anggota keluarga.',
+            ], 403);
+        }
+
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nik' => 'required|string|size:16',
+            'nik' => ['required', 'string', 'size:16', Rule::unique('penduduk', 'nik')],
             'status_hubungan_keluarga' => 'required|string',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'required|string|max:100',
@@ -91,6 +102,16 @@ class KeluargaController extends Controller
             'nama_ibu' => 'nullable|string',
             'file_kk' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
+
+        if (MutasiWarga::where('keluarga_id', $keluarga->id)
+            ->where('jenis_mutasi', 'tambah')
+            ->whereIn('status', ['menunggu_rt', 'menunggu_rw'])
+            ->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Masih terdapat pengajuan penambahan anggota yang sedang diproses.',
+            ], 422);
+        }
 
         $filePath = null;
         if ($request->hasFile('file_kk')) {
@@ -115,9 +136,17 @@ class KeluargaController extends Controller
     {
         $user = Auth::user();
         $penduduk = $user->penduduk;
-        
+
         if (!$penduduk || !$penduduk->keluarga) {
             return response()->json(['success' => false, 'message' => 'Data keluarga tidak ditemukan.'], 404);
+        }
+
+        // Hanya Kepala Keluarga yang boleh mengajukan perubahan data anggota.
+        if ($penduduk->nik !== $penduduk->keluarga->nik_kepala_keluarga) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya Kepala Keluarga yang dapat mengubah data anggota keluarga.',
+            ], 403);
         }
 
         $anggota = Penduduk::where('id', $id)->where('keluarga_id', $penduduk->keluarga->id)->firstOrFail();
@@ -127,16 +156,36 @@ class KeluargaController extends Controller
             'pekerjaan' => 'required|string',
             'status_perkawinan' => 'required|string',
             'nama_lengkap' => 'required|string|max:255',
-            'nik' => 'required|string|size:16',
+            'nik' => ['required', 'string', 'size:16', Rule::unique('penduduk', 'nik')->ignore($anggota->id)],
             'file_kk' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
+
+        if (MutasiWarga::where('penduduk_id', $anggota->id)
+            ->where('jenis_mutasi', 'edit')
+            ->whereIn('status', ['menunggu_rt', 'menunggu_rw'])
+            ->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Masih terdapat pengajuan perubahan anggota yang sedang diproses.',
+            ], 422);
+        }
+
+        $identityChanged = $request->input('nik') !== $anggota->nik
+            || $request->input('nama_lengkap') !== $anggota->nama_lengkap;
+        if ($identityChanged && ! $request->hasFile('file_kk')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dokumen KK wajib diunggah jika NIK atau nama diubah.',
+                'errors' => ['file_kk' => ['Dokumen KK wajib diunggah jika NIK atau nama diubah.']],
+            ], 422);
+        }
 
         $filePath = null;
         if ($request->hasFile('file_kk')) {
             $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');
         } else {
             // Is file_kk mandatory for edit if NIK/Nama changed? Yes in mockup.
-            // Simplified: let's just make it required if NIK or Nama changes, or optional if not. 
+            // Simplified: let's just make it required if NIK or Nama changes, or optional if not.
             // In the mockup it says "Wajib jika menambahkan NIK/Nama baru". We will just trust validation or handle it simply.
         }
 

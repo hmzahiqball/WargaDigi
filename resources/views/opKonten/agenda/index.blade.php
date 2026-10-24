@@ -27,7 +27,7 @@
     .quill-wrapper:focus-within .ql-toolbar.ql-snow {
         border-color: #0D631B;
     }
-    
+
     /* Custom Blockquote (Highlight Hijau) */
     .ql-editor blockquote,
     #detailKonten blockquote {
@@ -41,7 +41,7 @@
         font-size: 14px !important;
         font-style: normal !important;
     }
-    
+
     /* Styling for Agenda Modal & Table */
     .agenda-table th,
     .agenda-table td {
@@ -52,7 +52,7 @@
     .agenda-table th:nth-child(1) {
         text-align: left;
     }
-    
+
     /* Custom SweetAlert Styling */
     .custom-swal-popup {
         border-radius: 1rem !important;
@@ -87,7 +87,7 @@
     .btn-cancel-swal:hover {
         background-color: #F3F4F6 !important;
     }
-    
+
     .bento-card {
         border-radius: 12px;
         border: 1px solid #BFCABA;
@@ -134,7 +134,7 @@
         background: #f8f9fa;
         border-color: #0D631B;
     }
-    
+
     .image-preview-container {
         border: 1px solid #BFCABA;
         border-radius: 8px;
@@ -189,14 +189,16 @@
 
 @section('content')
 {{-- Page Header --}}
-<div class="d-flex justify-content-between align-items-end mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-end mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Manajemen Agenda</h2>
         <p class="text-muted mb-0">Kelola jadwal kegiatan warga secara terpusat.</p>
     </div>
-    <button type="button" onclick="openBuatAgendaModal()" class="btn btn-gradient-green fw-semibold px-4 py-2 rounded-3 text-white shadow-sm d-flex align-items-center gap-2">
-        <i class="bi bi-plus-lg"></i> Buat Agenda Baru
-    </button>
+    <div class="dash-header-actions">
+        <button type="button" onclick="openBuatAgendaModal()" class="btn btn-gradient-green fw-semibold px-4 py-2 rounded-3 text-white shadow-sm d-flex align-items-center gap-2">
+            <i class="bi bi-plus-lg"></i> Buat Agenda Baru
+        </button>
+    </div>
 </div>
 
 {{-- Status Workflow Bento --}}
@@ -337,9 +339,9 @@
                             @php
                                 $statusColors = [
                                     'Draft' => ['bg' => '#F3F4F6', 'color' => '#6B7280', 'label' => 'Draf'],
-                                    'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'], 
-                                    'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'], 
-                                    'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'], 
+                                    'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'],
+                                    'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'],
+                                    'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'],
                                 ];
                                 $s_bg = $statusColors[$item->status]['bg'] ?? '#F3F4F6';
                                 $s_color = $statusColors[$item->status]['color'] ?? '#6B7280';
@@ -351,8 +353,8 @@
                             </span>
                         </td>
                         <td class="py-4 px-3 text-center">
-                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;" onclick="openDetailModal('{{ $item->id }}')">
-                                Lihat Detail
+                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7;" onclick="openDetailModal('{{ $item->id }}')">
+                                <i class="bi bi-eye me-1"></i> Lihat Detail
                             </button>
                         </td>
                     </tr>
@@ -367,7 +369,7 @@
             </tbody>
         </table>
     </div>
-    
+
     {{-- Pagination --}}
     @if($agenda->total() > 0)
     <div class="d-flex justify-content-between align-items-center p-3 border-top" style="background: #FBF9F8; border-color: #E5E7EB !important;">
@@ -407,19 +409,19 @@
                 <input type="hidden" name="_method" id="formMethod" value="POST">
                 <input type="hidden" name="action" id="formAction" value="draft">
                 <input type="hidden" name="remove_banner" id="removeBannerInput" value="0">
-                
+
                 <div class="modal-header border-bottom px-4 py-3">
                     <h5 class="modal-title fw-bold" id="modalTitle">Buat Agenda Baru</h5>
                     <button type="button" class="btn-close" aria-label="Close" onclick="confirmCloseModal()"></button>
                 </div>
-                
+
                 <div class="modal-body px-4 py-4">
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Judul Agenda</label>
                             <input type="text" name="judul_agenda" id="judulAgenda" class="form-control" placeholder="Masukkan judul agenda..." required>
                         </div>
-                        
+
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Kategori Agenda</label>
                             <select name="kategori" id="kategoriAgenda" class="form-select" required>
@@ -432,7 +434,7 @@
                                 <option value="Organisasi">Organisasi</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-12 mb-2">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="is_multi_day" id="isMultiDay" value="1">
@@ -449,7 +451,7 @@
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tanggal Akhir</label>
                             <input type="date" name="tanggal_akhir" id="tanggalAkhir" class="form-control">
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Waktu</label>
                             <div class="d-flex align-items-center gap-2">
@@ -458,7 +460,7 @@
                                 <input type="time" name="waktu_selesai" id="waktuSelesai" class="form-control" required>
                             </div>
                         </div>
-                        
+
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Lokasi</label>
                             <div class="input-group">
@@ -498,7 +500,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-12">
                             <label class="fw-semibold text-dark mb-2">Deskripsi Agenda <span class="text-danger">*</span></label>
                             <input type="hidden" name="detail_pengumuman" id="deskripsiAgendaInput">
@@ -506,10 +508,10 @@
                                 <div id="editor-container" style="height: 250px; background-color: white;"></div>
                             </div>
                         </div>
-                        
+
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark mb-1" style="font-size: 14px;">Lampiran Flyer/Poster (Opsional)</label>
-                            
+
                             <!-- Existing File Preview (For Edit) -->
                             <div id="existingFilePreview" class="image-preview-container mb-3 d-none">
                                 <div class="d-flex align-items-center">
@@ -533,7 +535,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-dark fw-semibold px-4 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="confirmCloseModal()">Batal</button>
@@ -585,7 +587,7 @@
                     <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            
+
             <div class="modal-body px-4 py-4">
                 {{-- Notifikasi Catatan Revisi --}}
                 <div id="alertDetailCatatanRevisi" class="alert alert-danger mb-4 d-none border-0 shadow-sm" style="background-color: #FEF2F2; color: #991B1B; border-radius: 8px;">
@@ -603,22 +605,22 @@
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Judul Agenda</label>
                         <input type="text" id="detailJudul" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-12">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Kategori Agenda</label>
                         <input type="text" id="detailKategori" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tanggal</label>
                         <input type="text" id="detailTanggal" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Waktu</label>
                         <input type="text" id="detailWaktu" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-12">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Lokasi</label>
                         <div class="input-group">
@@ -646,12 +648,12 @@
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="col-12">
                         <span class="d-block text-muted small mb-2 fw-semibold">Deskripsi Agenda</span>
                         <div id="detailKonten" class="p-4 rounded-3 text-dark bg-white" style="border: 1px solid #E5E7EB; min-height: 150px; font-size: 15px; line-height: 1.6;"></div>
                     </div>
-                    
+
                     <div class="col-12 d-none" id="detailImageContainer">
                         <label class="form-label fw-medium text-dark mb-2" style="font-size: 14px;">Lampiran Flyer/Poster</label>
                         <div class="rounded-3 overflow-hidden border bg-white text-center p-2">
@@ -660,13 +662,13 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
-                <div class="w-100 d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewAgendaAsWarga()">
-                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+
+            <div class="modal-footer px-4 py-3 bg-white border-top modal-action-footer" style="border-color: #BFCABA !important;">
+                <div class="w-100 d-flex flex-wrap flex-sm-nowrap justify-content-between align-items-center gap-2">
+                    <button type="button" class="btn fw-semibold px-4 rounded-3 text-nowrap d-flex align-items-center justify-content-center" onclick="previewAgendaAsWarga()" data-bs-toggle="tooltip" title="Pratinjau Tampilan Warga" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
+                        <i class="bi bi-eye me-1"></i> <span class="label-full">Pratinjau Tampilan Warga</span><span class="label-short">Pratinjau</span>
                     </button>
-                    <div id="detailFooterActions" class="d-flex gap-2">
+                    <div id="detailFooterActions" class="d-flex flex-wrap gap-2">
                         <!-- Actions will be injected via JS -->
                     </div>
                 </div>
@@ -699,13 +701,13 @@
 <script>
     let formDirty = false;
     let allowModalClose = false;
-    
+
     // Map variables
     let formMap = null;
     let formMarker = null;
     let detailMap = null;
     let detailMarker = null;
-    
+
     // Initialize Quill
     var quill = new Quill('#editor-container', {
         theme: 'snow',
@@ -774,7 +776,7 @@
             confirmModalEl.addEventListener('show.bs.modal', function () {
                 const formContent = document.getElementById('formAgenda');
                 formContent.style.filter = 'blur(5px)';
-                
+
                 // Sembunyikan backdrop lapis kedua agar tidak terlalu gelap (tumpang tindih)
                 setTimeout(() => {
                     const backdrops = document.querySelectorAll('.modal-backdrop');
@@ -816,10 +818,28 @@
 
         // Sync Quill content before submit
         document.getElementById('formAgenda').addEventListener('submit', function(e) {
+            const formEl = this;
+            const textContent = quill.getText().trim();
+            if (!textContent) {
+                e.preventDefault();
+                if (window.resetFormSubmitting) {
+                    window.resetFormSubmitting(formEl);
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Deskripsi agenda wajib diisi.',
+                    confirmButtonColor: '#2E7D32'
+                });
+                return false;
+            }
             document.getElementById('deskripsiAgendaInput').value = quill.root.innerHTML;
             const action = document.getElementById('formAction').value;
             if (action === 'review') {
                 e.preventDefault();
+                if (window.resetFormSubmitting) {
+                    window.resetFormSubmitting(formEl);
+                }
                 Swal.fire({
                     title: 'Ajukan agenda ke Ketua RW?',
                     html: 'Agenda akan masuk tahap review dan menunggu persetujuan Ketua RW.',
@@ -837,7 +857,11 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         allowModalClose = true;
-                        e.target.submit();
+                        formEl.submit();
+                    } else {
+                        if (window.resetFormSubmitting) {
+                            window.resetFormSubmitting(formEl);
+                        }
                     }
                 });
             } else {
@@ -882,7 +906,7 @@
                 showNotification('Ukuran file maksimal 5MB.', true);
                 return;
             }
-            
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('previewImg').src = e.target.result;
@@ -935,7 +959,7 @@
             toastMsg.textContent = message;
             toast.style.background = isError ? 'rgba(220, 53, 69, 0.95)' : 'rgba(13, 99, 27, 0.95)';
             document.getElementById('customToastIcon').className = isError ? 'bi bi-exclamation-triangle-fill fs-5' : 'bi bi-check-circle-fill fs-5';
-            
+
             toast.style.opacity = '1';
 
             // Sembunyikan setelah 3 detik
@@ -966,59 +990,73 @@
     function openBuatAgendaModal() {
         formDirty = false;
         allowModalClose = false;
-        document.getElementById('formAgenda').reset();
+        const formEl = document.getElementById('formAgenda');
+        formEl.reset();
+        if (window.resetFormSubmitting) window.resetFormSubmitting(formEl);
         document.getElementById('formMethod').value = 'POST';
         document.getElementById('formAgenda').action = "{{ route('opkonten.agenda.store') }}";
         document.getElementById('modalTitle').textContent = 'Buat Agenda Baru';
-        
+
         document.getElementById('dropZone').classList.remove('d-none');
         document.getElementById('existingFilePreview').classList.add('d-none');
         document.getElementById('removeBannerInput').value = '0';
-        
+
         // Reset Map
         document.getElementById('latitudeInput').value = '';
         document.getElementById('longitudeInput').value = '';
         document.getElementById('rsvpToggle').checked = false;
         document.getElementById('mapToggle').checked = false;
         document.getElementById('mapContainerWrapper').style.display = 'none';
-        
+
         agendaModal.show();
     }
 
     function editAgenda(agenda) {
+        if (agenda.status !== 'Draft' && agenda.status !== 'Revisi') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Ditolak',
+                text: 'Agenda yang sudah berstatus ' + agenda.status + ' tidak dapat diubah secara sepihak.',
+                confirmButtonColor: '#2E7D32'
+            });
+            return;
+        }
+
         formDirty = false;
         allowModalClose = false;
-        document.getElementById('formAgenda').reset();
+        const formEl = document.getElementById('formAgenda');
+        formEl.reset();
+        if (window.resetFormSubmitting) window.resetFormSubmitting(formEl);
         document.getElementById('formMethod').value = 'PUT';
         document.getElementById('formAgenda').action = `/op-konten/agenda/${agenda.id}`;
         document.getElementById('modalTitle').textContent = 'Edit Agenda';
-        
+
         document.getElementById('judulAgenda').value = agenda.judul_agenda;
         document.getElementById('kategoriAgenda').value = agenda.kategori;
         document.getElementById('lokasiAgenda').value = agenda.lokasi;
         quill.root.innerHTML = agenda.detail_pengumuman;
-        document.getElementById('quillValidation').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
-        
+        document.getElementById('deskripsiAgendaInput').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
+
         const dateObj = new Date(agenda.tanggal_mulai);
         const yyyy = dateObj.getFullYear();
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const dd = String(dateObj.getDate()).padStart(2, '0');
         document.getElementById('tanggalAgenda').value = `${yyyy}-${mm}-${dd}`;
-        
+
         const hhMulai = String(dateObj.getHours()).padStart(2, '0');
         const minMulai = String(dateObj.getMinutes()).padStart(2, '0');
         document.getElementById('waktuMulai').value = `${hhMulai}:${minMulai}`;
-        
+
         const endObj = new Date(agenda.tanggal_selesai);
         const hhSelesai = String(endObj.getHours()).padStart(2, '0');
         const minSelesai = String(endObj.getMinutes()).padStart(2, '0');
         document.getElementById('waktuSelesai').value = `${hhSelesai}:${minSelesai}`;
-        
+
         const endYyyy = endObj.getFullYear();
         const endMm = String(endObj.getMonth() + 1).padStart(2, '0');
         const endDd = String(endObj.getDate()).padStart(2, '0');
         const endDayStr = `${endYyyy}-${endMm}-${endDd}`;
-        
+
         if (`${yyyy}-${mm}-${dd}` !== endDayStr) {
             document.getElementById('isMultiDay').checked = true;
             document.getElementById('containerTanggalAkhir').style.display = 'block';
@@ -1037,7 +1075,7 @@
         const dropZone = document.getElementById('dropZone');
         const previewBox = document.getElementById('existingFilePreview');
         document.getElementById('removeBannerInput').value = '0';
-        
+
         if (agenda.banner_flyer) {
             document.getElementById('previewImg').src = agenda.banner_flyer.startsWith('http') ? agenda.banner_flyer : '/' + agenda.banner_flyer;
             document.getElementById('previewFilename').textContent = agenda.banner_flyer.split('/').pop();
@@ -1047,7 +1085,7 @@
             dropZone.classList.remove('d-none');
             previewBox.classList.add('d-none');
         }
-        
+
         document.getElementById('latitudeInput').value = agenda.latitude || '';
         document.getElementById('longitudeInput').value = agenda.longitude || '';
         document.getElementById('rsvpToggle').checked = agenda.is_rsvp_enabled == 1;
@@ -1061,7 +1099,7 @@
         }
 
         agendaModal.show();
-        
+
         if (agenda.latitude && agenda.longitude) {
             setTimeout(() => {
                 initFormMap(agenda.latitude, agenda.longitude);
@@ -1130,6 +1168,15 @@
 
     const dummyAgendaData = @json($agenda->items());
 
+    function initFooterTooltips() {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+        document.querySelectorAll('#modalDetailAgenda [data-bs-toggle="tooltip"]').forEach(function (el) {
+            const existing = bootstrap.Tooltip.getInstance(el);
+            if (existing) existing.dispose();
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+    }
+
     function openDetailModal(id) {
         const item = dummyAgendaData.find(a => a.id == id);
         if (!item) return;
@@ -1157,7 +1204,7 @@
         const s_bg = statusColors[item.status]?.bg || '#F3F4F6';
         const s_color = statusColors[item.status]?.color || '#6B7280';
         const s_label = statusColors[item.status]?.label || item.status;
-        
+
         statusBadge.style.background = s_bg;
         statusBadge.style.color = s_color;
         statusBadge.querySelector('.status-dot').style.background = s_color;
@@ -1216,16 +1263,16 @@
         if (item.tanggal_mulai && item.tanggal_selesai) {
             const startObj = new Date(item.tanggal_mulai);
             const endObj = new Date(item.tanggal_selesai);
-            
+
             const startStr = startObj.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
             const endStr = endObj.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            
+
             if (startStr !== endStr) {
                 document.getElementById('detailTanggal').value = `${startStr} - ${endStr}`;
             } else {
                 document.getElementById('detailTanggal').value = startStr;
             }
-            
+
             const timeStart = startObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             const timeEnd = endObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             document.getElementById('detailWaktu').value = `${timeStart} - ${timeEnd} WIB`;
@@ -1243,16 +1290,16 @@
         // Actions Footer
         const detailFooter = document.getElementById('detailFooterActions');
         let actionsHtml = '';
-        
+
         if (item.status === 'Draft' || item.status === 'Revisi') {
             actionsHtml += `
-                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editAgendaFromJson('${item.id}')">
-                    <i class="bi bi-pencil"></i> Edit Agenda
+                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center justify-content-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editAgendaFromJson('${item.id}')" data-bs-toggle="tooltip" title="Edit Agenda">
+                    <i class="bi bi-pencil"></i> <span class="label-full">Edit Agenda</span><span class="label-short">Edit</span>
                 </button>
                 <form action="/op-konten/agenda/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="confirmSubmit('${item.id}')">
-                        Ajukan Agenda
+                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Agenda">
+                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Agenda</span><span class="label-short">Ajukan</span>
                     </button>
                 </form>
             `;
@@ -1261,8 +1308,8 @@
                     <form action="/op-konten/agenda/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="_method" value="DELETE">
-                        <button type="button" class="btn btn-outline-danger fw-semibold px-4" onclick="confirmDelete('${item.id}')">
-                            <i class="bi bi-trash"></i> Hapus
+                        <button type="button" class="btn btn-outline-danger fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" onclick="confirmDelete('${item.id}')" data-bs-toggle="tooltip" title="Hapus">
+                            <i class="bi bi-trash"></i> <span class="label-full">Hapus</span><span class="label-short">Hapus</span>
                         </button>
                     </form>
                 `;
@@ -1271,27 +1318,21 @@
             actionsHtml += `
                 <form action="/op-konten/agenda/${item.id}/revoke" method="POST" class="d-inline" id="formRevoke_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn btn-outline-warning fw-semibold px-4" onclick="confirmRevoke('${item.id}')">
-                        <i class="bi bi-arrow-return-left"></i> Batalkan Pengajuan
+                    <button type="button" class="btn btn-outline-warning fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" onclick="confirmRevoke('${item.id}')" data-bs-toggle="tooltip" title="Batalkan Pengajuan">
+                        <i class="bi bi-arrow-return-left"></i> <span class="label-full">Batalkan Pengajuan</span><span class="label-short">Batalkan</span>
                     </button>
                 </form>
             `;
         }
 
         detailFooter.innerHTML = actionsHtml;
+        initFooterTooltips();
 
         const detailModal = new bootstrap.Modal(document.getElementById('modalDetailAgenda'));
         detailModal.show();
     }
 
-    function editAgendaFromJson(id) {
-        const item = dummyAgendaData.find(a => a.id == id);
-        if(item) {
-            const detailModal = bootstrap.Modal.getInstance(document.getElementById('modalDetailAgenda'));
-            if(detailModal) detailModal.hide();
-            editAgenda(item);
-        }
-    }
+    function editAgendaFromJson(id) { const item = dummyAgendaData.find(a => a.id == id); if(item) { const detailModalEl = document.getElementById('modalDetailAgenda'); const detailModal = bootstrap.Modal.getInstance(detailModalEl); if(detailModal) { detailModal.hide(); } else { detailModalEl.classList.remove('show'); detailModalEl.style.display = 'none'; document.body.classList.remove('modal-open'); const backdrop = document.querySelector('.modal-backdrop'); if(backdrop) backdrop.remove(); } setTimeout(() => { try { editAgenda(item); } catch(e) { console.error("Edit Agenda Error:", e); alert("Gagal membuka form edit: " + e.message); } }, 500); } }
 
     // Sweet Alerts
     function confirmDelete(id) {
@@ -1391,7 +1432,7 @@
                     bbox.getSouthWest()
                 ]).addTo(formMap);
                 formMap.fitBounds(poly.getBounds());
-                
+
                 // Set marker
                 formMarker.setLatLng(e.geocode.center);
                 document.getElementById('latitudeInput').value = e.geocode.center.lat;
@@ -1429,3 +1470,6 @@
     }
 </script>
 @endpush
+
+
+

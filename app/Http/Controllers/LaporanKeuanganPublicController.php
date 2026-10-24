@@ -24,9 +24,9 @@ class LaporanKeuanganPublicController extends Controller
 
         // Allow everyone to see DKM and RW.
         // For Warga, limit RT to their own RT unless they are admin/rw/etc.
-        if ($user && $user->role === 'Warga') {
+        if ($user && $user->activeRole() === 'Warga') {
             $wargaRtId = $user->rt_id;
-            
+
             // Coba ambil dari data Penduduk -> Keluarga jika rt_id di User null
             if (!$wargaRtId) {
                 $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
@@ -45,7 +45,7 @@ class LaporanKeuanganPublicController extends Controller
                   });
             });
         }
-        
+
         if ($request->filled('tahun')) {
             $query->where('periode_tahun', $request->tahun);
         }
@@ -80,20 +80,20 @@ class LaporanKeuanganPublicController extends Controller
             $canView = false;
             if ($user->id === $laporan->dibuat_oleh) {
                 $canView = true;
-            } else if ($user->role === 'Ketua RT' && $laporan->unit === 'RT' && $laporan->rt_id === $user->rt_id) {
+            } else if ($user->activeRole() === 'Ketua RT' && $laporan->unit === 'RT' && $laporan->rt_id === $user->rt_id) {
                 $canView = true;
-            } else if (in_array($user->role, ['Admin RW', 'Pimpinan RW'])) {
+            } else if (in_array($user->activeRole(), ['Admin RW', 'Pimpinan RW'])) {
                 // RW can see all reports that are submitted/disetujui RT or higher
                 $canView = true;
-            } else if (in_array($user->role, ['Op Keuangan RT', 'Op Keuangan RW', 'DKM'])) {
+            } else if (in_array($user->activeRole(), ['Op Keuangan RT', 'Op Keuangan RW', 'DKM'])) {
                  // The creator check above handles this, but just in case for other ops in the same unit
-                 if ($laporan->unit === 'RT' && $user->role === 'Op Keuangan RT' && $laporan->rt_id === $user->rt_id) {
+                 if ($laporan->unit === 'RT' && $user->activeRole() === 'Op Keuangan RT' && $laporan->rt_id === $user->rt_id) {
                      $canView = true;
                  }
-                 if ($laporan->unit === 'RW' && $user->role === 'Op Keuangan RW') {
+                 if ($laporan->unit === 'RW' && $user->activeRole() === 'Op Keuangan RW') {
                      $canView = true;
                  }
-                 if ($laporan->unit === 'DKM' && $user->role === 'DKM') {
+                 if ($laporan->unit === 'DKM' && $user->activeRole() === 'DKM') {
                      $canView = true;
                  }
             }
@@ -103,7 +103,7 @@ class LaporanKeuanganPublicController extends Controller
             }
         } else {
              // If published, Warga can only view their own RT + RW + DKM
-             if ($user && $user->role === 'Warga' && $laporan->unit === 'RT' && $laporan->rt_id !== $user->rt_id) {
+             if ($user && $user->activeRole() === 'Warga' && $laporan->unit === 'RT' && $laporan->rt_id !== $user->rt_id) {
                  abort(403, 'Anda tidak memiliki hak akses untuk melihat laporan dari RT lain.');
              }
         }

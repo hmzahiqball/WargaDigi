@@ -160,7 +160,7 @@
                     {{ $usaha->deskripsi ?? 'Karya tangan Pak Budi, RT 03. Cocok untuk hiasan rumah atau hadiah eksklusif. Dibuat dengan dedikasi tinggi menggunakan kayu jati pilihan terbaik.' }}
                 </p>
                 <div>
-                    <a href="{{ $linkDirectChat }}" target="_blank" class="btn rounded-pill px-4 py-2 fw-semibold text-decoration-none shadow-sm text-white d-inline-flex align-items-center" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
+                    <a href="{{ $linkDirectChat }}" target="_blank" onclick="trackWaClick('{{ $usaha->id ?? '' }}')" class="btn rounded-pill px-4 py-2 fw-semibold text-decoration-none shadow-sm text-white d-inline-flex align-items-center" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                         <i class="{{ $messagingIcon }} me-2"></i> Hubungi via {{ $messagingLabel }}
                     </a>
                 </div>
@@ -265,7 +265,7 @@
                     @auth
         
                     <div class="col-md-7">
-                        <a href="{{ $linkDirectChat }}" target="_blank" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
+                        <a href="{{ $linkDirectChat }}" target="_blank" onclick="trackWaClick('{{ $usaha->id ?? '' }}')" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.2);">
                                 <i class="{{ $messagingIcon }} fs-5 text-white"></i>
                             </div>
@@ -286,7 +286,7 @@
                     @else
                     {{-- Tampilan Pengguna Anonim: Tanpa tombol share --}}
                     <div class="col-12">
-                        <a href="{{ $linkDirectChat }}" target="_blank" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
+                        <a href="{{ $linkDirectChat }}" target="_blank" onclick="trackWaClick('{{ $usaha->id ?? '' }}')" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.2);">
                                 <i class="{{ $messagingIcon }} fs-5 text-white"></i>
                             </div>
@@ -308,3 +308,24 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function trackWaClick(usahaId) {
+    if (!usahaId) return;
+    const url = "{{ route('umkm.usaha.track-wa', ['id' => ':id']) }}".replace(':id', encodeURIComponent(usahaId));
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token || '',
+            'Accept': 'application/json'
+        },
+        keepalive: true
+    }).catch(function() {
+        fetch(url, { method: 'GET', keepalive: true }).catch(function(){});
+    });
+}
+</script>
+@endpush

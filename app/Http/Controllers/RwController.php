@@ -34,12 +34,12 @@ class RwController extends Controller
 
         $stats = [
             'penduduk' => [
-                'total' => $totalPenduduk > 0 ? number_format($totalPenduduk, 0, ',', '.') : '12,450',
-                'change' => '+' . ($pendudukBaruBulanIni > 0 ? $pendudukBaruBulanIni : '142') . ' bulan ini',
+                'total' => number_format($totalPenduduk, 0, ',', '.'),
+                'change' => '+' . number_format($pendudukBaruBulanIni, 0, ',', '.') . ' bulan ini',
                 'trend' => 'up',
             ],
             'dokumen_pending' => [
-                'total' => $totalDokumenPending > 0 ? $totalDokumenPending : $dokumenNeedReviewRw,
+                'total' => $totalDokumenPending,
                 'need_review' => $dokumenNeedReviewRw,
             ],
             'umkm_baru' => [
@@ -58,6 +58,12 @@ class RwController extends Controller
                 'icon' => 'bi-file-earmark-text',
                 'bg' => 'icon-gray',
                 'link' => route('rw.persetujuan-dokumen'),
+            ],
+            [
+                'title' => 'Persetujuan Keuangan',
+                'icon' => 'bi-cash-coin',
+                'bg' => 'icon-yellow',
+                'link' => route('rw.persetujuan-keuangan.index'),
             ],
             [
                 'title' => 'Verifikasi UMKM',
@@ -113,54 +119,107 @@ class RwController extends Controller
             ];
         }
 
-        $activities = array_merge($activities, [
-            [
+        // Laporan keuangan yang menunggu persetujuan RW (RW & DKM)
+        $recentLaporan = \App\Models\LaporanKeuangan::with(['rt'])
+            ->whereIn('unit', ['RW', 'DKM'])
+            ->where('status', 'Submitted')
+            ->latest()
+            ->take(2)
+            ->get();
+
+        foreach ($recentLaporan as $lap) {
+            $unitLabel = $lap->unit === 'DKM' ? 'DKM' : ($lap->rt->nama_rt ?? 'RW');
+            $activities[] = [
                 'icon' => 'bi-file-earmark-text',
-                'title' => 'RT 04 telah menyerahkan laporan keuangan bulanan.',
-                'time' => '10 menit yang lalu',
+                'title' => "{$unitLabel} mengajukan {$lap->judul} untuk disetujui.",
+                'time' => $lap->created_at ? $lap->created_at->diffForHumans() : 'Baru saja',
+                'time_sort' => $lap->created_at,
                 'badge' => 'PERLU PEMERIKSAAN',
                 'badge_class' => 'bg-danger-subtle text-danger border-danger-subtle',
                 'quote' => null,
-            ],
-            [
-                'icon' => 'bi-person-plus',
-                'title' => 'RT 01 telah mendaftarkan 3 warga baru.',
-                'time' => '1 jam yang lalu',
-                'badge' => 'DISETUJUI',
+            ];
+        }
+
+        // Mutasi warga terbaru yang menunggu persetujuan RW
+        $recentMutasi = \App\Models\MutasiWarga::with(['keluarga.rt'])
+            ->where('status', 'menunggu_rw')
+            ->latest()
+            ->take(2)
+            ->get();
+
+        foreach ($recentMutasi as $mutasi) {
+            $rtLabel = $mutasi->keluarga->rt->nama_rt ?? 'RT';
+            $jenisLabel = $mutasi->jenis_mutasi === 'tambah' ? 'penambahan anggota keluarga' : 'perubahan data warga';
+            $activities[] = [
+                'icon' => 'bi-person-lines-fill',
+                'title' => "Pengajuan {$jenisLabel} dari {$rtLabel} menunggu persetujuan RW.",
+                'time' => $mutasi->created_at ? $mutasi->created_at->diffForHumans() : 'Baru saja',
+                'time_sort' => $mutasi->created_at,
+                'badge' => 'PERLU PERSETUJUAN',
                 'badge_class' => 'bg-primary-subtle text-primary border-primary-subtle',
                 'quote' => null,
-            ],
-            [
-                'icon' => 'bi-chat-left-dots',
-                'title' => 'RT 07 meminta klarifikasi mengenai pedoman UMKM yang baru.',
-                'time' => '3 jam yang lalu',
-                'badge' => null,
-                'badge_class' => null,
-                'quote' => 'Apakah fotokopi KTP masih diperlukan jika sudah upload scan?',
-            ],
-        ]);
+            ];
+        }
 
-        $recentDocs = [
-            [
-                'title' => 'SOP_UMKM_2023.pdf',
-                'desc' => 'Pedoman terbaru untuk pendaftaran bisnis lokal.',
-                'icon' => 'bi-file-earmark-text',
-                'status' => 'PUBLISHED',
-                'status_class' => 'bg-success-subtle text-success border-success-subtle',
-                'date' => 'Oct 12',
-            ],
-            [
-                'title' => 'Q3_Townhall_Banner.png',
-                'desc' => 'Rancangan untuk pertemuan komunitas mendatang.',
-                'icon' => 'bi-image',
-                'status' => 'DRAFT',
-                'status_class' => 'bg-secondary-subtle text-secondary border-secondary-subtle',
-                'date' => 'Today',
-            ],
-        ];
-        $pendingUmkmCount = \App\Models\UmkmUsaha::where('status_verifikasi', 'Pending')->count();
+        // Urutkan aktivitas berdasarkan waktu terbaru, batasi 6 item
+        $activities = collect($activities)
+            ->sortByDesc(fn ($a) => $a['time_sort'] ?? now())
+            ->take(6)
+            ->values()
+            ->all();
+
+        // Dokumen/konten terbaru nyata (berita, pengumuman, agenda)
+        $recentDocs = [];
+
+        foreach (\App\Models\Berita::latest()->take(2)->get() as $b) {
+            $recentDocs[] = [
+                'title' => $b->judul_berita,
+                'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $b->isi_berita), 60),
+                'icon' => 'bi-newspaper',
+                'status' => strtoupper((string) $b->status),
+                'status_class' => $this->dashboardStatusClass($b->status),
+                'date' => optional($b->created_at)->translatedFormat('d M'),
+            ];
+        }
+
+        foreach (\App\Models\Pengumuman::latest()->take(1)->get() as $p) {
+            $recentDocs[] = [
+                'title' => $p->judul_pengumuman,
+                'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $p->isi_pengumuman), 60),
+                'icon' => 'bi-megaphone',
+                'status' => strtoupper((string) $p->status),
+                'status_class' => $this->dashboardStatusClass($p->status),
+                'date' => optional($p->created_at)->translatedFormat('d M'),
+            ];
+        }
+
+        foreach (\App\Models\Agenda::latest()->take(1)->get() as $a) {
+            $recentDocs[] = [
+                'title' => $a->judul_agenda,
+                'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $a->detail_pengumuman), 60),
+                'icon' => 'bi-calendar-event',
+                'status' => strtoupper((string) $a->status),
+                'status_class' => $this->dashboardStatusClass($a->status),
+                'date' => optional($a->created_at)->translatedFormat('d M'),
+            ];
+        }
+
+        $recentDocs = array_slice($recentDocs, 0, 4);
 
         return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs', 'pendingUmkmCount'));
+    }
+
+    /**
+     * Pemetaan status konten ke kelas badge Bootstrap untuk kartu dokumen di dashboard.
+     */
+    private function dashboardStatusClass(?string $status): string
+    {
+        return match ($status) {
+            'Publish' => 'bg-success-subtle text-success border-success-subtle',
+            'Review' => 'bg-warning-subtle text-warning border-warning-subtle',
+            'Revisi' => 'bg-danger-subtle text-danger border-danger-subtle',
+            default => 'bg-secondary-subtle text-secondary border-secondary-subtle',
+        };
     }
 
     public function umkm(Request $request)
@@ -174,6 +233,8 @@ class RwController extends Controller
         if (!$tab) {
             if ($request->has('terdaftar_page') || $request->has('q') || $request->has('kategori') || $request->has('status') || $request->has('q_terdaftar') || $request->has('search')) {
                 $tab = 'terdaftar';
+            } elseif ($request->has('ditolak_page')) {
+                $tab = 'ditolak';
             } elseif ($request->has('approval_page')) {
                 $tab = 'persetujuan';
             } else {
@@ -190,13 +251,21 @@ class RwController extends Controller
             ->withQueryString();
         $pendingUsaha->appends(['tab' => 'persetujuan']);
 
-        // Data untuk Pimpinan RW (History yang sedang pending dan sudah diapprove) - 4 per pagination
-        $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved'])
+        // Data untuk Pimpinan RW (History pengajuan: Pending, Approved, dan Rejected) - 4 per pagination
+        $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved', 'Rejected'])
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
             ->latest()
             ->paginate(4, ['*'], 'approval_page')
             ->withQueryString();
         $historyUsaha->appends(['tab' => 'persetujuan']);
+
+        // Data Usaha yang Ditolak (Rejected) untuk Admin RW dan Pimpinan RW
+        $rejectedUsaha = UmkmUsaha::where('status_verifikasi', 'Rejected')
+            ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
+            ->latest()
+            ->paginate(4, ['*'], 'ditolak_page')
+            ->withQueryString();
+        $rejectedUsaha->appends(['tab' => 'ditolak']);
 
         $daftarKategoriUmkm = KategoriUmkm::all();
 
@@ -265,12 +334,13 @@ class RwController extends Controller
         $daftarUsahaTerdaftar->appends(['tab' => 'terdaftar']);
 
         return view('rw.umkm.umkm', compact(
-            'pendingUsaha', 
-            'historyUsaha', 
-            'daftarUsahaTerdaftar', 
+            'pendingUsaha',
+            'historyUsaha',
+            'rejectedUsaha',
+            'daftarUsahaTerdaftar',
             'daftarKategoriUmkm',
-            'tab', 
-            'isPimpinan', 
+            'tab',
+            'isPimpinan',
             'search',
             'kategori',
             'status'
@@ -358,10 +428,20 @@ class RwController extends Controller
     public function approveUmkm($id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
+
+        if ($usaha->status_verifikasi !== 'Pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan UMKM dengan status Pending yang dapat disetujui.');
+        }
+
         $usaha->update([
             'status_verifikasi' => 'Approved',
             'is_active' => true,
         ]);
+
+        $pemilik = \App\Models\User::where('nik', $usaha->nik)->first();
+        if ($pemilik) {
+            $pemilik->notify(new \App\Notifications\UmkmStatusNotification($usaha, 'Approved'));
+        }
 
         return redirect()->back()->with('success', 'Profil UMKM ' . $usaha->nama_usaha . ' berhasil disetujui.');
     }
@@ -369,12 +449,26 @@ class RwController extends Controller
     public function rejectUmkm(Request $request, $id)
     {
         $usaha = \App\Models\UmkmUsaha::findOrFail($id);
+
+        if ($usaha->status_verifikasi !== 'Pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan UMKM dengan status Pending yang dapat diproses.');
+        }
+
+        $request->validate([
+            'catatan_verifikasi' => 'nullable|string|max:500',
+        ]);
+
         $catatan = strip_tags($request->input('catatan_verifikasi', 'Pendaftaran UMKM belum memenuhi persyaratan RW.'));
         $usaha->update([
             'status_verifikasi' => 'Rejected',
             'is_active' => false,
             'catatan_verifikasi' => $catatan,
         ]);
+
+        $pemilik = \App\Models\User::where('nik', $usaha->nik)->first();
+        if ($pemilik) {
+            $pemilik->notify(new \App\Notifications\UmkmStatusNotification($usaha, 'Rejected', $catatan));
+        }
 
         return redirect()->back()->with('success', 'Profil UMKM ' . $usaha->nama_usaha . ' telah ditolak.');
     }
@@ -384,9 +478,9 @@ class RwController extends Controller
      */
     public function persetujuanDokumen()
     {
-        // Ambil data pengajuan yang sudah disetujui RT dari database
+        // Ambil data pengajuan dari database
         $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
-            ->whereIn('status', ['Disetujui RT', 'Ditolak RW', 'Selesai'])
+            ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Selesai', 'Ditolak RW', 'Ditolak RT'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -411,6 +505,13 @@ class RwController extends Controller
                 'tipe_surat' => $item->tipe_surat,
                 'tanggal_pengajuan' => $item->created_at->format('d M Y'),
                 'status' => $item->status,
+                'catatan_rt' => $item->catatan_rt,
+                'catatan_rw' => $item->catatan_rw,
+                'ttd_rt' => $item->ttd_rt,
+                'stempel_rt' => $item->stempel_rt,
+                'ttd_rw' => $item->ttd_rw,
+                'stempel_rw' => $item->stempel_rw,
+                'tanggal_selesai' => $item->tanggal_selesai ? $item->tanggal_selesai->format('d M Y') : null,
                 'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
                 'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->format('d-m-Y')) : '-',
                 'agama' => $p->agama ?? '-',
@@ -439,7 +540,7 @@ class RwController extends Controller
                 'kewarganegaraan_surat' => 'Indonesia',
                 'alamat_surat' => $k->alamat ?? '-',
                 'no_kk' => $k->no_kk ?? '-',
-                'nama_ketua_rt' => \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '.............................',
+                'nama_ketua_rt' => \App\Models\Pejabat::namaKetuaRt($k->rt_id ?? null) ?? '.............................',
                 'nomor_surat' => '---/SKD/VIII/' . now()->format('Y'),
             ];
         });
@@ -453,7 +554,7 @@ class RwController extends Controller
     public function approveDokumen(Request $request, $id)
     {
         $pengajuan = PengajuanSurat::findOrFail($id);
-        
+
         $dataUpdate = [
             'status' => 'Selesai',
             'catatan_rw' => $request->input('catatan', null),
@@ -475,7 +576,7 @@ class RwController extends Controller
 
                 if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
                     $decoded = base64_decode($signature);
-                    
+
                     if ($decoded !== false) {
                         $fileName = 'dokumen/ttd/' . Str::random(40) . '.' . $type;
                         Storage::disk('public')->put($fileName, $decoded);
@@ -525,8 +626,8 @@ class RwController extends Controller
             if ($rt) $kodeRt = $rt->kode_rt;
         }
 
-        $namaKetuaRt = \App\Models\User::where('role', 'Ketua RT')->first()->username ?? '..........................';
-        $namaKetuaRw = \App\Models\User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
+        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($k->rt_id ?? null) ?? '..........................';
+        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
 
         $tanggalSelesai = $item->tanggal_selesai ?? $item->updated_at;
         $bulanRomawi = PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
@@ -552,8 +653,8 @@ class RwController extends Controller
             'nama_ketua_rw' => $namaKetuaRw,
             'ttd_rt' => $item->ttd_rt,
             'stempel_rt' => $item->stempel_rt,
-            'ttd_rw' => null, // Sembunyikan ttd RW untuk preview sebelum disahkan
-            'stempel_rw' => null,
+            'ttd_rw' => $item->ttd_rw,
+            'stempel_rw' => $item->stempel_rw,
             'is_preview' => true,
         ];
 

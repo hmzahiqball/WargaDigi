@@ -24,10 +24,46 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Enforce application timezone Asia/Jakarta (WIB)
+        date_default_timezone_set(config('app.timezone', 'Asia/Jakarta'));
+
         // The project UI is built on Bootstrap 5, so render pagination with the matching theme.
         Paginator::useBootstrapFive();
 
+        $this->ensureStorageSynced();
+
         $this->registerActivityLogListeners();
+    }
+
+    /**
+     * Ensure storage files from storage/app/public are available in public/storage
+     * for direct static serving on Windows environments without symlink privilege.
+     */
+    protected function ensureStorageSynced(): void
+    {
+        try {
+            $folders = ['bukti_pembayaran', 'rekening', 'bukti_transaksi'];
+            foreach ($folders as $folder) {
+                $srcDir = storage_path('app/public/' . $folder);
+                $dstDir = public_path('storage/' . $folder);
+                if (is_dir($srcDir)) {
+                    if (!is_dir($dstDir)) {
+                        @mkdir($dstDir, 0755, true);
+                    }
+                    $files = @scandir($srcDir);
+                    if ($files) {
+                        foreach ($files as $file) {
+                            if ($file === '.' || $file === '..' || $file === '.gitkeep') continue;
+                            $srcFile = $srcDir . DIRECTORY_SEPARATOR . $file;
+                            $dstFile = $dstDir . DIRECTORY_SEPARATOR . $file;
+                            if (is_file($srcFile) && !file_exists($dstFile)) {
+                                @copy($srcFile, $dstFile);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
     }
 
     /**
@@ -60,14 +96,35 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Failed::class, function (Failed $event) {
-            activity('auth')
-                ->withProperties([
-                    'status' => 'Gagal',
-                    'category' => 'login',
-                    'nik' => $event->credentials['nik'] ?? null,
-                ])
-                ->event('failed')
-                ->log('Percobaan login gagal.');
+            $user = $event->user;
+            // Identifier bisa berupa 'login' (username/no_wa) atau 'nik' (alur lama).
+            $identifier = $event->credentials['login'] ?? ($event->credentials['nik'] ?? null);
+            if (! $user && $identifier) {
+                $user = \App\Models\User::where('username', $identifier)
+                    ->orWhere('nik', $identifier)
+                    ->first();
+            }
+
+            $activity = activity('auth');
+            if ($user) {
+                $activity->performedOn($user)->causedBy($user);
+            }
+
+            $userName = $user?->name ?? ($identifier ? "ID: {$identifier}" : 'Pengguna Tidak Dikenal');
+            $userRole = $user?->activeRole() ?? 'Pengguna';
+
+            $activity->withProperties([
+                'status' => 'Gagal',
+                'category' => 'login',
+                'identifier' => $identifier,
+                'name' => $userName,
+                'role' => $userRole,
+            ])
+            ->event('failed')
+            ->log($user
+                ? "Percobaan login gagal untuk {$user->username} ({$user->name})."
+                : ($identifier ? "Percobaan login gagal: {$identifier} tidak terdaftar." : 'Percobaan login gagal.')
+            );
         });
     }
 }

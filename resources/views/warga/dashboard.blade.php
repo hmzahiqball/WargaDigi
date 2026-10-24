@@ -3,47 +3,14 @@
 @section('title', 'Dashboard Warga')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-end mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-end mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-success mb-1">Selamat Datang, {{ Auth::user()->name ?? 'Bapak/Ibu' }}</h2>
         <p class="text-muted mb-0">Kepala Keluarga - RW 21 Desa Tanimulya</p>
     </div>
-    <div class="d-flex align-items-center gap-3">
-        <!-- Notification Dropdown -->
-        <div class="dropdown">
-            <button class="btn btn-light position-relative rounded-circle border-0 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 45px; height: 45px;">
-                <i class="bi bi-bell text-dark"></i>
-                @if(Auth::user()->unreadNotifications->count() > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ Auth::user()->unreadNotifications->count() }}
-                </span>
-                @endif
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="width: 350px; max-height: 400px; overflow-y: auto;">
-                <li><h6 class="dropdown-header fw-bold">Notifikasi</h6></li>
-                @forelse(Auth::user()->notifications as $notification)
-                <li>
-                    <a class="dropdown-item py-3 {{ $notification->read_at ? '' : 'bg-light' }}" href="{{ route('warga.notifications.read', $notification->id) }}">
-                        <div class="d-flex gap-3">
-                            <div class="mt-1"><i class="bi bi-info-circle text-warning fs-5"></i></div>
-                            <div>
-                                <span class="d-block fw-bold mb-1">{{ $notification->data['judul'] ?? 'Pemberitahuan' }}</span>
-                                <small class="text-muted text-wrap d-block" style="white-space: normal;">{{ $notification->data['pesan'] ?? '' }}</small>
-                                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">{{ $notification->created_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                    </a>
-                </li>
-                @empty
-                <li><span class="dropdown-item text-muted text-center py-4 small">Belum ada notifikasi.</span></li>
-                @endforelse
-            </ul>
-        </div>
-
-        <span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
-            <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
-        </span>
-    </div>
+    <span class="dash-header-status badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
+        <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
+    </span>
 </div>
 
 @if(isset($pendingUmkmListCount) && ($pendingUmkmListCount) > 0)
@@ -174,9 +141,11 @@
 
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="fw-bold mb-0">Data Anggota Keluarga</h5>
-            <a href="{{ route('warga.keluarga.index') }}" class="text-success text-decoration-none small fw-semibold">+ Kelola Keluarga</a>
+            <a href="{{ route('warga.keluarga.index') }}" class="btn btn-success btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 flex-shrink-0">
+                <i class="bi bi-gear"></i> <span>Kelola Keluarga</span>
+            </a>
         </div>
         <div class="row g-3 mb-4">
             <div class="col-md-6">
@@ -190,22 +159,24 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card card-custom p-3 h-100 d-flex flex-row align-items-center gap-3 bg-light shadow-sm border-0">
-                    <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <a href="{{ route('warga.keluarga.index') }}" class="card card-custom p-3 h-100 d-flex flex-row align-items-center gap-3 bg-light shadow-sm border-0 text-decoration-none text-reset card-clickable">
+                    <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
                         <i class="bi bi-people text-secondary fs-4"></i>
                     </div>
                     <div>
                         <h6 class="mb-0 fw-bold">Daftar Tanggungan</h6>
                         <small class="text-muted d-block">Lihat anggota keluarga lainnya</small>
-                        <a href="{{ route('warga.keluarga.index') }}" class="text-success text-decoration-none" style="font-size: 0.75rem;">Kelola Data &rarr;</a>
+                        <small class="text-success fw-semibold" style="font-size: 0.75rem;">Kelola Data &rarr;</small>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="fw-bold mb-0">Transparansi Keuangan RW 21</h5>
-            <a href="{{ route('transparansi') }}" class="text-success text-decoration-none small fw-semibold">Lihat Detail</a>
+            <a href="{{ route('transparansi') }}" class="btn btn-outline-success btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 flex-shrink-0">
+                <i class="bi bi-eye"></i> <span>Lihat Detail</span>
+            </a>
         </div>
         <div class="row g-3 mb-5">
             <div class="col-md-4">
@@ -234,7 +205,7 @@
                 <a href="{{ route('warga.berita.index') }}" class="badge bg-success rounded-pill px-3 py-2 text-decoration-none text-white">Semua Berita</a>
             </div>
         </div>
-        
+
         @if(isset($beritaTerkini) && $beritaTerkini->count() > 0)
             @foreach($beritaTerkini as $berita)
             <a href="{{ route('warga.berita.index') }}?open={{ $berita->id }}&type=Berita" class="text-decoration-none">
@@ -302,7 +273,7 @@
                                     @if($isPenting)
                                         <span class="position-absolute top-0 end-0 mt-3 me-3 badge bg-danger rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">PENTING</span>
                                     @endif
-                                    
+
                                     <div class="mb-3 {{ $iconColor }}" style="font-size: 2.5rem; opacity: 0.8;">
                                         <i class="bi bi-megaphone-fill"></i>
                                     </div>
@@ -423,7 +394,7 @@
         border: 1px solid rgba(0,0,0,0.05);
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .carousel-pinned:hover .carousel-control-prev, 
+    .carousel-pinned:hover .carousel-control-prev,
     .carousel-pinned:hover .carousel-control-next {
         opacity: 1;
     }
@@ -533,7 +504,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const rawAgenda = {!! json_encode($semuaAgenda) !!};
-    
+
     // Convert to easier lookup format: { "2026-09-08": [ {agenda} ] }
     const agendaMap = {};
     rawAgenda.forEach(item => {
@@ -546,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     let currentDate = new Date(); // Actual current date
-    
+
     const calDaysContainer = document.getElementById('cal-days');
     const calMonthYear = document.getElementById('cal-month-year');
     const agendaListContainer = document.getElementById('cal-agenda-list');
@@ -561,40 +532,40 @@ document.addEventListener('DOMContentLoaded', function() {
         calDaysContainer.innerHTML = '';
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        
+
         calMonthYear.textContent = `${monthNames[month]} ${year}`;
-        
+
         const firstDay = new Date(year, month, 1).getDay(); // 0 is Sunday
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
+
         // Add empty cells for days before the 1st
         for (let i = 0; i < firstDay; i++) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'cal-date empty';
             calDaysContainer.appendChild(emptyDiv);
         }
-        
+
         // Add days
         for (let i = 1; i <= daysInMonth; i++) {
             const dateDiv = document.createElement('div');
             dateDiv.className = 'cal-date';
             dateDiv.textContent = i;
-            
+
             const loopDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             dateDiv.dataset.date = loopDateStr;
-            
+
             if (loopDateStr === todayStr) {
                 dateDiv.classList.add('today');
             }
             if (loopDateStr === selectedDateStr) {
                 dateDiv.classList.add('active');
             }
-            
+
             // Check if there's agenda on this date
             if (agendaMap[loopDateStr] && agendaMap[loopDateStr].length > 0) {
                 const dot = document.createElement('div');
                 dot.className = 'cal-dot';
-                
+
                 // If the date is past, make the dot gray and text gray
                 if (loopDateStr < todayStr) {
                     dot.classList.add('past');
@@ -604,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 dateDiv.appendChild(dot);
             }
-            
+
             dateDiv.addEventListener('click', function() {
                 // Remove active class from all
                 document.querySelectorAll('.cal-date').forEach(el => el.classList.remove('active'));
@@ -613,35 +584,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAgendasForDate(selectedDateStr);
                 renderUpcomingAgendas(); // update upcoming to exclude selected date
             });
-            
+
             calDaysContainer.appendChild(dateDiv);
         }
     }
 
     function showAgendasForDate(dateStr) {
         agendaListContainer.innerHTML = '';
-        
+
         // Format the display date
         const dParts = dateStr.split('-');
         const displayDate = `${parseInt(dParts[2])} ${monthNames[parseInt(dParts[1])-1]} ${dParts[0]}`;
-        
+
         if (!agendaMap[dateStr] || agendaMap[dateStr].length === 0) {
             agendaListContainer.innerHTML = `<div class="p-3 rounded-3 bg-light border border-light-subtle text-center text-muted small">Tidak ada agenda pada ${displayDate}</div>`;
             return;
         }
-        
+
         const header = document.createElement('div');
         header.className = 'fw-bold text-dark small mb-2';
         header.textContent = `Agenda Terjadwal (${displayDate}):`;
         agendaListContainer.appendChild(header);
-        
+
         agendaMap[dateStr].forEach(agenda => {
             const card = document.createElement('div');
             // If past event, use gray styling, else green
             const isPast = dateStr < todayStr;
             const borderColor = isPast ? 'border-secondary' : 'border-success';
             const bgColor = isPast ? 'bg-secondary' : 'bg-success';
-            
+
             const timeShort = agenda.time_str || '';
 
             card.className = `p-2 rounded-3 bg-white border ${borderColor} border-opacity-25 shadow-sm d-flex align-items-center gap-2 mb-2`;
@@ -673,27 +644,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderUpcomingAgendas() {
         upcomingListContainer.innerHTML = '';
-        
+
         // Find next 4 agendas that are >= today and <= 7 days from today, and NOT on selectedDateStr
         let count = 0;
         const sortedDates = Object.keys(agendaMap).sort();
-        
+
         const nextWeekDate = new Date();
         nextWeekDate.setDate(nextWeekDate.getDate() + 7);
         const nextWeekStr = nextWeekDate.getFullYear() + '-' + String(nextWeekDate.getMonth()+1).padStart(2, '0') + '-' + String(nextWeekDate.getDate()).padStart(2, '0');
-        
+
         for (const dateStr of sortedDates) {
             if (dateStr >= todayStr && dateStr <= nextWeekStr && dateStr !== selectedDateStr) {
                 agendaMap[dateStr].forEach(agenda => {
                     if (count >= 4) return;
-                    
+
                     const card = document.createElement('div');
                     card.className = 'p-3 rounded-3 bg-white border border-success border-opacity-25 shadow-sm transition-hover';
-                    
+
                     // Simple title truncation
                     let judul = agenda.judul_agenda;
                     if(judul.length > 40) judul = judul.substring(0, 40) + '...';
-                    
+
                     let lokasi = agenda.lokasi;
                     if(lokasi.length > 25) lokasi = lokasi.substring(0, 25) + '...';
 
@@ -744,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDate.setMonth(currentDate.getMonth() - 1);
         renderCalendar();
     });
-    
+
     document.getElementById('cal-next').addEventListener('click', function() {
         currentDate.setMonth(currentDate.getMonth() + 1);
         renderCalendar();
@@ -759,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
             break;
         }
     }
-    
+
     if (autoSelectDate) {
         selectedDateStr = autoSelectDate;
     } else if (sortedDates.length > 0) {
@@ -767,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         selectedDateStr = todayStr; // today
     }
-    
+
     // Highlight and show
     renderCalendar();
     // Dashboard RSVP function
@@ -775,13 +746,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const agendaId = btnEl.dataset.agenda;
         const status = btnEl.dataset.status;
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        
+
         const container = btnEl.closest('.d-flex');
         const buttons = container.querySelectorAll('.rsvp-btn');
         buttons.forEach(b => b.disabled = true);
         const originalHtml = btnEl.innerHTML;
         btnEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        
+
         fetch('/warga/agenda/rsvp', {
             method: 'POST',
             credentials: 'same-origin',

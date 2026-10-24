@@ -21,11 +21,18 @@ class MutasiWargaController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $mutasi = MutasiWarga::findOrFail($id);
+        $mutasi = MutasiWarga::where('status', 'menunggu_rw')->where('id', $id)->first();
+        if (! $mutasi) {
+            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RW.']);
+        }
         
         $data = $mutasi->data_pengajuan;
 
         if ($mutasi->jenis_mutasi == 'tambah') {
+            if (Penduduk::where('nik', $data['nik'] ?? null)->exists()) {
+                return back()->withErrors(['nik' => 'NIK sudah terdaftar pada data penduduk.']);
+            }
+
             Penduduk::create([
                 'keluarga_id' => $mutasi->keluarga_id,
                 'nama_lengkap' => $data['nama_lengkap'],
@@ -45,6 +52,9 @@ class MutasiWargaController extends Controller
             ]);
         } else if ($mutasi->jenis_mutasi == 'edit') {
             $penduduk = Penduduk::findOrFail($mutasi->penduduk_id);
+            if (isset($data['nik']) && Penduduk::where('nik', $data['nik'])->where('id', '!=', $penduduk->id)->exists()) {
+                return back()->withErrors(['nik' => 'NIK sudah terdaftar pada data penduduk lain.']);
+            }
             $updateData = [];
             
             $fieldsToUpdate = [
@@ -76,7 +86,10 @@ class MutasiWargaController extends Controller
             'alasan_penolakan' => 'required|string'
         ]);
 
-        $mutasi = MutasiWarga::findOrFail($id);
+        $mutasi = MutasiWarga::where('status', 'menunggu_rw')->where('id', $id)->first();
+        if (! $mutasi) {
+            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RW.']);
+        }
         $mutasi->status = 'ditolak';
         $mutasi->keterangan_tolak = $request->alasan_penolakan;
         $mutasi->save();

@@ -14,78 +14,185 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'nik'      => ['required', 'string', 'digits:16'],
-            'no_wa'    => ['required', 'string'],
-            'password' => ['required', 'string'],
-        ], [
-            'nik.digits' => 'NIK harus terdiri dari 16 digit angka.',
-            'no_wa.required' => 'Nomor WhatsApp wajib diisi.',
+        // Field tunggal "login" menerima Username ATAU Nomor WhatsApp.
+        // Kompatibilitas mundur: form/test lama yang masih mengirim "no_wa" tetap didukung.
+        $request->merge([
+            'login' => trim((string) ($request->input('login', $request->input('no_wa')))),
         ]);
 
-        // 1) The NIK must belong to a registered user.
-        $user = \App\Models\User::where('nik', $request->nik)->first();
+        $request->validate([
+            'login'    => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ], [
+            'login.required' => 'Username atau Nomor WhatsApp wajib diisi.',
+        ]);
 
-        if (! $user) {
+        $identifier = $request->input('login');
+        $oldInput = ['login' => $identifier, 'no_wa' => $identifier];
+
+        // 1) Kumpulkan SEMUA kandidat user yang cocok dengan identifier
+        //    (username langsung, atau nomor WA via rantai keluarga).
+        $candidates = $this->findLoginCandidates($identifier);
+
+        if ($candidates->isEmpty()) {
+            event(new \Illuminate\Auth\Events\Failed('web', null, ['login' => $identifier]));
+
             return back()->withErrors([
-                'nik' => 'NIK tidak terdaftar dalam sistem.',
-            ])->withInput($request->only('nik', 'no_wa'));
+                'login' => 'Username atau Nomor WhatsApp tidak terdaftar dalam sistem.',
+            ])->withInput($oldInput);
         }
 
-        // 2) The WhatsApp number must match the household (keluarga) linked to this NIK.
-        if (! $this->whatsappMatchesNik($request->nik, $request->no_wa)) {
-            return back()->withErrors([
-                'no_wa' => 'Nomor WhatsApp tidak cocok dengan data NIK tersebut.',
-            ])->withInput($request->only('nik', 'no_wa'));
-        }
+        // 2) Tentukan user yang benar berdasarkan PASSWORD (bukan sekadar akun pertama),
+        //    agar identifier yang dipakai beberapa akun tidak salah masuk.
+        $activeCandidates = $candidates->where('status_akun', 'Active');
 
-        // 3) Validate the password and log the user in.
-        if (Auth::attempt(['nik' => $request->nik, 'password' => $request->password], $request->filled('remember'))) {
-            $request->session()->regenerate();
+        $matchedUser = $activeCandidates->first(function ($candidate) use ($request) {
+            return \Illuminate\Support\Facades\Hash::check($request->password, $candidate->password);
+        });
 
-            $user = Auth::user();
-            $user->forceFill(['last_login' => now()])->saveQuietly();
+        if (! $matchedUser) {
+            if ($activeCandidates->isEmpty()) {
+                event(new \Illuminate\Auth\Events\Failed('web', $candidates->first(), ['login' => $identifier]));
 
-            foreach (config('sidebarMenu') as $item) {
-                if (in_array($user->role, $item['roles'])) {
-                    return redirect()->intended($item['url']);
-                }
+                return back()->withErrors([
+                    'login' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
+                ])->withInput($oldInput);
             }
 
-            return redirect()->intended('/warga');
+            event(new \Illuminate\Auth\Events\Failed('web', $activeCandidates->first(), ['login' => $identifier]));
+
+            return back()->withErrors([
+                'password' => 'Password yang Anda masukkan salah.',
+            ])->withInput($oldInput);
         }
 
-        return back()->withErrors([
-            'password' => 'Password yang Anda masukkan salah.',
-        ])->withInput($request->only('nik', 'no_wa'));
+        // 3) Login pengguna yang cocok.
+        Auth::login($matchedUser, $request->filled('remember'));
+        $user = Auth::user();
+
+        $request->session()->regenerate();
+        $user->forceFill(['last_login' => now()])->saveQuietly();
+
+        // 4) Tentukan peran aktif.
+        //    - Akun satu peran: langsung set & lanjut.
+        //    - Akun banyak peran: arahkan ke halaman "Pilih Peran".
+        \App\Models\User::clearActiveRole();
+
+        $roles = $user->roleNames();
+        if (count($roles) <= 1) {
+            if (! empty($roles)) {
+                $user->setActiveRole($roles[0]);
+            }
+
+            return $this->afterRoleSelected($request, $user->activeRole());
+        }
+
+        // Multi-role: belum pilih peran. Middleware EnsureActiveRole akan
+        // mengarahkan ke /pilih-peran untuk request berikutnya.
+        return redirect()->route('pilih-peran');
     }
 
     /**
-     * Check whether the given WhatsApp number matches the household (keluarga)
-     * associated with the given NIK.
-     *
-     * Chain: users.nik -> penduduk.nik -> penduduk.keluarga_id -> keluarga.no_wa
-     * The head of family's NIK on the keluarga record is also accepted.
+     * Finalisasi sesi setelah peran aktif ditentukan (dipakai login 1-peran
+     * maupun setelah memilih peran di halaman Pilih Peran).
      */
-    protected function whatsappMatchesNik(string $nik, string $noWa): bool
+    public function afterRoleSelected(Request $request, ?string $activeRole)
     {
-        $noWa = $this->normalizeWhatsapp($noWa);
+        $user = Auth::user();
 
-        // a) Via the resident (penduduk) -> household relationship.
-        $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $nik)->first();
-        if ($penduduk && $penduduk->keluarga) {
-            if ($this->normalizeWhatsapp((string) $penduduk->keluarga->no_wa) === $noWa) {
-                return true;
+        // Maintenance mode: hanya Admin Aplikasi/Admin RW yang boleh masuk.
+        if (\App\Models\SystemSetting::get('maintenance_mode', false)
+            && ! in_array($activeRole, ['Admin Aplikasi', 'Admin RW'], true)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return response()->view('errors.503', [], 503);
+        }
+
+        return redirect()->intended($this->homeUrlForRole($activeRole));
+    }
+
+    /**
+     * URL beranda sesuai peran aktif (berdasarkan entri pertama di sidebarMenu).
+     */
+    public function homeUrlForRole(?string $role): string
+    {
+        if ($role) {
+            foreach (config('sidebarMenu') as $item) {
+                if (! empty($item['roles']) && in_array($role, $item['roles'], true) && ! empty($item['url'])) {
+                    return $item['url'];
+                }
             }
         }
 
-        // b) Fallback: the NIK is the head of a household directly.
-        $asHead = \App\Models\Keluarga::where('nik_kepala_keluarga', $nik)->first();
-        if ($asHead && $this->normalizeWhatsapp((string) $asHead->no_wa) === $noWa) {
-            return true;
+        return '/warga';
+    }
+
+    /**
+     * Cari kandidat login dari satu identifier yang bisa berupa username atau
+     * nomor WhatsApp.
+     *
+     *  - Selalu coba cocokkan sebagai username (case-insensitive).
+     *  - Bila identifier mengandung digit, coba juga resolusi sebagai nomor WA.
+     * Hasil digabung & di-dedupe; pemilihan akun final dilakukan via password.
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\User>
+     */
+    protected function findLoginCandidates(string $identifier): \Illuminate\Support\Collection
+    {
+        $candidates = collect();
+
+        // Jalur username (perbandingan case-insensitive).
+        $byUsername = \App\Models\User::whereRaw('LOWER(username) = ?', [mb_strtolower($identifier)])->get();
+        $candidates = $candidates->merge($byUsername);
+
+        // Jalur nomor WhatsApp (hanya bila ada digit).
+        if (preg_match('/\d/', $identifier)) {
+            $normalizedWa = $this->normalizeWhatsapp($identifier);
+            $candidates = $candidates->merge($this->findUsersByWhatsapp($normalizedWa));
         }
 
-        return false;
+        return $candidates->unique(fn ($user) => $user->getKey())->values();
+    }
+
+    /**
+     * Find all Users associated with a household WhatsApp number.
+     *
+     * Chain: keluarga.no_wa -> (penduduk.nik + nik_kepala_keluarga) -> users.nik
+     * Satu nomor WA dapat terhubung ke beberapa akun; pemanggil bertanggung jawab
+     * memilih akun yang tepat (mis. berdasarkan kecocokan password).
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\User>
+     */
+    protected function findUsersByWhatsapp(string $normalizedWa): \Illuminate\Support\Collection
+    {
+        if ($normalizedWa === '') {
+            return collect();
+        }
+
+        // Find all keluarga with matching normalized WhatsApp number.
+        $keluargaRecords = \App\Models\Keluarga::all()->filter(function ($k) use ($normalizedWa) {
+            return $this->normalizeWhatsapp((string) $k->no_wa) === $normalizedWa;
+        });
+
+        $niks = [];
+        foreach ($keluargaRecords as $keluarga) {
+            foreach ($keluarga->anggota()->pluck('nik')->toArray() as $nik) {
+                $niks[] = $nik;
+            }
+            if ($keluarga->nik_kepala_keluarga) {
+                $niks[] = $keluarga->nik_kepala_keluarga;
+            }
+        }
+
+        $niks = array_values(array_unique($niks));
+
+        if (empty($niks)) {
+            return collect();
+        }
+
+        return \App\Models\User::whereIn('nik', $niks)->get();
     }
 
     /**
@@ -105,6 +212,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Keluar dari peran apa pun: bersihkan peran aktif lalu akhiri sesi.
+        \App\Models\User::clearActiveRole();
+
         Auth::logout();
 
         $request->session()->invalidate();

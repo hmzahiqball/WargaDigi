@@ -23,10 +23,17 @@ class RoleMiddleware
 
         $user = Auth::user();
 
-        // Check if user's role is in allowed roles for this route
-        if (!empty($roles) && !in_array($user->role, $roles)) {
-            $redirectUrl = $this->getRedirectUrlForRole($user->role);
-            
+        // Akun multi-peran yang belum memilih peran aktif: arahkan ke Pilih Peran.
+        if ($user->hasMultipleRoles() && ! session(\App\Models\User::ACTIVE_ROLE_SESSION_KEY)) {
+            return redirect()->route('pilih-peran');
+        }
+
+        $activeRole = $user->activeRole();
+
+        // Cek izin terhadap PERAN AKTIF (bukan seluruh peran yang dimiliki).
+        if (!empty($roles) && !in_array($activeRole, $roles)) {
+            $redirectUrl = $this->getRedirectUrlForRole($activeRole);
+
             return redirect($redirectUrl)
                 ->with('error', 'Anda tidak memiliki hak akses untuk membuka halaman tersebut.');
         }
@@ -43,8 +50,8 @@ class RoleMiddleware
 
         foreach ($sidebarMenu as $item) {
             if (!empty($item['roles']) && in_array($role, $item['roles'])) {
-                $url = isset($item['route']) && \Illuminate\Support\Facades\Route::has($item['route']) 
-                    ? route($item['route']) 
+                $url = isset($item['route']) && \Illuminate\Support\Facades\Route::has($item['route'])
+                    ? route($item['route'])
                     : ($item['url'] ?? null);
 
                 if ($url && $url !== '#') {

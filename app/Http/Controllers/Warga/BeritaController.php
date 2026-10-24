@@ -8,6 +8,7 @@ use App\Models\Berita;
 use App\Models\Agenda;
 use App\Models\Pengumuman;
 use App\Models\UmkmProduk;
+use App\Models\GaleriDokumentasi;
 use Carbon\Carbon;
 
 class BeritaController extends Controller
@@ -114,16 +115,61 @@ class BeritaController extends Controller
                 ];
             });
 
+        // Get Galeri Dokumentasi (AC-06.8)
+        $galeriDokumentasi = GaleriDokumentasi::with(['agenda', 'operator'])
+            ->whereHas('agenda', function ($q) {
+                $q->where('status', 'Publish');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $agenda = $item->agenda;
+                $fotos = is_array($item->foto) ? $item->foto : [];
+                $firstImage = count($fotos) > 0 ? asset($fotos[0]) : null;
+                $formattedDate = $agenda ? Carbon::parse($agenda->tanggal_selesai)->setTimezone('Asia/Jakarta')->format('d M Y') : Carbon::parse($item->created_at)->setTimezone('Asia/Jakarta')->format('d M Y');
+                
+                $imagesGridHtml = '';
+                if (count($fotos) > 0) {
+                    $imagesGridHtml .= '<div class="row g-3 my-3">';
+                    foreach ($fotos as $f) {
+                        $imagesGridHtml .= '<div class="col-md-4 col-sm-6"><div class="rounded-3 overflow-hidden shadow-sm border" style="height: 180px;"><img src="' . asset($f) . '" alt="Dokumentasi" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="window.open(\'' . asset($f) . '\', \'_blank\')"></div></div>';
+                    }
+                    $imagesGridHtml .= '</div>';
+                }
+
+                $rawContent = '<p>' . ($agenda->detail_pengumuman ?? ('Dokumentasi kegiatan ' . ($agenda->judul_agenda ?? ''))) . '</p>';
+                if ($item->jumlah_peserta) {
+                    $rawContent .= '<p><strong><i class="bi bi-people-fill me-1"></i> Jumlah Peserta / Warga Hadir:</strong> ' . $item->jumlah_peserta . ' orang</p>';
+                }
+                $rawContent .= '<h5 class="fw-bold mt-4 mb-2"><i class="bi bi-images me-2"></i>Foto Dokumentasi Kegiatan:</h5>' . $imagesGridHtml;
+
+                return [
+                    'id' => $item->id,
+                    'type' => 'Galeri Dokumentasi',
+                    'title' => 'Dokumentasi: ' . ($agenda->judul_agenda ?? 'Kegiatan'),
+                    'description' => 'Dokumentasi kegiatan ' . ($agenda->judul_agenda ?? '') . ' yang telah selesai dilaksanakan.' . ($item->jumlah_peserta ? ' Dihadiri oleh ' . $item->jumlah_peserta . ' peserta.' : ''),
+                    'author' => $item->operator->username ?? 'Operator Konten',
+                    'date' => $formattedDate . ', ' . Carbon::parse($item->created_at)->format('H:i'),
+                    'location' => $agenda->lokasi ?? null,
+                    'image' => $firstImage,
+                    'raw_content' => $rawContent,
+                    'kategori' => 'Galeri Dokumentasi',
+                    'jumlah_peserta' => $item->jumlah_peserta,
+                    'fotos' => array_map(fn($f) => asset($f), $fotos),
+                    'updated_at' => $item->updated_at
+                ];
+            });
+
         $sorotanUmkm = $umkmProduk->first();
         $pengumumanPenting = collect($pengumuman)->where('is_priority', true)->take(3); // First 3 pengumuman
 
-        $semua = collect($berita)->merge($agenda)->merge($pengumuman)->merge($umkmProduk)->sortByDesc('updated_at')->values()->all();
+        $semua = collect($berita)->merge($agenda)->merge($pengumuman)->merge($umkmProduk)->merge($galeriDokumentasi)->sortByDesc('updated_at')->values()->all();
 
         // Unggulan: Try to find a Berita or Agenda with image
         $unggulan = collect($semua)->firstWhere(function ($val) {
-            return ($val['type'] === 'Berita' || $val['type'] === 'Agenda') && $val['image'] !== null;
+            return ($val['type'] === 'Berita' || $val['type'] === 'Agenda' || $val['type'] === 'Galeri Dokumentasi') && $val['image'] !== null;
         }) ?? collect($semua)->first();
 
-        return view('warga.berita.index', compact('berita', 'agenda', 'pengumuman', 'umkmProduk', 'semua', 'unggulan', 'sorotanUmkm', 'pengumumanPenting'));
+        return view('warga.berita.index', compact('berita', 'agenda', 'pengumuman', 'umkmProduk', 'galeriDokumentasi', 'semua', 'unggulan', 'sorotanUmkm', 'pengumumanPenting'));
     }
 }

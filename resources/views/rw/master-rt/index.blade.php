@@ -3,14 +3,16 @@
 @section('title', 'Manajemen RT')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1" style="font-size: 1.75rem;">Manajemen Data RT</h2>
         <p class="text-muted mb-0">Kelola daftar Rukun Tetangga (RT) di lingkungan RW.</p>
     </div>
-    <button type="button" class="btn btn-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalTambahRt">
-        <i class="bi bi-plus-lg me-1"></i> Tambah RT
-    </button>
+    <div class="dash-header-actions">
+        <button type="button" class="btn btn-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalTambahRt">
+            <i class="bi bi-plus-lg me-1"></i> Tambah RT
+        </button>
+    </div>
 </div>
 
 @if(session('success'))

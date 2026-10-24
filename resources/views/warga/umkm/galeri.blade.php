@@ -245,6 +245,9 @@
                                     <option value="" selected disabled>Pilih Kategori</option>
                                     @if(isset($daftarKategoriUmkm) && count($daftarKategoriUmkm) > 0)
                                         @foreach($daftarKategoriUmkm as $kat)
+                                            @if(strtolower(trim($kat->nama_kategori)) === 'koperasi')
+                                                @continue
+                                            @endif
                                             <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
                                         @endforeach
                                     @endif

@@ -25,7 +25,7 @@
     .quill-wrapper:focus-within .ql-toolbar.ql-snow {
         border-color: #0D631B;
     }
-    
+
     /* Custom Blockquote (Highlight Hijau) */
     .ql-editor blockquote,
     #detailKonten blockquote {
@@ -39,14 +39,14 @@
         font-size: 14px !important;
         font-style: normal !important;
     }
-    
+
     /* Styling for Pengumuman Table */
     .pengumuman-table th,
     .pengumuman-table td {
         text-align: center;
         vertical-align: middle;
     }
-    
+
     /* Custom SweetAlert Styling */
     .custom-swal-popup {
         border-radius: 1rem !important;
@@ -81,7 +81,7 @@
     .btn-cancel-swal:hover {
         background-color: #F3F4F6 !important;
     }
-    
+
     .bento-card {
         border-radius: 12px;
         border: 1px solid #BFCABA;
@@ -162,14 +162,16 @@
 
 @section('content')
 {{-- Page Header --}}
-<div class="d-flex justify-content-between align-items-end mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-end mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Manajemen Pengumuman</h2>
         <p class="text-muted mb-0">Kelola dan terbitkan pengumuman penting untuk warga.</p>
     </div>
-    <button type="button" onclick="openCreateModal()" class="btn btn-gradient-green fw-semibold px-4 py-2 rounded-3 text-white shadow-sm d-flex align-items-center gap-2">
-        <i class="bi bi-plus-lg"></i> Buat Pengumuman Baru
-    </button>
+    <div class="dash-header-actions">
+        <button type="button" onclick="openCreateModal()" class="btn btn-gradient-green fw-semibold px-4 py-2 rounded-3 text-white shadow-sm d-flex align-items-center gap-2">
+            <i class="bi bi-plus-lg"></i> Buat Pengumuman Baru
+        </button>
+    </div>
 </div>
 
 {{-- Status Workflow Bento (Synced with Agenda) --}}
@@ -270,7 +272,7 @@
             </colgroup>
             <thead class="thead-green-gradient">
                 <tr class="text-uppercase text-xs fw-bold" style="letter-spacing: 0.5px;">
-                    <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Pengumuman</th>
+                    <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-start">Pengumuman</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Prioritas</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Tanggal</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Status</th>
@@ -280,9 +282,9 @@
             <tbody>
                 @forelse($pengumuman as $item)
                     <tr class="border-bottom" style="border-color: #BFCABA !important;">
-                        <td class="py-4 px-3 text-center">
+                        <td class="py-4 px-3 text-start">
                             <div class="fw-bold text-dark mb-1">{{ $item->judul_pengumuman }}</div>
-                            <div class="text-muted" style="font-size: 13px; max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 auto;">
+                            <div class="text-muted" style="font-size: 13px; max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 {{ Str::limit(strip_tags($item->isi_pengumuman), 60) }}
                             </div>
                         </td>
@@ -319,8 +321,8 @@
                             </span>
                         </td>
                         <td class="py-4 px-3 text-center">
-                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;" onclick="openDetailModal('{{ $item->id }}')">
-                                Lihat Detail
+                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7;" onclick="openDetailModal('{{ $item->id }}')">
+                                <i class="bi bi-eye me-1"></i> Lihat Detail
                             </button>
                         </td>
                     </tr>
@@ -335,7 +337,7 @@
             </tbody>
         </table>
     </div>
-    
+
     {{-- Pagination (Synced with Agenda style) --}}
     @if($pengumuman->total() > 0)
     <div class="d-flex justify-content-between align-items-center p-3 border-top" style="background: #FBF9F8; border-color: #E5E7EB !important;">
@@ -375,12 +377,12 @@
                 <input type="hidden" name="_method" id="formMethod" value="POST">
                 <input type="hidden" id="pengumumanIdInput">
                 <input type="hidden" name="action" id="formAction" value="draft">
-                
+
                 <div class="modal-header border-bottom px-4 py-3">
                     <h5 class="modal-title fw-bold" id="modalTitle">Buat Pengumuman Baru</h5>
                     <button type="button" class="btn-close" aria-label="Close" onclick="confirmCloseModal()"></button>
                 </div>
-                
+
                 <div class="modal-body px-4 py-4">
                     {{-- Alert Catatan Revisi --}}
                     <div id="alertCatatanRevisi" class="alert alert-danger mb-4 d-none border-0 shadow-sm" style="background-color: #FEF2F2; color: #991B1B; border-radius: 8px;">
@@ -398,7 +400,7 @@
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Judul Pengumuman</label>
                             <input type="text" name="judul_pengumuman" id="judulPengumuman" class="form-control" placeholder="Masukkan judul pengumuman..." required>
                         </div>
-                        
+
                         <div class="col-12">
                             <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background: #FDF4F5; border: 1px solid #F8D7DA;">
                                 <div>
@@ -422,11 +424,11 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end gap-2" style="border-color: #BFCABA !important;">
                     <button type="button" class="btn btn-draft fw-semibold" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="confirmCloseModal()">Batal</button>
                     <button type="submit" class="btn btn-gradient-green fw-semibold px-4 text-white d-flex align-items-center gap-2">
-                        <i class="bi bi-save"></i> Simpan ke Draf
+                        <i class="bi bi-save"></i> <span id="submitBtnPengumumanText">Simpan ke Draf</span>
                     </button>
                 </div>
         </form>
@@ -477,7 +479,7 @@
                     <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            
+
             <div class="modal-body px-4 py-4">
                 {{-- Notifikasi Catatan Revisi --}}
                 <div id="alertDetailCatatanRevisi" class="alert alert-danger mb-4 d-none border-0 shadow-sm" style="background-color: #FEF2F2; color: #991B1B; border-radius: 8px;">
@@ -495,30 +497,30 @@
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Judul Pengumuman</label>
                         <input type="text" id="detailJudul" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tanggal Dibuat</label>
                         <input type="text" id="detailTanggal" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <label class="form-label fw-medium text-dark" style="font-size: 14px;">Tingkat Prioritas</label>
                         <input type="text" id="detailPrioritas" class="form-control bg-white" readonly disabled>
                     </div>
-                    
+
                     <div class="col-12">
                         <span class="d-block text-muted small mb-2 fw-semibold">Isi Pengumuman</span>
                         <div id="detailKonten" class="p-4 rounded-3 text-dark bg-white" style="border: 1px solid #E5E7EB; min-height: 150px; font-size: 15px; line-height: 1.6;"></div>
                     </div>
                 </div>
             </div>
-            
-            <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end" style="border-color: #BFCABA !important;">
-                <div class="w-100 d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewPengumumanAsWarga()">
-                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+
+            <div class="modal-footer px-4 py-3 bg-white border-top modal-action-footer" style="border-color: #BFCABA !important;">
+                <div class="w-100 d-flex flex-wrap flex-sm-nowrap justify-content-between align-items-center gap-2">
+                    <button type="button" class="btn fw-semibold px-4 rounded-3 text-nowrap" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewPengumumanAsWarga()" data-bs-toggle="tooltip" title="Pratinjau Tampilan Warga">
+                        <i class="bi bi-eye me-1"></i> <span class="label-full">Pratinjau Tampilan Warga</span><span class="label-short">Pratinjau</span>
                     </button>
-                    <div id="detailFooterActions" class="d-flex gap-2">
+                    <div id="detailFooterActions" class="d-flex flex-wrap gap-2">
                         <!-- Actions will be injected via JS -->
                     </div>
                 </div>
@@ -542,7 +544,7 @@
         if (!currentDetailPengumumanItem) return;
         const item = currentDetailPengumumanItem;
 
-        const dateStr = item.tanggal_publish 
+        const dateStr = item.tanggal_publish
             ? new Date(item.tanggal_publish).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : new Date(item.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -563,7 +565,7 @@
     }
 
     const dummyPengumumanData = @json($pengumuman->items());
-    
+
     let formDirty = false;
     let allowModalClose = false;
 
@@ -617,6 +619,13 @@
 
         // Sync Quill on submit
         form.addEventListener('submit', function(e) {
+            const textContent = quill.getText().trim();
+            if (!textContent) {
+                e.preventDefault();
+                if (window.resetFormSubmitting) window.resetFormSubmitting(form);
+                showNotification('Isi pengumuman wajib diisi.', true);
+                return false;
+            }
             document.getElementById('isiPengumumanInput').value = quill.root.innerHTML;
         });
 
@@ -651,7 +660,7 @@
             toastMsg.textContent = message;
             toast.style.background = isError ? 'rgba(220, 53, 69, 0.95)' : 'rgba(13, 99, 27, 0.95)';
             document.getElementById('customToastIcon').className = isError ? 'bi bi-exclamation-triangle-fill fs-5' : 'bi bi-check-circle-fill fs-5';
-            
+
             toast.style.opacity = '1';
 
             // Sembunyikan setelah 3 detik
@@ -667,13 +676,15 @@
         const form = document.getElementById('formPengumuman');
         form.reset();
         quill.setText('');
-        
+
         document.getElementById('formMethod').value = 'POST';
         form.action = "{{ route('opkonten.pengumuman.store') }}";
         document.getElementById('pengumumanIdInput').value = '';
         document.getElementById('alertCatatanRevisi').classList.add('d-none');
-        
+
         document.getElementById('modalTitle').textContent = 'Buat Pengumuman Baru';
+        const submitBtnText = document.getElementById('submitBtnPengumumanText');
+        if (submitBtnText) submitBtnText.textContent = 'Simpan ke Draf';
         pengumumanModal.show();
     }
 
@@ -682,16 +693,21 @@
         allowModalClose = false;
         const form = document.getElementById('formPengumuman');
         form.reset();
-        
+
         document.getElementById('formMethod').value = 'PUT';
         form.action = `/op-konten/pengumuman/${item.id}`;
         document.getElementById('pengumumanIdInput').value = item.id;
         document.getElementById('modalTitle').textContent = 'Edit Pengumuman';
-        
+
+        const submitBtnText = document.getElementById('submitBtnPengumumanText');
+        if (submitBtnText) {
+            submitBtnText.textContent = item.status === 'Revisi' ? 'Simpan & Ajukan Ulang' : 'Simpan Perubahan';
+        }
+
         document.getElementById('judulPengumuman').value = item.judul_pengumuman;
         document.getElementById('isPriorityToggle').checked = item.is_priority;
         quill.root.innerHTML = item.isi_pengumuman;
-        
+
         // Catatan Revisi
         const alertRevisi = document.getElementById('alertCatatanRevisi');
         if (item.status === 'Revisi' && item.catatan_revisi) {
@@ -700,7 +716,7 @@
         } else {
             alertRevisi.classList.add('d-none');
         }
-        
+
         pengumumanModal.show();
     }
 
@@ -711,6 +727,15 @@
             if(detailModalEl) detailModalEl.hide();
             editPengumuman(item);
         }
+    }
+
+    function initFooterTooltips() {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+        document.querySelectorAll('#modalDetail [data-bs-toggle="tooltip"]').forEach(function (el) {
+            const existing = bootstrap.Tooltip.getInstance(el);
+            if (existing) existing.dispose();
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
     }
 
     function openDetailModal(id) {
@@ -729,7 +754,7 @@
         const s_bg = statusColors[item.status]?.bg || '#F3F4F6';
         const s_color = statusColors[item.status]?.color || '#6B7280';
         const s_label = statusColors[item.status]?.label || item.status;
-        
+
         statusBadge.style.background = s_bg;
         statusBadge.style.color = s_color;
         statusBadge.querySelector('.status-dot').style.background = s_color;
@@ -766,16 +791,16 @@
         // Actions Footer (Synced with Agenda pattern)
         const detailFooter = document.getElementById('detailFooterActions');
         let actionsHtml = '';
-        
+
         if (item.status === 'Draft' || item.status === 'Revisi') {
             actionsHtml += `
-                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editPengumumanFromJson('${item.id}')">
-                    <i class="bi bi-pencil"></i> Edit Pengumuman
+                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center justify-content-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editPengumumanFromJson('${item.id}')" data-bs-toggle="tooltip" title="Edit Pengumuman">
+                    <i class="bi bi-pencil"></i> <span class="label-full">Edit Pengumuman</span><span class="label-short">Edit</span>
                 </button>
                 <form action="/op-konten/pengumuman/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="confirmSubmit('${item.id}')">
-                        Ajukan Pengumuman
+                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Pengumuman">
+                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Pengumuman</span><span class="label-short">Ajukan</span>
                     </button>
                 </form>
             `;
@@ -783,26 +808,27 @@
             actionsHtml += `
                 <form action="/op-konten/pengumuman/${item.id}/cancel-submit" method="POST" class="d-inline" id="formCancelSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn btn-outline-warning fw-semibold px-4" onclick="confirmCancelSubmit('${item.id}')">
-                        <i class="bi bi-arrow-return-left"></i> Batalkan Pengajuan
+                    <button type="button" class="btn btn-outline-warning fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" onclick="confirmCancelSubmit('${item.id}')" data-bs-toggle="tooltip" title="Batalkan Pengajuan">
+                        <i class="bi bi-arrow-return-left"></i> <span class="label-full">Batalkan Pengajuan</span><span class="label-short">Batalkan</span>
                     </button>
                 </form>
             `;
         }
-        
+
         if (item.status !== 'Review') {
             actionsHtml += `
                 <form action="/op-konten/pengumuman/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="DELETE">
-                    <button type="button" class="btn btn-outline-danger fw-semibold px-4" onclick="confirmDelete('${item.id}')">
-                        <i class="bi bi-trash"></i> Hapus
+                    <button type="button" class="btn btn-outline-danger fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" onclick="confirmDelete('${item.id}')" data-bs-toggle="tooltip" title="Hapus">
+                        <i class="bi bi-trash"></i> <span class="label-full">Hapus</span><span class="label-short">Hapus</span>
                     </button>
                 </form>
             `;
         }
 
         detailFooter.innerHTML = actionsHtml;
+        initFooterTooltips();
 
         const detailModal = new bootstrap.Modal(document.getElementById('modalDetail'));
         detailModal.show();

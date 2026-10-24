@@ -30,7 +30,7 @@
         justify-content: center;
         flex-shrink: 0;
     }
-    
+
     /* Table Enhancements */
     .thead-green-gradient {
         background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%) !important;
@@ -99,7 +99,7 @@
         border: 1px solid rgba(0,0,0,0.05);
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .carousel-pinned:hover .carousel-control-prev, 
+    .carousel-pinned:hover .carousel-control-prev,
     .carousel-pinned:hover .carousel-control-next {
         opacity: 1;
     }
@@ -213,7 +213,7 @@
 </div>
 
 {{-- Top 4 Stat Cards (Bento Style) --}}
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-4 dash-stats">
     <div class="col-md-3">
         <div class="bento-card h-100">
             <div class="bento-icon" style="background: rgba(46, 125, 50, 0.10); color: #007232;">
@@ -272,7 +272,7 @@
 <div class="row g-4">
     {{-- Left Column --}}
     <div class="col-lg-8 d-flex flex-column gap-4">
-        
+
         {{-- Antrean Revisi --}}
         <div class="card card-custom p-0 shadow-sm border-0 overflow-hidden" style="border-radius: 16px;">
             <div class="p-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
@@ -348,9 +348,9 @@
                                 @php
                                     $statusColors = [
                                         'Draft' => ['bg' => '#F3F4F6', 'color' => '#6B7280', 'label' => 'Draf'],
-                                        'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'], 
-                                        'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'], 
-                                        'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'], 
+                                        'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'],
+                                        'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'],
+                                        'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'],
                                     ];
                                     $s_bg = $statusColors[$item['status']]['bg'] ?? '#F3F4F6';
                                     $s_color = $statusColors[$item['status']]['color'] ?? '#6B7280';
@@ -386,7 +386,7 @@
 
     {{-- Right Column --}}
     <div class="col-lg-4 d-flex flex-column gap-4">
-        
+
         {{-- Sorotan Pengumuman (Carousel) --}}
         <div class="card card-custom p-0 shadow-sm border-0 position-relative" style="border-radius: 16px;">
             <div class="p-4 pb-2 d-flex justify-content-between align-items-center">
@@ -479,7 +479,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const rawAgenda = {!! json_encode($semuaAgenda) !!};
-    
+
     // Convert to easier lookup format: { "2026-09-08": [ {agenda} ] }
     const agendaMap = {};
     rawAgenda.forEach(item => {
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     let currentDate = new Date(); // Actual current date
-    
+
     const calDaysContainer = document.getElementById('cal-days');
     const calMonthYear = document.getElementById('cal-month-year');
     const agendaListContainer = document.getElementById('cal-agenda-list');
@@ -507,40 +507,40 @@ document.addEventListener('DOMContentLoaded', function() {
         calDaysContainer.innerHTML = '';
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        
+
         calMonthYear.textContent = `${monthNames[month]} ${year}`;
-        
+
         const firstDay = new Date(year, month, 1).getDay(); // 0 is Sunday
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
+
         // Add empty cells for days before the 1st
         for (let i = 0; i < firstDay; i++) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'cal-date empty';
             calDaysContainer.appendChild(emptyDiv);
         }
-        
+
         // Add days
         for (let i = 1; i <= daysInMonth; i++) {
             const dateDiv = document.createElement('div');
             dateDiv.className = 'cal-date';
             dateDiv.textContent = i;
-            
+
             const loopDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             dateDiv.dataset.date = loopDateStr;
-            
+
             if (loopDateStr === todayStr) {
                 dateDiv.classList.add('today');
             }
             if (loopDateStr === selectedDateStr) {
                 dateDiv.classList.add('active');
             }
-            
+
             // Check if there's agenda on this date
             if (agendaMap[loopDateStr] && agendaMap[loopDateStr].length > 0) {
                 const dot = document.createElement('div');
                 dot.className = 'cal-dot';
-                
+
                 // If the date is past, make the dot gray and text gray
                 if (loopDateStr < todayStr) {
                     dot.classList.add('past');
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 dateDiv.appendChild(dot);
             }
-            
+
             dateDiv.addEventListener('click', function() {
                 // Remove active class from all
                 document.querySelectorAll('.cal-date').forEach(el => el.classList.remove('active'));
@@ -559,35 +559,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAgendasForDate(selectedDateStr);
                 renderUpcomingAgendas(); // update upcoming to exclude selected date
             });
-            
+
             calDaysContainer.appendChild(dateDiv);
         }
     }
 
     function showAgendasForDate(dateStr) {
         agendaListContainer.innerHTML = '';
-        
+
         // Format the display date
         const dParts = dateStr.split('-');
         const displayDate = `${parseInt(dParts[2])} ${monthNames[parseInt(dParts[1])-1]} ${dParts[0]}`;
-        
+
         if (!agendaMap[dateStr] || agendaMap[dateStr].length === 0) {
             agendaListContainer.innerHTML = `<div class="p-3 rounded-3 bg-light border border-light-subtle text-center text-muted small">Tidak ada agenda pada ${displayDate}</div>`;
             return;
         }
-        
+
         const header = document.createElement('div');
         header.className = 'fw-bold text-dark small mb-2';
         header.textContent = `Agenda Terjadwal (${displayDate}):`;
         agendaListContainer.appendChild(header);
-        
+
         agendaMap[dateStr].forEach(agenda => {
             const card = document.createElement('div');
             // If past event, use gray styling, else green
             const isPast = dateStr < todayStr;
             const borderColor = isPast ? 'border-secondary' : 'border-success';
             const bgColor = isPast ? 'bg-secondary' : 'bg-success';
-            
+
             const timeShort = agenda.time_str || '';
 
             card.className = `p-2 rounded-3 bg-white border ${borderColor} border-opacity-25 shadow-sm d-flex align-items-center gap-2 mb-2`;
@@ -606,27 +606,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderUpcomingAgendas() {
         upcomingListContainer.innerHTML = '';
-        
+
         // Find next 4 agendas that are >= today and <= 7 days from today, and NOT on selectedDateStr
         let count = 0;
         const sortedDates = Object.keys(agendaMap).sort();
-        
+
         const nextWeekDate = new Date();
         nextWeekDate.setDate(nextWeekDate.getDate() + 7);
         const nextWeekStr = nextWeekDate.getFullYear() + '-' + String(nextWeekDate.getMonth()+1).padStart(2, '0') + '-' + String(nextWeekDate.getDate()).padStart(2, '0');
-        
+
         for (const dateStr of sortedDates) {
             if (dateStr >= todayStr && dateStr <= nextWeekStr && dateStr !== selectedDateStr) {
                 agendaMap[dateStr].forEach(agenda => {
                     if (count >= 4) return;
-                    
+
                     const card = document.createElement('div');
                     card.className = 'p-3 rounded-3 bg-white border border-success border-opacity-25 shadow-sm transition-hover';
-                    
+
                     // Simple title truncation
                     let judul = agenda.judul_agenda;
                     if(judul.length > 40) judul = judul.substring(0, 40) + '...';
-                    
+
                     let lokasi = agenda.lokasi;
                     if(lokasi.length > 25) lokasi = lokasi.substring(0, 25) + '...';
 
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDate.setMonth(currentDate.getMonth() - 1);
         renderCalendar();
     });
-    
+
     document.getElementById('cal-next').addEventListener('click', function() {
         currentDate.setMonth(currentDate.getMonth() + 1);
         renderCalendar();
@@ -679,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
             break;
         }
     }
-    
+
     if (autoSelectDate) {
         selectedDateStr = autoSelectDate;
     } else if (sortedDates.length > 0) {
@@ -687,7 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         selectedDateStr = todayStr; // today
     }
-    
+
     // Highlight and show
     renderCalendar();
     showAgendasForDate(selectedDateStr);

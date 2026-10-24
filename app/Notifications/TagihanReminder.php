@@ -23,13 +23,36 @@ class TagihanReminder extends Notification
     }
 
     /**
-     * Get the notification's delivery channels.
+     * Get the notification's delivery channels based on SystemSetting.
      *
      * @return array<int, string>
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = [];
+
+        if (\App\Services\NotificationService::isPushEnabled()) {
+            $channels[] = 'database';
+        }
+
+        if (\App\Services\NotificationService::isEmailEnabled()) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
+    }
+
+    /**
+     * Get the mail representation of the notification.
+     */
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject('Pengingat Pembayaran: ' . ($this->pembayaran->tagihan->judul ?? 'Tagihan Iuran'))
+            ->greeting('Halo, ' . ($notifiable->username ?? 'Warga') . '!')
+            ->line('Anda memiliki tagihan "' . ($this->pembayaran->tagihan->judul ?? '-') . '" sebesar ' . ($this->pembayaran->tagihan->formatted_nominal ?? 'Rp 0') . ' yang belum dibayar.')
+            ->action('Lihat Tagihan', route('warga.tagihan.index'))
+            ->line('Terima kasih atas partisipasi Anda membangun lingkungan warga.');
     }
 
     /**

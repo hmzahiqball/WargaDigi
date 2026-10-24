@@ -13,10 +13,10 @@
 </div>
 
 {{-- Top 3 Stat Cards --}}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 dash-stats">
     {{-- Card 1: TOTAL KAS RW --}}
     <div class="col-md-4">
-        <div class="card card-custom p-4 h-100 shadow-sm border-0">
+        <div class="card card-custom p-4 h-100 shadow-sm border-0 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-wallet2 text-success fs-5"></i>
@@ -24,13 +24,22 @@
                 </div>
             </div>
             <h2 class="fw-bold text-dark mb-1 fs-2">{{ $stats['kas_rw']['total'] }}</h2>
-            <span class="text-muted small">{{ $stats['kas_rw']['subtext'] }}</span>
+            <span class="text-muted small d-block mb-3">{{ $stats['kas_rw']['subtext'] }}</span>
+            {{-- Breakdown Masuk & Keluar (EV-001) --}}
+            <div class="mt-auto pt-2 border-top border-light-subtle d-flex justify-content-between align-items-center small">
+                <span class="text-success fw-semibold" title="Total Pemasukan Kas RW">
+                    <i class="bi bi-arrow-down-left-circle me-1"></i> Masuk: {{ $stats['kas_rw']['masuk'] }}
+                </span>
+                <span class="text-danger fw-semibold" title="Total Pengeluaran Kas RW">
+                    <i class="bi bi-arrow-up-right-circle me-1"></i> Keluar: {{ $stats['kas_rw']['keluar'] }}
+                </span>
+            </div>
         </div>
     </div>
 
     {{-- Card 2: TOTAL KAS RT --}}
     <div class="col-md-4">
-        <div class="card card-custom p-4 h-100 shadow-sm border-0">
+        <div class="card card-custom p-4 h-100 shadow-sm border-0 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-building text-success fs-5"></i>
@@ -38,13 +47,22 @@
                 </div>
             </div>
             <h2 class="fw-bold text-dark mb-1 fs-2">{{ $stats['kas_rt']['total'] }}</h2>
-            <span class="text-muted small">{{ $stats['kas_rt']['subtext'] }}</span>
+            <span class="text-muted small d-block mb-3">{{ $stats['kas_rt']['subtext'] }}</span>
+            {{-- Breakdown Masuk & Keluar (EV-001) --}}
+            <div class="mt-auto pt-2 border-top border-light-subtle d-flex justify-content-between align-items-center small">
+                <span class="text-success fw-semibold" title="Total Pemasukan Kas RT">
+                    <i class="bi bi-arrow-down-left-circle me-1"></i> Masuk: {{ $stats['kas_rt']['masuk'] }}
+                </span>
+                <span class="text-danger fw-semibold" title="Total Pengeluaran Kas RT">
+                    <i class="bi bi-arrow-up-right-circle me-1"></i> Keluar: {{ $stats['kas_rt']['keluar'] }}
+                </span>
+            </div>
         </div>
     </div>
 
     {{-- Card 3: DANA KEMATIAN --}}
     <div class="col-md-4">
-        <div class="card card-custom p-4 h-100 shadow-sm border-0">
+        <div class="card card-custom p-4 h-100 shadow-sm border-0 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-suit-heart-fill text-danger fs-5"></i>
@@ -52,7 +70,16 @@
                 </div>
             </div>
             <h2 class="fw-bold text-dark mb-1 fs-2">{{ $stats['dana_kematian']['total'] }}</h2>
-            <span class="text-muted small">{{ $stats['dana_kematian']['subtext'] }}</span>
+            <span class="text-muted small d-block mb-3">{{ $stats['dana_kematian']['subtext'] }}</span>
+            {{-- Breakdown Masuk & Keluar (EV-001) --}}
+            <div class="mt-auto pt-2 border-top border-light-subtle d-flex justify-content-between align-items-center small">
+                <span class="text-success fw-semibold" title="Total Pemasukan Kas DKM">
+                    <i class="bi bi-arrow-down-left-circle me-1"></i> Masuk: {{ $stats['dana_kematian']['masuk'] }}
+                </span>
+                <span class="text-danger fw-semibold" title="Total Pengeluaran Kas DKM">
+                    <i class="bi bi-arrow-up-right-circle me-1"></i> Keluar: {{ $stats['dana_kematian']['keluar'] }}
+                </span>
+            </div>
         </div>
     </div>
 </div>
@@ -82,7 +109,7 @@
         <div class="card card-custom p-4 shadow-sm border-0 h-100 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">SHEET SALDO</span>
-                <a href="#" class="text-muted"><i class="bi bi-box-arrow-up-right"></i></a>
+                <a href="{{ route('opkeuangan.laporan.index') }}" class="text-muted" title="Buka Laporan Keuangan Lengkap"><i class="bi bi-box-arrow-up-right"></i></a>
             </div>
 
             <div class="d-flex flex-column gap-3 mb-auto">
@@ -108,8 +135,8 @@
                 </div>
             </div>
 
-            <div class="bg-light border border-light-subtle rounded-3 p-2.5 text-center mt-3">
-                <span class="small fw-bold text-dark"><i class="bi bi-check-circle-fill me-1 text-dark"></i> {{ $sheetSaldo['status'] }}</span>
+            <div class="{{ $sheetSaldo['status_box_class'] }} rounded-3 p-2.5 text-center mt-3">
+                <span class="small fw-bold {{ $sheetSaldo['status_text_class'] }}"><i class="bi {{ $sheetSaldo['status_icon'] }} me-1"></i> {{ $sheetSaldo['status'] }}</span>
             </div>
         </div>
     </div>

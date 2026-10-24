@@ -69,7 +69,7 @@
                     <a href="#" class="link-green" style="font-size: 0.85rem;">Lihat Semua</a>
                 </div>
                 <div class="transaction-list">
-                    @foreach($transactions as $tx)
+                    @forelse($transactions as $tx)
                     <div class="transaction-item">
                         <div class="transaction-icon {{ $tx['icon'] }}">
                             <i class="bi {{ $tx['icon'] === 'income' ? 'bi-arrow-down-left' : 'bi-arrow-up-right' }}"></i>
@@ -80,7 +80,9 @@
                         </div>
                         <span class="transaction-amount {{ $tx['type'] }}">{{ $tx['amount'] }}</span>
                     </div>
-                    @endforeach
+                    @empty
+                    <p class="text-muted mb-0">Belum ada transaksi terverifikasi.</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -91,7 +93,7 @@
         <h4 style="color: #2E7D32; font-weight: 700;">Laporan Keuangan Resmi</h4>
     </div>
     <div class="row g-4">
-        @foreach($reports as $report)
+        @forelse($reports as $report)
         <div class="col-lg-4 col-md-6 fade-on-scroll">
             <div class="report-card">
                 <div class="report-icon {{ $report['color'] }}">
@@ -99,12 +101,16 @@
                 </div>
                 <h6>{{ $report['title'] }}</h6>
                 <div class="report-period">{{ $report['period'] }}</div>
-                <a href="{{ route('transparansi.download-pdf', $loop->index) }}" class="report-download">
+                <a href="{{ route('transparansi.download-pdf', $report['id']) }}" class="report-download">
                     <i class="bi bi-download"></i> Unduh PDF ({{ $report['size'] }})
                 </a>
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="col-12">
+            <p class="text-muted mb-0">Belum ada laporan keuangan resmi yang dipublikasikan.</p>
+        </div>
+        @endforelse
     </div>
 </section>
 @endsection

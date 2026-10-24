@@ -72,19 +72,24 @@
     </div>
 
     <div class="row g-4">
-        @foreach($berita as $item)
+        @forelse($berita as $item)
         <div class="col-md-4 fade-on-scroll">
             <div class="card-warga">
-                <img src="{{ asset($item['image']) }}" class="card-img-top" alt="{{ $item['title'] }}">
+                @php($beritaImg = $item['image'] ? (\Illuminate\Support\Str::startsWith($item['image'], ['http://','https://']) ? $item['image'] : asset('storage/'.$item['image'])) : asset('images/berita-1.jpg'))
+                <img src="{{ $beritaImg }}" class="card-img-top" alt="{{ $item['title'] }}">
                 <div class="card-body">
                     <div class="card-date">{{ $item['date'] }}</div>
                     <h5 class="card-title">{{ $item['title'] }}</h5>
                     <p class="card-text">{{ $item['excerpt'] }}</p>
-                    <a href="#" class="link-green" style="font-size: 0.9rem;">Baca Selengkapnya <i class="bi bi-arrow-right"></i></a>
+                    <a href="{{ route('berita.show', $item['id']) }}" class="link-green" style="font-size: 0.9rem;">Baca Selengkapnya <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="col-12">
+            <p class="text-muted text-center mb-0">Belum ada berita yang dipublikasikan.</p>
+        </div>
+        @endforelse
     </div>
 </section>
 
@@ -105,7 +110,7 @@
                 <div class="card-warga p-4">
                     <h5 class="mb-3" style="font-weight: 700;">Agenda Mendatang</h5>
                     <div class="agenda-list">
-                        @foreach($agenda as $item)
+                        @forelse($agenda as $item)
                         <div class="agenda-item">
                             <div class="agenda-date-box">
                                 <div class="agenda-day">{{ $item['day'] }}</div>
@@ -117,7 +122,9 @@
                             </div>
                             <a href="#" class="agenda-link">Detail</a>
                         </div>
-                        @endforeach
+                        @empty
+                        <p class="text-muted mb-0">Belum ada agenda mendatang.</p>
+                        @endforelse
                     </div>
                     <div class="text-center mt-3">
                         <a href="#" class="btn btn-outline-warga">Lihat Semua Agenda</a>
@@ -141,7 +148,8 @@
         <div class="col-md-4 fade-on-scroll">
             <div class="card-umkm">
                 <div class="umkm-img-wrapper">
-                    <img src="{{ asset($item['image']) }}" alt="{{ $item['name'] }}">
+                    @php($umkmImg = $item['image'] ? (\Illuminate\Support\Str::startsWith($item['image'], ['http://','https://']) ? $item['image'] : asset('storage/'.$item['image'])) : asset('images/umkm-1.jpg'))
+                    <img src="{{ $umkmImg }}" alt="{{ $item['name'] }}">
                     <span class="price-badge">{{ $item['price'] }}</span>
                 </div>
                 <div class="card-body">

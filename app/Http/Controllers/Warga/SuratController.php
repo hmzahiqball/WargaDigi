@@ -111,8 +111,8 @@ class SuratController extends Controller
         }
 
         $query = PengajuanSurat::with('penduduk.keluarga')->where('id', $id);
-        
-        if ($user->role == 'Warga') {
+
+        if ($user->activeRole() == 'Warga') {
             $query->where('penduduk_id', $penduduk->id);
         }
 
@@ -132,9 +132,9 @@ class SuratController extends Controller
             if ($rt) $kodeRt = $rt->kode_rt;
         }
 
-        // Nama Ketua RT dan RW
-        $namaKetuaRt = User::where('role', 'Ketua RT')->first()->username ?? '..........................';
-        $namaKetuaRw = User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
+        // Nama Ketua RT & RW dari data Pejabat aktif (bukan username akun).
+        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($k->rt_id ?? null) ?? '..........................';
+        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
 
         // Bulan Romawi
         $tanggalSelesai = $item->tanggal_selesai ?? $item->updated_at;

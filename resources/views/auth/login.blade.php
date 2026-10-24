@@ -37,6 +37,8 @@
                             <i class="bi bi-exclamation-circle"></i>
                             <span id="loginErrorText">{{ session('error') }}</span>
                         </div>
+                    @elseif (session('status'))
+                        <div class="alert alert-success p-2 mb-3 small">{{ session('status') }}</div>
                     @else
                         <div id="loginError" class="alert p-2 d-none align-items-center gap-2 mb-3" style="background-color: #fce4ec; color: #c62828; border-radius: 0.5rem; border: none; font-size: 0.85rem;">
                             <i class="bi bi-exclamation-circle"></i>
@@ -46,26 +48,17 @@
 
                     <form id="loginForm" method="POST" action="{{ route('login') }}">
                         @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark">Nomor Induk Kependudukan (NIK)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
-                                    <i class="bi bi-person-vcard"></i>
-                                </span>
-                                <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" placeholder="Masukkan 16 digit NIK" inputmode="numeric" maxlength="16" required value="{{ old('nik') }}">
-                            </div>
-                            @error('nik')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                        </div>
+
 
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark">Nomor WhatsApp</label>
+                            <label class="form-label small fw-semibold text-dark">Username atau Nomor WhatsApp</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
-                                    <i class="bi bi-whatsapp text-success"></i>
+                                    <i class="bi bi-person-badge text-success"></i>
                                 </span>
-                                <input type="text" name="no_wa" class="form-control @error('no_wa') is-invalid @enderror" placeholder="Contoh: 081234567890" inputmode="tel" required value="{{ old('no_wa') }}">
+                                <input type="text" name="login" class="form-control @error('login') is-invalid @enderror" placeholder="Username atau 081234567890" required value="{{ old('login', old('no_wa')) }}">
                             </div>
-                            @error('no_wa')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                            @error('login')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="mb-3">

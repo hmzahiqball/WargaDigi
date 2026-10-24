@@ -11,27 +11,49 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
+        // Statistik nyata dari database
+        $totalPenduduk = \App\Models\Penduduk::count();
+        $totalKepalaKeluarga = \App\Models\Keluarga::count();
+        $totalUser = \App\Models\User::count();
+        $aktifHariIni = \App\Models\User::whereDate('last_login', today())->count();
+
         $stats = [
-            ['label' => 'AKTIF HARI INI', 'value' => 1, 'total' => 416, 'icon' => 'bi-check-circle', 'color' => '#43A047'],
-            ['label' => 'TOTAL KEPALA KELUARGA', 'value' => 416, 'icon' => 'bi-people-fill', 'color' => '#FF9800'],
-            ['label' => 'TOTAL PENDUDUK', 'value' => 1446, 'icon' => 'bi-person-badge-fill', 'color' => '#0288D1'],
+            ['label' => 'AKTIF HARI INI', 'value' => $aktifHariIni, 'total' => $totalUser, 'icon' => 'bi-check-circle', 'color' => '#43A047'],
+            ['label' => 'TOTAL KEPALA KELUARGA', 'value' => $totalKepalaKeluarga, 'icon' => 'bi-people-fill', 'color' => '#FF9800'],
+            ['label' => 'TOTAL PENDUDUK', 'value' => $totalPenduduk, 'icon' => 'bi-person-badge-fill', 'color' => '#0288D1'],
         ];
 
-        $alerts = [
-            [
-                'title' => 'Instans Diaktifkan',
-                'desc' => 'RW 21 Tanimulya telah berhasil menyelesaikan proses pembaruan DNS.',
-                'time' => '2 jam yang lalu',
-                'type' => 'success',
-            ],
-        ];
+        // Peringatan terbaru diambil dari log aktivitas nyata (Spatie Activitylog)
+        $alerts = [];
+        if (class_exists(\Spatie\Activitylog\Models\Activity::class)) {
+            $recentActivities = \Spatie\Activitylog\Models\Activity::latest()->take(5)->get();
 
+            foreach ($recentActivities as $activity) {
+                $event = $activity->event ?? '';
+                $type = match ($event) {
+                    'failed' => 'warning',
+                    'deleted' => 'warning',
+                    default => 'success',
+                };
+
+                $alerts[] = [
+                    'title' => ucfirst($activity->log_name ?? 'Aktivitas'),
+                    'desc' => $activity->description ?? 'Aktivitas sistem.',
+                    'time' => $activity->created_at
+                        ? $activity->created_at->timezone('Asia/Jakarta')->diffForHumans()
+                        : 'Baru saja',
+                    'type' => $type,
+                ];
+            }
+        }
+
+        // Instance tunggal (aplikasi single-RW): data nyata dari pengaturan sistem & jumlah user
         $instances = [
             [
-                'name' => 'RW 21 Tanimulya',
-                'domain' => 'rw21.wargadigi.id',
-                'status' => 'Active',
-                'users' => 452,
+                'name' => SystemSetting::get('instance_name', 'RW 21 Tanimulya'),
+                'domain' => SystemSetting::get('domain', 'rw21.wargadigi.id'),
+                'status' => SystemSetting::get('maintenance_mode', false) ? 'Maintenance' : 'Active',
+                'users' => $totalUser,
             ],
         ];
 
@@ -100,31 +122,117 @@ class AdminController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        // Available roles come from Spatie (falls back to the users enum list).
-        $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name')->all();
-        if (empty($roles)) {
-            $roles = $this->availableRoles();
+        // Daftar peran yang bisa ditetapkan (urut sesuai enum kanonik).
+        $roles = $this->availableRoles();
+        $pengurusRoles = $this->pengurusRoles();
+
+        // Peta peran per user (untuk pre-check multi-select di UI).
+        $userRoles = [];
+        foreach ($users as $u) {
+            $userRoles[$u->id] = $u->roleNames();
         }
 
-        return view('admin.manajemen-hak-akses', compact('users', 'roles', 'search'));
+        return view('admin.manajemen-hak-akses', compact('users', 'roles', 'pengurusRoles', 'userRoles', 'search'));
     }
 
     /**
-     * Update a single user's role (kept in sync between the `role` column and Spatie).
+     * Perbarui daftar peran sebuah akun (mendukung multi-peran / Paket 2B).
+     *
+     * roles[] disinkronkan ke Spatie (sumber kebenaran daftar peran), dan kolom
+     * `role` legacy diisi dengan peran pertama sebagai default/active fallback.
      */
     public function updateHakAkses(Request $request, string $id)
     {
         $validated = $request->validate([
-            'role' => ['required', 'string', Rule::in($this->availableRoles())],
+            'roles'   => ['required', 'array', 'min:1'],
+            'roles.*' => ['string', Rule::in($this->availableRoles())],
+        ], [
+            'roles.required' => 'Pilih minimal satu peran.',
         ]);
 
         $user = \App\Models\User::findOrFail($id);
-        $user->update(['role' => $validated['role']]);
-        // syncSpatieRole() is triggered automatically via the model's saved() hook.
+        $roles = array_values(array_unique($validated['roles']));
+
+        // Guard: peran Warga membutuhkan NIK kependudukan (akun warga = kepala keluarga).
+        if (in_array('Warga', $roles, true) && empty($user->nik)) {
+            return back()->withErrors([
+                'roles' => 'Peran Warga hanya untuk akun yang tertaut NIK kependudukan.',
+            ]);
+        }
+
+        // Kolom role legacy = peran pertama; Spatie menyimpan daftar lengkap.
+        $user->update(['role' => $roles[0]]);
+        $this->syncUserRoles($user, $roles);
 
         return redirect()
             ->route('admin.manajemen-hak-akses')
-            ->with('success', 'Hak akses ' . ($user->username ?? $user->nik) . ' berhasil diperbarui menjadi ' . $validated['role'] . '.');
+            ->with('success', 'Peran ' . ($user->username ?? $user->nik) . ' berhasil diperbarui: ' . implode(', ', $roles) . '.');
+    }
+
+    /**
+     * Buat akun pengurus baru (tanpa NIK, login via username).
+     */
+    public function storePengurus(Request $request)
+    {
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'roles'    => ['required', 'array', 'min:1'],
+            'roles.*'  => ['string', Rule::in($this->pengurusRoles())],
+        ], [
+            'username.regex'  => 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.',
+            'username.unique' => 'Username sudah digunakan. Pilih username lain.',
+            'roles.required'  => 'Pilih minimal satu peran pengurus.',
+        ]);
+
+        $roles = array_values(array_unique($validated['roles']));
+
+        $user = new \App\Models\User();
+        $user->fill([
+            'nik' => null,
+            'username' => $validated['username'],
+            'role' => $roles[0],
+            'password' => $validated['password'],
+            'status_akun' => 'Active',
+            'nik_verified_at' => now(),
+        ]);
+        $user->save();
+
+        $this->syncUserRoles($user, $roles);
+
+        return redirect()
+            ->route('admin.manajemen-hak-akses')
+            ->with('success', 'Akun pengurus "' . $user->username . '" berhasil dibuat dengan peran: ' . implode(', ', $roles) . '.');
+    }
+
+    /**
+     * Sinkronkan daftar peran Spatie sebuah akun (menggantikan peran lama).
+     */
+    protected function syncUserRoles(\App\Models\User $user, array $roles): void
+    {
+        if (! class_exists(\Spatie\Permission\Models\Role::class)) {
+            return;
+        }
+
+        try {
+            foreach ($roles as $role) {
+                \Spatie\Permission\Models\Role::findOrCreate($role, 'web');
+            }
+            $user->syncRoles($roles);
+        } catch (\Throwable $e) {
+            // Abaikan bila tabel permission belum tersedia.
+        }
+    }
+
+    /**
+     * Daftar peran pengurus/petugas (tanpa Warga, karena Warga butuh NIK).
+     */
+    protected function pengurusRoles(): array
+    {
+        return array_values(array_filter(
+            $this->availableRoles(),
+            fn ($role) => $role !== 'Warga'
+        ));
     }
 
     /**
@@ -162,7 +270,13 @@ class AdminController extends Controller
 
         // Category filter (stored in properties->category or derived from log_name).
         if ($category = $request->input('category')) {
-            $query->where('properties->category', $category);
+            $query->where(function ($q) use ($category) {
+                $q->where('properties->category', $category)
+                    ->orWhere('log_name', $category);
+                if ($category === 'login') {
+                    $q->orWhere('log_name', 'auth');
+                }
+            });
         }
 
         $paginated = $query->paginate(15)->withQueryString();
@@ -185,16 +299,19 @@ class AdminController extends Controller
     protected function transformActivity($activity): array
     {
         $causer = $activity->causer;
-        $name = $causer?->name ?? ($causer?->username ?? 'Sistem');
-        $role = $causer?->role ?? 'SISTEM';
         $props = $activity->properties ?? collect();
+        $targetNik = $props['nik'] ?? null;
+        $targetUser = (! $causer && $targetNik) ? \App\Models\User::where('nik', $targetNik)->first() : null;
+
+        $name = $causer?->name ?? ($causer?->username ?? ($props['name'] ?? ($targetUser?->name ?? ($targetNik ? "NIK: {$targetNik}" : 'Sistem'))));
+        $role = $causer?->role ?? ($props['role'] ?? ($targetUser?->role ?? ($targetNik ? 'Tamu' : 'SISTEM')));
         $status = $props['status'] ?? 'Sukses';
         $category = $props['category'] ?? ($activity->log_name ?: 'lainnya');
 
         // Icon + display type by log_name / event.
         [$activityType, $icon] = $this->activityDisplay($activity->log_name, $activity->event);
 
-        $created = $activity->created_at;
+        $created = $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->timezone('Asia/Jakarta') : null;
 
         return [
             'date' => $created?->translatedFormat('d M Y') ?? '-',
@@ -209,7 +326,7 @@ class AdminController extends Controller
             'activity_icon' => $icon,
             'description' => $activity->description,
             'status' => $status,
-            'status_class' => $status === 'Gagal' ? 'danger' : 'success',
+            'status_class' => in_array($status, ['Gagal', 'Failed']) ? 'failed' : 'success',
             'category' => $category,
         ];
     }
@@ -217,7 +334,11 @@ class AdminController extends Controller
     protected function activityDisplay(?string $logName, ?string $event): array
     {
         return match ($logName) {
-            'auth'       => ['Login / Logout', 'bi-box-arrow-in-right'],
+            'auth'       => match ($event) {
+                'logout' => ['Logout', 'bi-box-arrow-right'],
+                'failed' => ['Login Gagal', 'bi-shield-x'],
+                default  => ['Login', 'bi-box-arrow-in-right'],
+            },
             'pengaturan' => ['Mengubah Pengaturan', 'bi-gear'],
             'master_rt'  => ['Manajemen RT', 'bi-building'],
             'pengguna'   => ['Manajemen Pengguna', 'bi-person-gear'],

@@ -16,29 +16,31 @@
 {{-- Filters --}}
 <div class="admin-card mb-4 animate-in delay-1">
     <div class="admin-card-body">
-        <form method="GET" action="{{ route('admin.log-aktivitas') }}">
+        <form method="GET" action="{{ route('admin.log-aktivitas') }}" id="filterLogForm">
             <div class="row g-3 align-items-end">
-                <div class="col-lg-6">
+                <div class="col-lg-7 col-md-6">
                     <label class="form-label small fw-semibold text-muted">Cari Pengguna / Aktivitas</label>
                     <div class="admin-search-box">
                         <i class="bi bi-search"></i>
-                        <input type="text" name="search" class="admin-input form-control" placeholder="Masukkan nama atau deskripsi..." id="searchLog" value="{{ request('search') }}">
+                        <input type="text" name="search" class="admin-input form-control" placeholder="Ketik kata kunci lalu tekan Enter..." id="searchLog" value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <label class="form-label small fw-semibold text-muted">Kategori Aktivitas</label>
-                    <select class="form-select admin-input" id="filterCategory" name="category">
+                <div class="col-lg-5 col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-semibold text-muted mb-0">Kategori Aktivitas</label>
+                        @if(request('search') || request('category'))
+                            <a href="{{ route('admin.log-aktivitas') }}" class="small text-decoration-none text-danger" style="font-size: 11px;">
+                                <i class="bi bi-x-circle"></i> Reset Filter
+                            </a>
+                        @endif
+                    </div>
+                    <select class="form-select admin-input" id="filterCategory" name="category" onchange="this.form.submit()">
                         <option value="">Semua Kategori</option>
                         <option value="login" {{ request('category') === 'login' ? 'selected' : '' }}>Login / Logout</option>
                         <option value="pengaturan" {{ request('category') === 'pengaturan' ? 'selected' : '' }}>Perubahan Pengaturan</option>
                         <option value="master_rt" {{ request('category') === 'master_rt' ? 'selected' : '' }}>Manajemen RT</option>
                         <option value="pengguna" {{ request('category') === 'pengguna' ? 'selected' : '' }}>Manajemen Pengguna</option>
                     </select>
-                </div>
-                <div class="col-lg-2">
-                    <button type="submit" class="btn btn-success w-100" style="border-radius: 0.5rem;">
-                        <i class="bi bi-funnel"></i> Filter
-                    </button>
                 </div>
             </div>
         </form>
@@ -120,6 +122,14 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit when category changed
+    const filterCategory = document.getElementById('filterCategory');
+    if (filterCategory) {
+        filterCategory.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+
     // Export (client-side notice; filtering & pagination handled server-side).
     document.getElementById('exportLog')?.addEventListener('click', function() {
         if (typeof showAdminToast === 'function') {

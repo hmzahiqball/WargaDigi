@@ -3,18 +3,18 @@
 @section('title', 'Dashboard RW')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-end mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-end mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-success mb-1">Ringkasan</h2>
         <p class="text-muted mb-0">Ringkasan Data Aplikasi - RW 12 Tanimulya</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <span class="dash-header-status badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
+        <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
+    </span>
+    <div class="dash-header-actions d-flex align-items-center gap-2">
         <button class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold">
             <i class="bi bi-download me-1"></i> Export Data
         </button>
-        <span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
-            <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
-        </span>
     </div>
 </div>
 
@@ -52,7 +52,7 @@
 </div>
 @endif
 
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 dash-stats">
     @include('rw.components.cardStatDashboard', [
         'title' => 'JUMLAH PENDUDUK',
         'titleClass' => 'text-secondary',

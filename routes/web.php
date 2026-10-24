@@ -30,6 +30,8 @@ use App\Http\Controllers\OpKonten\BeritaController as OpKontenBeritaController;
 use App\Http\Controllers\OpKonten\PengumumanController as OpKontenPengumumanController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\Warga\TagihanController as WargaTagihanController;
+use App\Http\Controllers\PendudukController;
+use App\Http\Controllers\MutasiDocumentController;
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -51,6 +53,9 @@ Route::get('/pojok-umkm/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->n
 Route::get('/public/usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('public.umkm.usaha.show');
 Route::get('/pojok-umkm/produk/{id}', [UmkmController::class, 'detailProduk'])->name('public.umkm.produk.show');
 Route::get('/galeri/detail-usaha/{id?}', [UmkmController::class, 'detailUsaha'])->name('umkm.detail_usaha');
+Route::match(['get', 'post'], '/usaha/{id}/klik-wa', [UmkmController::class, 'trackWaClick'])
+    ->middleware('throttle:30,1')
+    ->name('umkm.usaha.track-wa');
 
 // Redirect /warga/galeri routes
 Route::redirect('/warga/galeri', '/galeri')->name('warga.umkm.galeri');
@@ -73,47 +78,23 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Pemilihan & penggantian peran aktif (akun multi-peran).
+// Hanya butuh 'auth' (tanpa RoleMiddleware) agar user multi-peran yang belum
+// memilih tetap bisa membuka halaman ini tanpa loop redirect.
+Route::middleware('auth')->group(function () {
+    Route::get('/pilih-peran', [\App\Http\Controllers\RoleSwitchController::class, 'show'])->name('pilih-peran');
+    Route::post('/pilih-peran', [\App\Http\Controllers\RoleSwitchController::class, 'store'])->name('pilih-peran.store');
+    // Ganti peran = kembali ke halaman pilih peran (reset pilihan saat ini).
+    Route::post('/ganti-peran', [\App\Http\Controllers\RoleSwitchController::class, 'switch'])->name('ganti-peran');
+});
+
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
-
-// Temporary Magic Login for Testing
-Route::get('/login-warga', function () {
-    $user = \App\Models\User::where('nik', '3217010101010003')->first(); // Budi Sampurno (Warga)
-    if ($user) {
-        \Illuminate\Support\Facades\Auth::login($user);
-        return redirect()->route('warga.surat.index');
-    }
-    return "User warga tidak ditemukan. Pastikan seeder sudah dijalankan.";
-});
-
-Route::get('/debug-php', function () {
-    return [
-        'upload_tmp_dir' => ini_get('upload_tmp_dir'),
-        'sys_temp_dir' => sys_get_temp_dir(),
-        'upload_max_filesize' => ini_get('upload_max_filesize'),
-        'post_max_size' => ini_get('post_max_size'),
-        'user' => get_current_user(),
-    ];
-});
-
-
-Route::get('/login-rt', function () {
-    $user = \App\Models\User::where('nik', '3217010101010008')->first(); // NIK RT
-    if ($user) {
-        \Illuminate\Support\Facades\Auth::login($user);
-        return redirect()->route('rt.persetujuan-dokumen');
-    }
-    return "User RT tidak ditemukan.";
-});
-
-Route::get('/login-rw', function () {
-    $user = \App\Models\User::where('nik', '3217010101010002')->first(); // NIK RW
-    if ($user) {
-        \Illuminate\Support\Facades\Auth::login($user);
-        return redirect()->route('rw.persetujuan-dokumen');
-    }
-    return "User RW tidak ditemukan.";
-});
+Route::post('/aktivasi/verifikasi', [RegisterController::class, 'prosesAktivasi'])->name('aktivasi.verifikasi');
+Route::get('/aktivasi/otp', [RegisterController::class, 'showOtp'])->name('aktivasi.otp');
+Route::post('/aktivasi/otp', [RegisterController::class, 'verifyOtp'])->name('aktivasi.otp.verify');
+Route::get('/aktivasi/password', [RegisterController::class, 'showPassword'])->name('aktivasi.password');
+Route::post('/aktivasi/password', [RegisterController::class, 'complete'])->name('aktivasi.password.complete');
 
 // Admin Routes (Role: Admin Aplikasi)
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
@@ -121,8 +102,11 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
     Route::post('/pengaturan-sistem', [AdminController::class, 'updatePengaturanSistem'])->name('admin.pengaturan-sistem.update');
     Route::get('/manajemen-hak-akses', [AdminController::class, 'manajemenHakAkses'])->name('admin.manajemen-hak-akses');
+    Route::post('/manajemen-hak-akses/pengurus', [AdminController::class, 'storePengurus'])->name('admin.manajemen-hak-akses.pengurus.store');
     Route::put('/manajemen-hak-akses/{id}', [AdminController::class, 'updateHakAkses'])->name('admin.manajemen-hak-akses.update');
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('admin.log-aktivitas');
+    Route::get('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'index'])->name('admin.pejabat.index');
+    Route::post('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'store'])->name('admin.pejabat.store');
     Route::get('/arsip-data-warga', [AdminController::class, 'arsipDataWarga'])->name('admin.arsip-data-warga');
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
 });
@@ -168,6 +152,11 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'index'])->name('mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'approve'])->name('mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'reject'])->name('mutasi.reject');
+    Route::get('/mutasi-warga/{id}/dokumen', [MutasiDocumentController::class, 'show'])->name('mutasi.dokumen');
+
+    // Manajemen Penduduk
+    Route::get('/penduduk', [PendudukController::class, 'index'])->name('penduduk.index');
+    Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('penduduk.show');
 });
 
 //RT (Role: Ketua RT)
@@ -188,6 +177,14 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'index'])->name('rt.mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'approve'])->name('rt.mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'reject'])->name('rt.mutasi.reject');
+    Route::get('/mutasi-warga/{id}/dokumen', [MutasiDocumentController::class, 'show'])->name('rt.mutasi.dokumen');
+    Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('rt.penduduk.show');
+
+    // Pendataan Keluarga & Kepala Keluarga oleh RT.
+    Route::get('/keluarga/create', [\App\Http\Controllers\Rt\KeluargaController::class, 'create'])->name('rt.keluarga.create');
+    Route::post('/keluarga', [\App\Http\Controllers\Rt\KeluargaController::class, 'store'])->name('rt.keluarga.store');
+    // Tambah anggota keluarga (tanpa akun) ke sebuah keluarga.
+    Route::post('/keluarga/{keluarga}/anggota', [\App\Http\Controllers\Rt\KeluargaController::class, 'storeAnggota'])->name('rt.keluarga.anggota.store');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)
@@ -236,6 +233,7 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::post('/laporan', [OpKeuanganController::class, 'laporanStore'])->name('opkeuangan.laporan.store');
         Route::delete('/laporan/{id}', [OpKeuanganController::class, 'laporanDestroy'])->name('opkeuangan.laporan.destroy');
         Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
+        Route::put('/laporan/{id}/submit', [OpKeuanganController::class, 'submitLaporan'])->name('opkeuangan.laporan.submit');
 
         // Tagihan / Iuran
         Route::get('/rekening', [TagihanController::class, 'rekeningIndex'])->name('opkeuangan.rekening.index');
@@ -303,3 +301,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/laporan-keuangan', [LaporanKeuanganPublicController::class, 'index'])->name('laporan-keuangan.publik');
     Route::get('/laporan-keuangan/{id}/pdf', [LaporanKeuanganPublicController::class, 'downloadPdf'])->name('laporan-keuangan.pdf');
 });
+
+// Storage File Serving Fallback (Windows Dev Server compatibility)
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+    return response()->file($filePath, ['Content-Type' => $mime]);
+})->where('path', '.*')->name('storage.file');
+
+
+

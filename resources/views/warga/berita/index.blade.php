@@ -335,6 +335,7 @@
                 <button class="custom-tab-warga" onclick="switchTab('Berita')">Berita</button>
                 <button class="custom-tab-warga" onclick="switchTab('Pengumuman')">Pengumuman</button>
                 <button class="custom-tab-warga" onclick="switchTab('UMKM News')">UMKM News</button>
+                <button class="custom-tab-warga" onclick="switchTab('Galeri Dokumentasi')">Galeri Dokumentasi</button>
             </div>
 
             <!-- Content Grid -->
@@ -570,6 +571,8 @@
                 iconClass = item.is_priority ? 'bi-megaphone-fill text-warning' : 'bi-info-circle text-info';
             } else if (item.type === 'UMKM News') {
                 iconClass = 'bi-shop text-orange';
+            } else if (item.type === 'Galeri Dokumentasi') {
+                iconClass = 'bi-camera-fill text-success';
             }
 
             const imgHtml = item.image 
@@ -768,14 +771,20 @@
 
         const tabParam = urlParams.get('tab');
         if (tabParam) {
-            // Capitalize first letter (e.g., 'pengumuman' -> 'Pengumuman')
-            const tabName = tabParam.charAt(0).toUpperCase() + tabParam.slice(1);
-            if (['Semua', 'Berita', 'Pengumuman', 'UMKM News'].includes(tabName)) {
-                switchTab(tabName);
-                
-                // Clean URL without reloading page
+            const lowerTab = tabParam.toLowerCase();
+            if (lowerTab === 'galeri' || lowerTab === 'dokumentasi' || lowerTab === 'galeri dokumentasi') {
+                switchTab('Galeri Dokumentasi');
                 const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 window.history.replaceState({path:newUrl}, '', newUrl);
+            } else {
+                const tabName = tabParam.charAt(0).toUpperCase() + tabParam.slice(1);
+                if (['Semua', 'Berita', 'Pengumuman', 'UMKM News', 'Galeri Dokumentasi'].includes(tabName)) {
+                    switchTab(tabName);
+                    
+                    // Clean URL without reloading page
+                    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({path:newUrl}, '', newUrl);
+                }
             }
         }
 

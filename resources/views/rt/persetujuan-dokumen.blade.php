@@ -18,6 +18,16 @@
 @forelse($pengajuan as $item)
 <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
     <div class="card-body p-4 bg-white" style="border-radius: 16px;">
+        @php
+            $rtSc = match($item->status) {
+                'Diajukan' => ['bg' => '#FFF3CD', 'color' => '#856404', 'label' => 'Menunggu Verifikasi RT', 'icon' => 'bi-hourglass-split'],
+                'Disetujui RT' => ['bg' => '#D1ECF1', 'color' => '#0C5460', 'label' => 'Menunggu RW', 'icon' => 'bi-clock-history'],
+                'Selesai' => ['bg' => '#D1E7DD', 'color' => '#0F5132', 'label' => 'Selesai / Disahkan RW', 'icon' => 'bi-check-circle-fill'],
+                'Ditolak RT' => ['bg' => '#F8D7DA', 'color' => '#842029', 'label' => 'Ditolak RT', 'icon' => 'bi-x-circle-fill'],
+                'Ditolak RW' => ['bg' => '#F8D7DA', 'color' => '#842029', 'label' => 'Ditolak RW', 'icon' => 'bi-x-circle-fill'],
+                default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status, 'icon' => 'bi-info-circle'],
+            };
+        @endphp
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;background:linear-gradient(135deg,#198754,#20c997);"><i class="bi bi-person-fill text-white fs-5"></i></div>
@@ -26,20 +36,170 @@
                     <span class="text-muted small">NIK: {{ $item->nik }} &bull; {{ $item->tanggal_pengajuan }}</span>
                 </div>
             </div>
-            <span class="badge rounded-pill px-3 py-2" style="background:#FFF3CD;color:#856404;">{{ $item->status }}</span>
+            @if($item->status === 'Selesai')
+                <button type="button" class="btn btn-sm rounded-pill px-3 py-2 fw-semibold border-0 shadow-none d-inline-flex align-items-center gap-1"
+                        style="background:{{ $rtSc['bg'] }};color:{{ $rtSc['color'] }};font-size:12px; cursor:pointer;"
+                        data-bs-toggle="modal" data-bs-target="#modalPreviewSelesaiRt{{ $item->id }}"
+                        title="Klik untuk melihat pratinjau surat lengkap">
+                    <i class="bi {{ $rtSc['icon'] }}"></i>
+                    <span>{{ $rtSc['label'] }}</span>
+                </button>
+            @elseif($item->status === 'Diajukan')
+                <button type="button" class="btn btn-sm rounded-pill px-3 py-2 fw-semibold border-0 shadow-none d-inline-flex align-items-center gap-1"
+                        style="background:{{ $rtSc['bg'] }};color:{{ $rtSc['color'] }};font-size:12px; cursor:pointer;"
+                        data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}"
+                        title="Klik untuk melihat detail permohonan">
+                    <i class="bi {{ $rtSc['icon'] }}"></i>
+                    <span>{{ $rtSc['label'] }}</span>
+                </button>
+            @else
+                <button type="button" class="btn btn-sm rounded-pill px-3 py-2 fw-semibold border-0 shadow-none d-inline-flex align-items-center gap-1"
+                        style="background:{{ $rtSc['bg'] }};color:{{ $rtSc['color'] }};font-size:12px; cursor:pointer;"
+                        data-bs-toggle="modal" data-bs-target="#modalStatusRt{{ $item->id }}"
+                        title="Klik untuk melihat catatan / status">
+                    <i class="bi {{ $rtSc['icon'] }}"></i>
+                    <span>{{ $rtSc['label'] }}</span>
+                </button>
+            @endif
         </div>
         <div class="row g-3 mb-3">
             <div class="col-md-4"><span class="text-muted small">Jenis Surat</span><br><span class="fw-semibold small">{{ $item->tipe_surat }}</span></div>
             <div class="col-md-4"><span class="text-muted small">Alamat</span><br><span class="fw-semibold small">{{ $item->alamat }}</span></div>
             <div class="col-md-4"><span class="text-muted small">Pekerjaan</span><br><span class="fw-semibold small">{{ $item->pekerjaan }}</span></div>
         </div>
-        @if($item->status === 'Diajukan')
         <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}"><i class="bi bi-eye me-1"></i>Detail Permintaan</button>
-            <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTtdRt{{ $item->id }}"><i class="bi bi-pen me-1"></i>Tanda Tangan & Setujui</button>
-            <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalReject{{ $item->id }}"><i class="bi bi-x-circle me-1"></i>Tolak</button>
+            @if($item->status === 'Diajukan')
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}"><i class="bi bi-eye me-1"></i>Detail Permintaan</button>
+                <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTtdRt{{ $item->id }}"><i class="bi bi-pen me-1"></i>Tanda Tangan & Setujui</button>
+                <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalReject{{ $item->id }}"><i class="bi bi-x-circle me-1"></i>Tolak</button>
+            @elseif($item->status === 'Ditolak RT')
+                <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalStatusRt{{ $item->id }}"><i class="bi bi-info-circle me-1"></i>Lihat Alasan Penolakan RT</button>
+            @elseif($item->status === 'Ditolak RW')
+                <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalStatusRt{{ $item->id }}"><i class="bi bi-info-circle me-1"></i>Lihat Alasan Penolakan RW</button>
+            @elseif($item->status === 'Disetujui RT')
+                <button class="btn btn-outline-info btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalStatusRt{{ $item->id }}"><i class="bi bi-clock-history me-1"></i>Menunggu Peninjauan RW</button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalPreviewSelesaiRt{{ $item->id }}"><i class="bi bi-eye me-1"></i>Pratinjau Surat Disetujui</button>
+            @elseif($item->status === 'Selesai')
+                <button class="btn btn-outline-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalPreviewSelesaiRt{{ $item->id }}"><i class="bi bi-file-earmark-check me-1"></i>Lihat Surat Selesai (TTD Lengkap)</button>
+            @endif
         </div>
-        @endif
+    </div>
+</div>
+
+{{-- Modal Status & Alasan Penolakan untuk RT --}}
+<div class="modal fade" id="modalStatusRt{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <h5 class="modal-title fw-bold">
+                    @if(in_array($item->status, ['Ditolak RT', 'Ditolak RW']))
+                        <i class="bi bi-x-circle-fill text-danger me-2"></i>Alasan Penolakan Dokumen
+                    @elseif($item->status === 'Disetujui RT')
+                        <i class="bi bi-clock-history text-info me-2"></i>Status Peninjauan Dokumen
+                    @else
+                        <i class="bi bi-info-circle-fill text-primary me-2"></i>Status Dokumen
+                    @endif
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-3 pb-3">
+                <div class="mb-3 p-3 rounded-3" style="background:#f8f9fa;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark">{{ $item->nama_pemohon }}</span>
+                        <span class="badge rounded-pill px-3 py-1" style="background:{{ $rtSc['bg'] }};color:{{ $rtSc['color'] }};font-size:11px;">{{ $rtSc['label'] }}</span>
+                    </div>
+                    <div class="text-muted small">
+                        <div><strong>NIK:</strong> {{ $item->nik }} &bull; {{ $item->tipe_surat }}</div>
+                        <div><i class="bi bi-calendar3 me-1"></i>Diajukan: {{ $item->tanggal_pengajuan }}</div>
+                    </div>
+                </div>
+
+                @if($item->status === 'Ditolak RT')
+                    <div class="alert alert-danger border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 mt-n1"></i>
+                        <div>
+                            <strong>Surat Ditolak oleh RT</strong>
+                            <div class="small mt-1">Berikut adalah catatan alasan penolakan yang telah dikirimkan kepada pemohon:</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Alasan Penolakan RT:</label>
+                        <div class="p-3 rounded-3 border small" style="min-height: 70px; border-color: #f1aeb5 !important; background-color: #fff8f8 !important;">
+                            @if(!empty($item->catatan_rt))
+                                <p class="mb-0 fw-semibold text-danger">{{ $item->catatan_rt }}</p>
+                            @else
+                                <p class="mb-0 text-muted fst-italic">Tidak ada catatan alasan penolakan yang tercatat.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                @elseif($item->status === 'Ditolak RW')
+                    <div class="alert alert-danger border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 mt-n1"></i>
+                        <div>
+                            <strong>Surat Ditolak oleh RW</strong>
+                            <div class="small mt-1">Berikut adalah catatan penolakan yang diberikan oleh Ketua RW:</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Alasan Penolakan RW:</label>
+                        <div class="p-3 rounded-3 border small" style="min-height: 70px; border-color: #f1aeb5 !important; background-color: #fff8f8 !important;">
+                            @if(!empty($item->catatan_rw))
+                                <p class="mb-0 fw-semibold text-danger">{{ $item->catatan_rw }}</p>
+                            @else
+                                <p class="mb-0 text-muted fst-italic">Tidak ada catatan penolakan dari RW.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                @elseif($item->status === 'Disetujui RT')
+                    <div class="alert alert-info border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 12px;">
+                        <i class="bi bi-clock-history fs-5 mt-n1 text-info"></i>
+                        <div>
+                            <strong>Surat Telah Disetujui RT & Sedang Ditinjau RW</strong>
+                            <div class="small mt-1">Surat permohonan ini telah Anda setujui dan tandatangani. Dokumen saat ini sedang dalam proses peninjauan dan pengesahan tanda tangan akhir dari Ketua RW.</div>
+                        </div>
+                    </div>
+                    @if(!empty($item->catatan_rt))
+                        <div class="mb-3 p-3 rounded-3 bg-light border small">
+                            <span class="text-muted fw-bold">Catatan Persetujuan RT:</span>
+                            <p class="mb-0 text-dark">{{ $item->catatan_rt }}</p>
+                        </div>
+                    @endif
+                    <div class="p-3 rounded-3 bg-light border small text-muted">
+                        <i class="bi bi-info-circle me-1 text-primary"></i>Setelah disahkan oleh Ketua RW, status dokumen akan otomatis menjadi <strong>Selesai / Disahkan RW</strong> dan surat resmi dapat dipratinjau secara lengkap.
+                    </div>
+                @endif
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Preview Surat Selesai untuk RT --}}
+<div class="modal fade" id="modalPreviewSelesaiRt{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow bg-white" style="border-radius: 16px;">
+            <div class="modal-header border-0 px-4 pt-4 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-check-fill text-success me-2"></i>Pratinjau Surat Resmi</h5>
+                    <p class="text-muted small mb-0">Surat pengantar pemohon: <strong>{{ $item->nama_pemohon }}</strong> ({{ $item->tipe_surat }})</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-3 pb-4">
+                <div class="d-flex justify-content-center">
+                    <div class="bg-white border rounded-3 shadow-sm" style="width: 595px; max-width: 100%; overflow: hidden;">
+                        <iframe src="{{ route('rt.surat.preview', $item->id) }}" style="width: 595px; height: 842px; border: none; display: block;" title="Preview Surat"></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 justify-content-center">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
     </div>
 </div>
 

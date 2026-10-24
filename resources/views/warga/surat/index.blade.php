@@ -3,11 +3,15 @@
 @section('title', 'Riwayat Surat Pengajuan')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-success mb-0">Riwayat Pengajuan Surat</h2>
-    <a href="{{ Route::has('warga.surat.create') ? route('warga.surat.create') : route('warga.surat.index') }}" class="btn btn-success">
-        <i class="bi bi-plus-circle me-1"></i> Buat Surat Baru
-    </a>
+<div class="dash-header d-flex justify-content-between align-items-center mb-4">
+    <div class="dash-header-title">
+        <h2 class="fw-bold text-success mb-0">Riwayat Pengajuan Surat</h2>
+    </div>
+    <div class="dash-header-actions">
+        <a href="{{ Route::has('warga.surat.create') ? route('warga.surat.create') : route('warga.surat.index') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i> Buat Surat Baru
+        </a>
+    </div>
 </div>
 
 @if(session('success'))

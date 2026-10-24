@@ -85,7 +85,7 @@
                             <label class="form-label small fw-semibold text-dark mb-1">Harga (Rp) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted px-3">Rp</span>
-                                <input type="text" name="harga" id="editProdukHarga" class="form-control border-start-0 rounded-end-3 py-2 px-3 shadow-none" placeholder="0" required>
+                                <input type="text" inputmode="numeric" data-money name="harga" id="editProdukHarga" class="form-control border-start-0 rounded-end-3 py-2 px-3 shadow-none" placeholder="0" required>
                             </div>
                         </div>
                     </div>
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (action) form.action = action;
             modalEdit.querySelector('#editProdukNama').value = nama || '';
-            
+
             const statusProdukSelect = modalEdit.querySelector('#editProdukStatusProduk');
             if (statusProdukSelect) {
                 statusProdukSelect.value = (statusProduk === 'Non-Aktif') ? 'Tidak Aktif' : statusProduk;
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (kategoriSelect && kategori) kategoriSelect.value = kategori;
 
             modalEdit.querySelector('#editProdukHarga').value = harga ? Math.round(harga) : '';
-            
+
             let cleanWa = wa ? wa.replace(/^(\+62|62|0)/, '') : '';
             const editWaInput = modalEdit.querySelector('#editProdukWa');
             if (editWaInput) {

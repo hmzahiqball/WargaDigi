@@ -10,9 +10,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = [
+        $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first();
+        $rt01Id = $rt01 ? $rt01->id : null;
+
+        // Akun PENGURUS/PETUGAS: tanpa NIK (login via username). Paket 2B.
+        $pengurus = [
             [
-                'nik' => '3217010101010001',
                 'username' => 'superadmin',
                 'password' => Hash::make('password'),
                 'role' => 'Admin Aplikasi',
@@ -20,7 +23,6 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010002',
                 'username' => 'adminrw21',
                 'password' => Hash::make('password'),
                 'role' => 'Admin RW',
@@ -28,15 +30,6 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010003',
-                'username' => 'Budi Sampurno',
-                'password' => Hash::make('password'),
-                'role' => 'Warga',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'nik' => '3217010101010004',
                 'username' => 'pimpinan',
                 'password' => Hash::make('password'),
                 'role' => 'Pimpinan RW',
@@ -44,7 +37,6 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010005',
                 'username' => 'opkontenrw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Konten RW',
@@ -52,7 +44,6 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010006',
                 'username' => 'opkeuanganrw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Keuangan RW',
@@ -60,7 +51,6 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010007',
                 'username' => 'dkm',
                 'password' => Hash::make('password'),
                 'role' => 'DKM',
@@ -68,30 +58,50 @@ class UserSeeder extends Seeder
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010008',
                 'username' => 'ketuart01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Ketua RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010009',
                 'username' => 'opkeuanganrt01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Keuangan RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],
             [
-                'nik' => '3217010101010010',
                 'username' => 'opkontenrt01rw21',
                 'password' => Hash::make('password'),
                 'role' => 'Op Konten RT',
+                'rt_id' => $rt01Id,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],
-            // Akun demo untuk pengajuan permohonan surat
+        ];
+
+        foreach ($pengurus as $userData) {
+            // Dedupe berdasarkan username (akun pengurus tidak punya NIK).
+            User::updateOrCreate(
+                ['username' => $userData['username']],
+                array_merge($userData, ['nik' => null])
+            );
+        }
+
+        // Akun WARGA (Kepala Keluarga): tetap tertaut NIK kependudukan.
+        $warga = [
+            [
+                'nik' => '3217010101010003',
+                'username' => 'budisampurno',
+                'password' => Hash::make('password'),
+                'role' => 'Warga',
+                'status_akun' => 'Active',
+                'nik_verified_at' => now(),
+            ],
+            // Akun demo untuk pengajuan permohonan surat.
             [
                 'nik' => '3204111122220002',
                 'username' => 'budisantoso',
@@ -102,7 +112,7 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        foreach ($users as $userData) {
+        foreach ($warga as $userData) {
             User::updateOrCreate(
                 ['nik' => $userData['nik']],
                 $userData

@@ -44,14 +44,15 @@ class TagihanController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get Rekening config for RT and DKM
+        // Get Rekening config for RT, RW, and DKM
         $penduduk = Penduduk::with('keluarga')->where('nik', Auth::user()->nik)->first();
-        $rtId = $penduduk->keluarga->rt_id;
+        $rtId = ($penduduk && $penduduk->keluarga) ? $penduduk->keluarga->rt_id : null;
         
-        $rekeningRt = RekeningBendahara::where('unit', 'RT')->where('rt_id', $rtId)->first();
+        $rekeningRt = $rtId ? RekeningBendahara::where('unit', 'RT')->where('rt_id', $rtId)->first() : null;
+        $rekeningRw = RekeningBendahara::where('unit', 'RW')->first();
         $rekeningDkm = RekeningBendahara::where('unit', 'DKM')->first();
 
-        return view('warga.tagihan.index', compact('tagihanList', 'rekeningRt', 'rekeningDkm'));
+        return view('warga.tagihan.index', compact('tagihanList', 'rekeningRt', 'rekeningRw', 'rekeningDkm'));
     }
 
     public function bayar(Request $request, $id)
@@ -65,12 +66,40 @@ class TagihanController extends Controller
 
         $request->validate([
             'metode' => 'required|in:Transfer,QRIS,Cash',
-            'bukti_file' => 'required_unless:metode,Cash|image|max:2048',
+        ], [
+            'metode.required' => 'Pilih metode pembayaran terlebih dahulu.',
         ]);
 
         $buktiPath = $pembayaran->bukti_file;
-        if ($request->hasFile('bukti_file')) {
-            $buktiPath = $request->file('bukti_file')->store('bukti_pembayaran', 'public');
+
+        if ($request->metode !== 'Cash') {
+            $hasBase64 = $request->filled('bukti_base64') && str_starts_with($request->bukti_base64, 'data:image');
+            $hasFile = $request->hasFile('bukti_file') && $request->file('bukti_file')->isValid();
+
+            if (!$hasBase64 && !$hasFile) {
+                if ($request->hasFile('bukti_file') && !$request->file('bukti_file')->isValid()) {
+                    return redirect()->back()->with('error', 'File bukti pembayaran gagal diproses server: ' . $request->file('bukti_file')->getErrorMessage())->withInput();
+                }
+                return redirect()->back()->with('error', 'Silakan unggah foto atau tangkapan layar bukti pembayaran (JPG, PNG, atau WEBP).')->withInput();
+            }
+
+            if ($hasBase64) {
+                $savedBase64 = $this->saveBase64Image($request->bukti_base64, 'bukti_pembayaran');
+                if ($savedBase64) {
+                    $buktiPath = $savedBase64;
+                }
+            } elseif ($hasFile) {
+                $buktiPath = $request->file('bukti_file')->store('bukti_pembayaran', 'public');
+                // Sinkronkan juga langsung ke public/storage
+                try {
+                    $dst = public_path('storage/' . $buktiPath);
+                    $dstDir = dirname($dst);
+                    if (!is_dir($dstDir)) {
+                        @mkdir($dstDir, 0755, true);
+                    }
+                    @copy(storage_path('app/public/' . $buktiPath), $dst);
+                } catch (\Throwable $e) {}
+            }
         }
 
         $pembayaran->update([
@@ -105,4 +134,40 @@ class TagihanController extends Controller
 
         return redirect($notification->data['url'] ?? route('home'));
     }
+
+    private function saveBase64Image(string $base64Data, string $folder): ?string
+    {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+            $data = substr($base64Data, strpos($base64Data, ',') + 1);
+            $type = strtolower($type[1]);
+
+            if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp', 'svg+xml'])) {
+                $type = 'jpg';
+            }
+            if ($type === 'svg+xml') $type = 'svg';
+
+            $data = base64_decode($data);
+            if ($data === false) {
+                return null;
+            }
+
+            $filename = $folder . '/' . \Illuminate\Support\Str::uuid() . '.' . $type;
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $data);
+
+            // Simpan juga langsung ke public/storage untuk web native serving
+            try {
+                $dst = public_path('storage/' . $filename);
+                $dstDir = dirname($dst);
+                if (!is_dir($dstDir)) {
+                    @mkdir($dstDir, 0755, true);
+                }
+                @file_put_contents($dst, $data);
+            } catch (\Throwable $e) {}
+
+            return $filename;
+        }
+
+        return null;
+    }
 }
+

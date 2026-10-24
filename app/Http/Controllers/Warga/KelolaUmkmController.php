@@ -10,9 +10,12 @@ use App\Models\UmkmProduk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Concerns\NormalizesMoney;
 
 class KelolaUmkmController extends Controller
 {
+    use NormalizesMoney;
+
     public function index(Request $request)
     {
         $search = $request->get('q');
@@ -26,11 +29,8 @@ class KelolaUmkmController extends Controller
         if ($userNik) {
             $daftarUsaha = UmkmUsaha::with(['kategori_umkm', 'user.penduduk.keluarga.rt'])
                 ->where('nik', $userNik)
+                ->where('status_verifikasi', '!=', 'Rejected')
                 ->get();
-        }
-
-        if ($daftarUsaha->isEmpty()) {
-            $daftarUsaha = UmkmUsaha::with(['kategori_umkm', 'user.penduduk.keluarga.rt'])->get();
         }
 
         $usaha = null;
@@ -55,31 +55,35 @@ class KelolaUmkmController extends Controller
 
         if ($usaha) {
             session(['selected_umkm_usaha_id' => $usaha->id]);
+        } else {
+            session()->forget('selected_umkm_usaha_id');
         }
 
         $query = UmkmProduk::with(['usaha.kategori_umkm','usaha.kategori_produk']);
 
         if ($usaha) {
             $query->where('umkm_usaha_id', $usaha->id);
-        } elseif ($userNik) {
-            $query->whereHas('usaha', function ($q) use ($userNik) {
-                $q->where('nik', $userNik);
-            });
+            $allUsahaProduk = (clone $query)->get();
+            $jumlahProdukAktif = $allUsahaProduk->where('status_produk', 'Aktif')->count();
+            $jumlahProdukTidakAktif = $allUsahaProduk->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif'])->count();
+            $jumlahProdukPending = $jumlahProdukTidakAktif;
+            $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->kategori_produk->nama_kategori ?? 'Lainnya')->count();
+            $jumlahProdukStokMenipis = $allUsahaProduk->filter(fn($item) => strtolower($item->status_stok ?? '') === 'menipis')->count();
+
+            // Menggunakan scope dari model UmkmProduk
+            $query->search($search)
+                  ->filterCategory($kategori)
+                  ->filterStatus($status);
+
+            $produk = $query->latest()->paginate(8)->withQueryString();
+        } else {
+            $produk = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 8);
+            $jumlahProdukAktif = 0;
+            $jumlahProdukTidakAktif = 0;
+            $jumlahProdukPending = 0;
+            $jumlahKategoriProduk = 0;
+            $jumlahProdukStokMenipis = 0;
         }
-
-        $allUsahaProduk = (clone $query)->get();
-        $jumlahProdukAktif = $allUsahaProduk->where('status_produk', 'Aktif')->count();
-        $jumlahProdukTidakAktif = $allUsahaProduk->whereIn('status_produk', ['Tidak Aktif', 'Non-Aktif'])->count();
-        $jumlahProdukPending = $jumlahProdukTidakAktif;
-        $jumlahKategoriProduk = $allUsahaProduk->groupBy(fn($item) => $item->kategori_produk->nama_kategori ?? 'Lainnya')->count();
-        $jumlahProdukStokMenipis = $allUsahaProduk->filter(fn($item) => strtolower($item->status_stok ?? '') === 'menipis')->count();
-
-        // Menggunakan scope dari model UmkmProduk
-        $query->search($search)
-              ->filterCategory($kategori)
-              ->filterStatus($status);
-
-        $produk = $query->latest()->paginate(8)->withQueryString();
 
         $daftarKategoriUmkm = KategoriUmkm::all();
         $kategoriProdukList = $usaha ? KategoriProduk::where('umkm_usaha_id', $usaha->id)->get() : collect();
@@ -164,8 +168,10 @@ class KelolaUmkmController extends Controller
 
         if ($request->hasFile('foto_sampul')) {
             $file = $request->file('foto_sampul');
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('umkm-photos', $fileName, 'public');
+            if ($usaha->foto_usaha && Storage::disk('public')->exists($usaha->foto_usaha)) {
+                Storage::disk('public')->delete($usaha->foto_usaha);
+            }
+            $path = $file->store('umkm-photos', 'public');
             $usaha->update(['foto_usaha' => $path]);
         }
 
@@ -202,7 +208,27 @@ class KelolaUmkmController extends Controller
         }
 
         $kategoriProdukId = $request->get('kategori_produk_id');
-        if (!$kategoriProdukId || !KategoriProduk::where('id', $kategoriProdukId)->exists()) {
+        $namaKategoriBaru = trim(strip_tags((string)$request->get('nama_kategori_baru')));
+
+        if (($kategoriProdukId === 'NEW_CATEGORY' || empty($kategoriProdukId)) && !empty($namaKategoriBaru)) {
+            $katBaru = KategoriProduk::firstOrCreate([
+                'umkm_usaha_id' => $umkm->id,
+                'nama_kategori' => $namaKategoriBaru,
+            ]);
+            $kategoriProdukId = $katBaru->id;
+        } elseif (!empty($namaKategoriBaru)) {
+            $katBaru = KategoriProduk::firstOrCreate([
+                'umkm_usaha_id' => $umkm->id,
+                'nama_kategori' => $namaKategoriBaru,
+            ]);
+            $kategoriProdukId = $katBaru->id;
+        } elseif ($kategoriProdukId && !KategoriProduk::where('id', $kategoriProdukId)->where('umkm_usaha_id', $umkm->id)->exists()) {
+            $katBaru = KategoriProduk::firstOrCreate([
+                'umkm_usaha_id' => $umkm->id,
+                'nama_kategori' => strip_tags($kategoriProdukId),
+            ]);
+            $kategoriProdukId = $katBaru->id;
+        } elseif (!$kategoriProdukId) {
             $katDefault = KategoriProduk::firstOrCreate([
                 'umkm_usaha_id' => $umkm->id,
                 'nama_kategori' => 'Umum',
@@ -210,9 +236,12 @@ class KelolaUmkmController extends Controller
             $kategoriProdukId = $katDefault->id;
         }
 
+        // Normalisasi harga dari number formatter sebelum validasi.
+        $request->merge(['harga' => $this->normalizeMoney($request->input('harga'))]);
+
         $validated = $request->validate([
             'nama_produk' => 'required|string|max:100',
-            'harga' => 'required|numeric|min:0',
+            'harga' => 'required|numeric|min:0|max:999999999',
             'status_stok' => 'nullable|string',
             'stok' => 'nullable',
             'deskripsi' => 'nullable|string',
@@ -244,8 +273,7 @@ class KelolaUmkmController extends Controller
 
         if ($request->hasFile('foto_produk')) {
             $file = $request->file('foto_produk');
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('umkm-photos', $fileName, 'public');
+            $path = $file->store('umkm-photos', 'public');
             $validated['foto_produk'] = $path;
         }
 
@@ -265,18 +293,38 @@ class KelolaUmkmController extends Controller
         }
 
         $kategoriProdukId = $request->get('kategori_produk_id');
-        if ($kategoriProdukId && !KategoriProduk::where('id', $kategoriProdukId)->exists() && $produk->umkm_usaha_id) {
+        $namaKategoriBaru = trim(strip_tags((string)$request->get('nama_kategori_baru')));
+
+        if (($kategoriProdukId === 'NEW_CATEGORY' || empty($kategoriProdukId)) && !empty($namaKategoriBaru) && $produk->umkm_usaha_id) {
             $katDefault = KategoriProduk::firstOrCreate([
                 'umkm_usaha_id' => $produk->umkm_usaha_id,
-                'nama_kategori' => $kategoriProdukId,
+                'nama_kategori' => $namaKategoriBaru,
+            ]);
+            $request->merge(['kategori_produk_id' => $katDefault->id]);
+        } elseif (!empty($namaKategoriBaru) && $produk->umkm_usaha_id) {
+            $katDefault = KategoriProduk::firstOrCreate([
+                'umkm_usaha_id' => $produk->umkm_usaha_id,
+                'nama_kategori' => $namaKategoriBaru,
+            ]);
+            $request->merge(['kategori_produk_id' => $katDefault->id]);
+        } elseif ($kategoriProdukId && !KategoriProduk::where('id', $kategoriProdukId)->where('umkm_usaha_id', $produk->umkm_usaha_id)->exists() && $produk->umkm_usaha_id) {
+            $katDefault = KategoriProduk::firstOrCreate([
+                'umkm_usaha_id' => $produk->umkm_usaha_id,
+                'nama_kategori' => strip_tags($kategoriProdukId),
             ]);
             $request->merge(['kategori_produk_id' => $katDefault->id]);
         }
 
+        // Normalisasi harga dari number formatter sebelum validasi.
+        $request->merge(['harga' => $this->normalizeMoney($request->input('harga'))]);
+
         $validated = $request->validate([
             'nama_produk' => 'required|string|max:100',
-            'kategori_produk_id' => 'nullable|exists:kategori_produk,id',
-            'harga' => 'required|numeric|min:0',
+            'kategori_produk_id' => [
+                'nullable',
+                \Illuminate\Validation\Rule::exists('kategori_produk', 'id')->where('umkm_usaha_id', $produk->umkm_usaha_id),
+            ],
+            'harga' => 'required|numeric|min:0|max:999999999',
             'status_stok' => 'nullable|string',
             'status_produk' => 'nullable|string|in:Aktif,Tidak Aktif,Non-Aktif',
             'stok' => 'nullable',
@@ -312,8 +360,10 @@ class KelolaUmkmController extends Controller
 
         if ($request->hasFile('foto_produk')) {
             $file = $request->file('foto_produk');
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('umkm-photos', $fileName, 'public');
+            if ($produk->foto_produk && Storage::disk('public')->exists($produk->foto_produk)) {
+                Storage::disk('public')->delete($produk->foto_produk);
+            }
+            $path = $file->store('umkm-photos', 'public');
             $validated['foto_produk'] = $path;
         }
 
@@ -329,6 +379,10 @@ class KelolaUmkmController extends Controller
         $userNik = Auth::user()->nik ?? null;
         if (!$userNik || !$produk->usaha || $produk->usaha->nik !== $userNik) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus produk ini.');
+        }
+
+        if ($produk->foto_produk && Storage::disk('public')->exists($produk->foto_produk)) {
+            Storage::disk('public')->delete($produk->foto_produk);
         }
 
         $namaProduk = $produk->nama_produk;

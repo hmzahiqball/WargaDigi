@@ -9,7 +9,7 @@
 </div>
 
 {{-- Stat Cards --}}
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-4 dash-stats">
     @foreach($stats as $index => $stat)
     <div class="col-md-4">
         <div class="admin-stat-card animate-in delay-{{ $index + 1 }}">
@@ -36,7 +36,7 @@
         <h5><i class="bi bi-bell-fill text-warning"></i> Peringatan Terbaru</h5>
     </div>
     <div class="admin-card-body">
-        @foreach($alerts as $alert)
+        @forelse($alerts as $alert)
         <div class="admin-alert-item {{ $alert['type'] }}">
             <div class="alert-icon">
                 @if($alert['type'] === 'success')
@@ -53,7 +53,9 @@
                 <small class="text-muted">{{ $alert['time'] }}</small>
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="text-center text-muted py-3">Belum ada aktivitas tercatat.</div>
+        @endforelse
         <div class="text-center mt-3">
             <button class="btn btn-outline-secondary btn-sm px-4" style="border-radius: 0.5rem;" id="viewAllLogs">Lihat Semua log</button>
         </div>

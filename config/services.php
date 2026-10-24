@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    /*
+    | WhatsApp Gateway (IR51)
+    | Fail-safe: bila url/token kosong, pengiriman WA hanya dicatat ke log
+    | dan fitur lain (notifikasi in-app) tetap berjalan normal.
+    | Mendukung gateway generik berbasis HTTP (mis. Fonnte, Wablas, dsb).
+    */
+    'whatsapp' => [
+        'url' => env('WA_GATEWAY_URL'),
+        'token' => env('WA_GATEWAY_TOKEN'),
+        'sender' => env('WA_GATEWAY_SENDER'),
+        'timeout' => (int) env('WA_GATEWAY_TIMEOUT', 10),
+    ],
+
 ];
