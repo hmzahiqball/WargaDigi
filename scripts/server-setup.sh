@@ -76,11 +76,14 @@ for i in $(seq 1 30); do
 done
 
 # --- 4. Seeder DATA DEMO (termasuk akun pengguna) ---
-# Mode demo: menjalankan seluruh seeder (Role, Master RT, User, Keluarga,
-# Penduduk, UMKM, Keuangan, dll). UserSeeder membuat akun demo berpassword 'password'.
-warn "Mode DEMO: menjalankan seluruh seeder termasuk akun pengguna (password: 'password')."
-info "Menjalankan db:seed (semua seeder demo)..."
-docker compose --env-file .env.docker -f docker-compose.prod.yml exec -T app php artisan db:seed --force || warn "db:seed dilewati/gagal (mungkin sudah pernah di-seed)."
+# Mode demo: menjalankan DemoSeeder secara eksplisit (Master + seluruh data
+# showcase: Role, Master RT, User, Keluarga, Penduduk, Pejabat, UMKM, Keuangan,
+# dll). Dipanggil via --class=DemoSeeder agar tidak bergantung pada flag APP_DEMO.
+# Akun pengurus demo login via username (password: 'password'); akun warga
+# (Kepala Keluarga) login via username atau Nomor WhatsApp.
+warn "Mode DEMO: menjalankan DemoSeeder (semua data showcase + akun pengguna, password: 'password')."
+info "Menjalankan db:seed --class=DemoSeeder..."
+docker compose --env-file .env.docker -f docker-compose.prod.yml exec -T app php artisan db:seed --class=DemoSeeder --force || warn "db:seed dilewati/gagal (mungkin sudah pernah di-seed)."
 ok "Seeder demo selesai. Akun demo siap dipakai untuk presentasi."
 
 # --- 5. Konfigurasi Caddy ---
@@ -119,10 +122,14 @@ echo "  - Aplikasi     : https://${DOMAIN}  (via Caddy -> 127.0.0.1:${APP_PORT})
 echo "  - Rahasia      : tersimpan di ${ENV_FILE} (jangan commit ke git)"
 echo "  - Log app      : docker compose --env-file .env.docker -f docker-compose.prod.yml logs -f app"
 echo
-echo "  Akun demo (password semua: 'password') — login pakai NIK + Nomor WhatsApp:"
-echo "    Admin Aplikasi : NIK 3217010101010001 | WA 082123456789"
-echo "    Admin RW       : NIK 3217010101010002 | WA 081234567890"
-echo "    Ketua RT       : NIK 3217010101010008 | WA 081398765432"
-echo "    Warga          : NIK 3217010101010003 | WA 081987654321"
+echo "  Akun demo (password semua: 'password'):"
+echo "    Pengurus login via USERNAME:"
+echo "      Admin Aplikasi : superadmin"
+echo "      Admin RW       : adminrw21"
+echo "      Pimpinan RW    : pimpinan"
+echo "      Ketua RT 01    : ketuart01rw21"
+echo "      Op Keuangan RW : opkeuanganrw21   | Op Konten RW : opkontenrw21   | DKM : dkm"
+echo "    Warga (Kepala Keluarga) login via USERNAME atau Nomor WhatsApp:"
+echo "      budisampurno  (WA 081987654321)   |   budisantoso (WA 081234567890)"
 echo
 warn "PERINGATAN: ini data DEMO dengan password lemah. Ganti/hapus sebelum dipakai produksi nyata."
