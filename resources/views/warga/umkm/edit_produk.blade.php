@@ -28,7 +28,7 @@
                 <label for="harga" class="form-label fw-bold">Harga <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text">Rp</span>
-                    <input type="number" class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga', $produk->harga) }}" required>
+                    <input type="text" inputmode="numeric" data-money class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga', $produk->harga) }}" required>
                 </div>
                 @error('harga')
                     <div class="invalid-feedback">{{ $message }}</div>

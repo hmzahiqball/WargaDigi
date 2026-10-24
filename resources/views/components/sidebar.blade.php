@@ -1,5 +1,5 @@
 @php
-    $userRole = Auth::user()->role ?? null;
+    $userRole = Auth::check() ? Auth::user()->activeRole() : null;
     $allMenus = config('sidebarMenu', []);
 
     $mainMenus = array_filter($allMenus, function($item) use ($userRole) {
@@ -27,7 +27,8 @@
     } elseif (in_array($userRole, ['Admin RW', 'Pimpinan RW'])) {
         $brandRole = 'RW 12 TANIMULYA';
     } elseif ($userRole === 'Ketua RT') {
-        $brandRole = 'RT ' . (Auth::user()->rt ?? '01') . ' RW 12';
+        $kodeRt = optional(Auth::user()->rt)->kode_rt ?? optional(Auth::user()->rt)->nama_rt ?? '01';
+        $brandRole = 'RT ' . $kodeRt . ' RW 12';
     } elseif (in_array($userRole, ['Op. Konten RW', 'Op. Konten RT'])) {
         $brandRole = 'OPERATOR KONTEN';
     } elseif (in_array($userRole, ['Op. Keuangan RW', 'Op. Keuangan RT', 'DKM'])) {
@@ -60,7 +61,7 @@
                     } elseif (!empty($item['url']) && $item['url'] !== '#') {
                         $url = url($item['url']);
                     }
-                    
+
                     $isActive = false;
                     if (isset($item['active'])) {
                         foreach ((array)$item['active'] as $pattern) {
@@ -80,8 +81,22 @@
             @endforeach
         </ul>
 
-        @if(count($bottomMenus) > 0)
+        @php
+            $canSwitchRole = Auth::check() && Auth::user()->hasMultipleRoles();
+        @endphp
+        @if(count($bottomMenus) > 0 || $canSwitchRole)
             <ul class="sidebar-menu sidebar-menu-bottom">
+                @if($canSwitchRole)
+                    <li class="sidebar-item">
+                        <form action="{{ route('ganti-peran') }}" method="POST" id="sidebar-switch-role-form" class="w-100">
+                            @csrf
+                            <a href="#" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('sidebar-switch-role-form').submit();">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>Ganti Peran</span>
+                            </a>
+                        </form>
+                    </li>
+                @endif
                 @foreach($bottomMenus as $item)
                     @php
                         $url = '#';
@@ -100,7 +115,7 @@
                                 }
                             }
                         }
-                        
+
                         $isLogout = $item['is_logout'] ?? false;
                     @endphp
                     <li class="sidebar-item">

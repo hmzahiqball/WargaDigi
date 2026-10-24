@@ -13,7 +13,7 @@ class MutasiDocumentController extends Controller
         $mutasi = MutasiWarga::with('keluarga')->findOrFail($id);
         $user = $request->user();
 
-        if ($user->role === 'Ketua RT' && $mutasi->keluarga?->rt_id !== $user->rt_id) {
+        if ($user->activeRole() === 'Ketua RT' && $mutasi->keluarga?->rt_id !== $user->rt_id) {
             abort(403);
         }
 

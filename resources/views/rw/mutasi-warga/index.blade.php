@@ -6,7 +6,7 @@
 <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="d-flex align-items-center gap-3">
-            <div class="bg-success bg-opacity-10 text-success rounded-3 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+            <div class="header-icon-box bg-success bg-opacity-10 text-success rounded-3 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
                 <i class="bi bi-people-fill fs-3"></i>
             </div>
             <div>

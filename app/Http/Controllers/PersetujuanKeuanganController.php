@@ -18,7 +18,7 @@ class PersetujuanKeuanganController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'Ketua RT') {
+        if (trim($user->activeRole() ?? '') === 'Ketua RT') {
             $rtId = $user->rt_id;
             if (!$rtId) {
                 // Fallback: cari rt_id dari relasi Penduduk -> Keluarga jika belum terisi di users

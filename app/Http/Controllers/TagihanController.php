@@ -11,16 +11,19 @@ use App\Models\Keluarga;
 use App\Models\TransaksiKeuangan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Http\Controllers\Concerns\NormalizesMoney;
 
 class TagihanController extends Controller
 {
+    use NormalizesMoney;
+
     private function getRoleFilterData()
     {
         $user = Auth::user();
         $unit = null;
         $rt_id = null;
 
-        $role = trim($user->role ?? '');
+        $role = trim($user->activeRole() ?? '');
 
         if (in_array($role, ['Op Keuangan RT', 'Op. Keuangan RT', 'Bendahara RT'])) {
             $unit = 'RT';
@@ -29,6 +32,10 @@ class TagihanController extends Controller
                 $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first();
                 if ($penduduk && $penduduk->keluarga) {
                     $rt_id = $penduduk->keluarga->rt_id;
+                }
+                if (!$rt_id) {
+                    $rt01 = MasterRt::where('kode_rt', '01')->first() ?? MasterRt::first();
+                    $rt_id = $rt01 ? $rt01->id : null;
                 }
             }
         } elseif (in_array($role, ['Op Keuangan RW', 'Op. Keuangan RW', 'Bendahara RW', 'Admin RW', 'Pimpinan RW'])) {
@@ -155,7 +162,7 @@ class TagihanController extends Controller
         $query = Tagihan::withCount(['pembayaran as paid_count' => function($q) {
             $q->where('status', 'Paid');
         }])->where('unit', $unit);
-        
+
         if ($unit === 'RT') {
             $query->where('rt_id', $rt_id);
         }
@@ -168,7 +175,7 @@ class TagihanController extends Controller
     {
         extract($this->getRoleFilterData());
         $tagihan = Tagihan::with('pembayaran.keluarga.kepalaKeluarga')->findOrFail($id);
-        
+
         // Ensure access control
         if ($tagihan->unit !== $unit || ($unit === 'RT' && $tagihan->rt_id !== $rt_id)) {
             abort(403);
@@ -195,34 +202,52 @@ class TagihanController extends Controller
     public function tagihanStore(Request $request)
     {
         extract($this->getRoleFilterData());
+        if (!$unit) {
+            return redirect()->back()->with('error', 'Unit keuangan tidak terdefinisi untuk akun ini.')->withInput();
+        }
+
+        // Normalisasi nominal dari number formatter sebelum validasi.
+        $request->merge(['nominal' => $this->normalizeMoney($request->input('nominal'))]);
+
         $request->validate([
             'judul' => 'required|string|max:100',
             'nominal' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
             'tenggat' => 'nullable|date',
+            'jenis' => 'nullable|in:rutin,insidental',
         ]);
+
+        $jenis = $request->input('jenis', 'insidental');
+
+        // IR44: Tentukan daftar keluarga penerima SEBELUM membuat tagihan,
+        // agar tagihan tanpa penerima tidak dibuat (hindari "target 0 warga").
+        if ($unit === 'RT') {
+            if (!$rt_id) {
+                return redirect()->back()->with('error', 'Tagihan gagal dibuat: RT untuk akun bendahara ini tidak dapat ditentukan.')->withInput();
+            }
+            $keluargas = Keluarga::where('rt_id', $rt_id)->get();
+        } else {
+            $keluargas = Keluarga::all();
+        }
+
+        if ($keluargas->isEmpty()) {
+            return redirect()->back()->with('error', 'Tagihan gagal dibuat: tidak ada warga/keluarga pada unit ini untuk ditagih.')->withInput();
+        }
 
         $tagihan = Tagihan::create([
             'id' => Str::uuid(),
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi,
-            'jenis' => 'insidental',
+            'jenis' => $jenis,
             'nominal' => $request->nominal,
             'periode_bulan' => date('n'),
             'periode_tahun' => date('Y'),
             'unit' => $unit,
-            'rt_id' => $rt_id,
+            'rt_id' => $unit === 'RT' ? $rt_id : null,
             'pembuat_id' => Auth::id(),
             'status' => 'Active',
             'tenggat' => $request->tenggat,
         ]);
-
-        // Assign ke keluarga terkait
-        if ($unit === 'RT') {
-            $keluargas = Keluarga::where('rt_id', $rt_id)->get();
-        } else {
-            $keluargas = Keluarga::all();
-        }
 
         $data = [];
         foreach ($keluargas as $kk) {
@@ -236,11 +261,11 @@ class TagihanController extends Controller
             ];
         }
 
-        if (count($data) > 0) {
-            PembayaranTagihan::insert($data);
-        }
+        PembayaranTagihan::insert($data);
 
-        return redirect()->back()->with('success', 'Tagihan insidental berhasil dibuat dan disebar ke warga.');
+        $labelJenis = $jenis === 'rutin' ? 'rutin' : 'insidental';
+
+        return redirect()->back()->with('success', "Tagihan {$labelJenis} berhasil dibuat dan disebar ke {$keluargas->count()} warga.");
     }
 
     public function approvePembayaran($id)
@@ -285,7 +310,7 @@ class TagihanController extends Controller
     {
         extract($this->getRoleFilterData());
         $pembayaran = PembayaranTagihan::with('tagihan')->findOrFail($id);
-        
+
         if ($pembayaran->tagihan->unit !== $unit || ($unit === 'RT' && $pembayaran->tagihan->rt_id !== $rt_id)) {
             abort(403);
         }
@@ -302,7 +327,7 @@ class TagihanController extends Controller
     {
         extract($this->getRoleFilterData());
         $pembayaran = PembayaranTagihan::with(['tagihan', 'keluarga.kepalaKeluarga'])->findOrFail($id);
-        
+
         if ($pembayaran->tagihan->unit !== $unit || ($unit === 'RT' && $pembayaran->tagihan->rt_id !== $rt_id)) {
             abort(403);
         }
@@ -322,7 +347,7 @@ class TagihanController extends Controller
 
         // 1. WhatsApp Delivery
         $kepalaKeluarga = $pembayaran->keluarga->kepalaKeluarga;
-        $targetWa = $pembayaran->keluarga->no_wa ?? ($kepalaKeluarga ? $kepalaKeluarga->nomor_telepon : null);
+        $targetWa = $pembayaran->keluarga->no_wa ?: null;
 
         if (\App\Services\NotificationService::isWhatsAppEnabled()) {
             if ($targetWa) {

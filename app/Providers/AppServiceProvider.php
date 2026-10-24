@@ -97,9 +97,12 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(Failed::class, function (Failed $event) {
             $user = $event->user;
-            $nik = $event->credentials['nik'] ?? null;
-            if (! $user && $nik) {
-                $user = \App\Models\User::where('nik', $nik)->first();
+            // Identifier bisa berupa 'login' (username/no_wa) atau 'nik' (alur lama).
+            $identifier = $event->credentials['login'] ?? ($event->credentials['nik'] ?? null);
+            if (! $user && $identifier) {
+                $user = \App\Models\User::where('username', $identifier)
+                    ->orWhere('nik', $identifier)
+                    ->first();
             }
 
             $activity = activity('auth');
@@ -107,20 +110,20 @@ class AppServiceProvider extends ServiceProvider
                 $activity->performedOn($user)->causedBy($user);
             }
 
-            $userName = $user?->name ?? ($nik ? "NIK: {$nik}" : 'Pengguna Tidak Dikenal');
-            $userRole = $user?->role ?? 'Pengguna';
+            $userName = $user?->name ?? ($identifier ? "ID: {$identifier}" : 'Pengguna Tidak Dikenal');
+            $userRole = $user?->activeRole() ?? 'Pengguna';
 
             $activity->withProperties([
                 'status' => 'Gagal',
                 'category' => 'login',
-                'nik' => $nik,
+                'identifier' => $identifier,
                 'name' => $userName,
                 'role' => $userRole,
             ])
             ->event('failed')
-            ->log($user 
-                ? "Percobaan login gagal untuk NIK {$user->nik} ({$user->name})."
-                : ($nik ? "Percobaan login gagal: NIK {$nik} tidak terdaftar." : 'Percobaan login gagal.')
+            ->log($user
+                ? "Percobaan login gagal untuk {$user->username} ({$user->name})."
+                : ($identifier ? "Percobaan login gagal: {$identifier} tidak terdaftar." : 'Percobaan login gagal.')
             );
         });
     }

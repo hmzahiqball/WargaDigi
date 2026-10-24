@@ -6,15 +6,15 @@
         <div class="modal-content" style="background: #F3F4F6;">
             {{-- Header Bar --}}
             <div class="modal-header border-bottom px-4 py-3" style="background: white;">
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="btn btn-light border btn-sm text-muted rounded-circle d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;" data-bs-dismiss="modal" title="Kembali">
+                <div class="d-flex align-items-center flex-wrap gap-2 gap-md-3 w-100">
+                    <button type="button" class="btn btn-light border btn-sm text-muted rounded-circle d-flex justify-content-center align-items-center flex-shrink-0" style="width: 36px; height: 36px;" data-bs-dismiss="modal" title="Kembali">
                         <i class="bi bi-arrow-left fs-5"></i>
                     </button>
-                    <div>
+                    <div class="flex-grow-1" style="min-width: 0;">
                         <h6 class="mb-0 fw-bold text-dark">Pratinjau Tampilan Warga</h6>
                         <span class="text-muted" style="font-size: 12px;">Seperti inilah tampilan yang akan dilihat oleh warga</span>
                     </div>
-                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-semibold ms-2" style="font-size: 12px;">
+                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-semibold text-nowrap flex-shrink-0" style="font-size: 12px;">
                         <i class="bi bi-eye me-1"></i> Mode Pratinjau
                     </span>
                 </div>

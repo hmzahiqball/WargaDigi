@@ -16,13 +16,14 @@
     </div>
 
     @if($article['image'])
+    @php($detailImg = \Illuminate\Support\Str::startsWith($article['image'], ['http://','https://']) ? $article['image'] : asset('storage/'.$article['image']))
     <div class="mb-4 rounded overflow-hidden shadow-sm">
-        <img src="{{ asset($article['image']) }}" class="img-fluid w-100" alt="{{ $article['title'] }}" style="object-fit: cover; max-height: 400px;">
+        <img src="{{ $detailImg }}" class="img-fluid w-100" alt="{{ $article['title'] }}" style="object-fit: cover; max-height: 400px;">
     </div>
     @endif
 
     <div class="content text-secondary" style="font-size: 1.1rem; line-height: 1.8;">
-        <p>{{ $article['content'] }}</p>
+        {!! $article['content'] !!}
     </div>
 </section>
 @endsection

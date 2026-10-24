@@ -8,18 +8,19 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
-            RoleSeeder::class,
-            MasterRtSeeder::class,
-            UserSeeder::class,
-            KeluargaSeeder::class,
-            PendudukSeeder::class,
-            BeritaSeeder::class,
-            KategoriUmkmSeeder::class,
-            UmkmUsahaSeeder::class,
-            KategoriProdukSeeder::class,
-            UmkmProdukSeeder::class,
-            TransaksiKeuanganSeeder::class,
-        ]);
+        // Switch mode seeding via flag .env APP_DEMO.
+        // - APP_DEMO=true  -> seed data DEMO lengkap (showcase).
+        // - APP_DEMO=false -> hanya data MASTER (produksi).
+        //
+        // Kedua seeder juga tetap bisa dipanggil manual tanpa mengubah .env:
+        //   php artisan db:seed --class=DemoSeeder
+        //   php artisan db:seed --class=MasterSeeder
+        $demo = filter_var(env('APP_DEMO', false), FILTER_VALIDATE_BOOLEAN);
+
+        if ($demo) {
+            $this->call(DemoSeeder::class);
+        } else {
+            $this->call(MasterSeeder::class);
+        }
     }
 }

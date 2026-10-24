@@ -300,7 +300,7 @@
                 {{-- Card Footer --}}
                 <div class="galeri-card-footer">
                     @if($hasGaleri)
-                        <a href="{{ route('opkonten.galeri.show', $item->id) }}" class="btn btn-sm w-100 rounded-3 fw-semibold" style="font-size: 13px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;">
+                        <a href="{{ route('opkonten.galeri.show', $item->id) }}" class="btn btn-sm w-100 rounded-3 fw-semibold" style="font-size: 13px; background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7;">
                             <i class="bi bi-eye me-1"></i> Lihat Detail
                         </a>
                     @else

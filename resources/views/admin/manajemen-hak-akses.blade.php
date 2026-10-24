@@ -24,6 +24,48 @@
     </div>
 @endif
 
+{{-- Buat Akun Pengurus (tanpa NIK, login via username) --}}
+<div class="admin-card mb-4 animate-in delay-1">
+    <div class="admin-card-body">
+        <h5 class="fw-bold mb-1"><i class="bi bi-person-badge me-2 text-success"></i>Buat Akun Pengurus</h5>
+        <p class="text-muted small mb-3">Akun pengurus/petugas tidak memerlukan NIK dan masuk menggunakan username.</p>
+        <form method="POST" action="{{ route('admin.manajemen-hak-akses.pengurus.store') }}">
+            @csrf
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Username</label>
+                    <input type="text" name="username" class="form-control admin-input" placeholder="mis. ketuart02rw12" value="{{ old('username') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Password</label>
+                    <input type="password" name="password" class="form-control admin-input" placeholder="Min. 8 karakter" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Konfirmasi Password</label>
+                    <input type="password" name="password_confirmation" class="form-control admin-input" placeholder="Ulangi password" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100" style="border-radius: 0.5rem;">
+                        <i class="bi bi-plus-lg"></i> Buat
+                    </button>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small fw-semibold d-block">Peran (boleh lebih dari satu)</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach($pengurusRoles as $role)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="roles[]" value="{{ $role }}" id="newrole_{{ $loop->index }}"
+                                    {{ collect(old('roles', []))->contains($role) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="newrole_{{ $loop->index }}">{{ $role }}</label>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- Search --}}
 <div class="admin-card mb-4 animate-in delay-1">
     <div class="admin-card-body">
@@ -76,18 +118,23 @@
                             @endif
                         </td>
                         <td>
-                            <form method="POST" action="{{ route('admin.manajemen-hak-akses.update', $user->id) }}" class="d-flex align-items-center gap-2">
+                            @php $assigned = $userRoles[$user->id] ?? []; @endphp
+                            <form method="POST" action="{{ route('admin.manajemen-hak-akses.update', $user->id) }}" class="d-flex align-items-start gap-2">
                                 @csrf
                                 @method('PUT')
-                                <select name="role" class="form-select admin-input">
+                                <select name="roles[]" multiple size="4" class="form-select admin-input" style="min-height: 110px;">
                                     @foreach($roles as $role)
-                                        <option value="{{ $role }}" {{ $user->role === $role ? 'selected' : '' }}>{{ $role }}</option>
+                                        @php $disabledWarga = ($role === 'Warga' && empty($user->nik)); @endphp
+                                        <option value="{{ $role }}" {{ in_array($role, $assigned, true) ? 'selected' : '' }} {{ $disabledWarga ? 'disabled' : '' }}>
+                                            {{ $role }}{{ $disabledWarga ? ' (butuh NIK)' : '' }}
+                                        </option>
                                     @endforeach
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-success" style="border-radius: 0.5rem;" title="Simpan role">
+                                <button type="submit" class="btn btn-sm btn-success" style="border-radius: 0.5rem;" title="Simpan peran">
                                     <i class="bi bi-floppy"></i>
                                 </button>
                             </form>
+                            <small class="text-muted d-block mt-1">Ctrl/Cmd + klik untuk memilih lebih dari satu.</small>
                         </td>
                     </tr>
                     @empty

@@ -4,50 +4,48 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-        <div>
-            <h2 class="fw-bold text-dark mb-1 fs-2">Pusat Manajemen UMKM</h2>
-            <p class="text-muted mb-0 small fs-6">
-                {{ $isPimpinan ? 'Monitoring riwayat persetujuan dan katalog UMKM warga RW.' : 'Tinjau pendaftaran baru dan pantau seluruh UMKM warga RW.' }}
-            </p>
-        </div>
+    <div class="mb-3">
+        <h2 class="fw-bold text-dark mb-1 fs-2">Pusat Manajemen UMKM</h2>
+        <p class="text-muted mb-0 small fs-6">
+            {{ $isPimpinan ? 'Monitoring riwayat persetujuan dan katalog UMKM warga RW.' : 'Tinjau pendaftaran baru dan pantau seluruh UMKM warga RW.' }}
+        </p>
+    </div>
 
-        @php
-            $pendingCount = ($pendingUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $pendingUsaha->total() : count($pendingUsaha ?? []);
-            $terdaftarCount = ($daftarUsahaTerdaftar instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $daftarUsahaTerdaftar->total() : count($daftarUsahaTerdaftar ?? []);
-            $rejectedCount = ($rejectedUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $rejectedUsaha->total() : count($rejectedUsaha ?? []);
-        @endphp
-        <div class="d-flex align-items-center gap-2 pb-2 flex-wrap">
-            <a href="{{ route('rw.umkm.index', ['tab' => 'persetujuan']) }}" 
-               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'persetujuan' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
-               style="{{ $tab === 'persetujuan' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
-                <i class="bi bi-shield-check"></i>
-                <span>{{ $isPimpinan ? 'Riwayat Persetujuan UMKM' : 'Persetujuan UMKM' }}</span>
-                @if(!$isPimpinan && $pendingCount > 0)
-                    <span class="badge bg-danger rounded-pill px-2 py-1 small">{{ $pendingCount }}</span>
-                @endif
-            </a>
-            
-            <a href="{{ route('rw.umkm.index', ['tab' => 'terdaftar']) }}" 
-               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
-               style="{{ $tab === 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
-                <i class="bi bi-shop"></i>
-                <span>Daftar UMKM Terdaftar</span>
-                @if($terdaftarCount > 0)
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">{{ $terdaftarCount }}</span>
-                @endif
-            </a>
+    @php
+        $pendingCount = ($pendingUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $pendingUsaha->total() : count($pendingUsaha ?? []);
+        $terdaftarCount = ($daftarUsahaTerdaftar instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $daftarUsahaTerdaftar->total() : count($daftarUsahaTerdaftar ?? []);
+        $rejectedCount = ($rejectedUsaha instanceof \Illuminate\Pagination\LengthAwarePaginator) ? $rejectedUsaha->total() : count($rejectedUsaha ?? []);
+    @endphp
+    <div class="d-flex align-items-center gap-2 mb-4 flex-nowrap overflow-auto border-bottom">
+        <a href="{{ route('rw.umkm.index', ['tab' => 'persetujuan']) }}"
+           class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 text-nowrap flex-shrink-0 {{ $tab === 'persetujuan' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
+           style="{{ $tab === 'persetujuan' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
+            <i class="bi bi-shield-check"></i>
+            <span>{{ $isPimpinan ? 'Riwayat Persetujuan UMKM' : 'Persetujuan UMKM' }}</span>
+            @if(!$isPimpinan && $pendingCount > 0)
+                <span class="badge bg-danger rounded-pill px-2 py-1 small">{{ $pendingCount }}</span>
+            @endif
+        </a>
 
-            <a href="{{ route('rw.umkm.index', ['tab' => 'ditolak']) }}" 
-               class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 {{ $tab === 'ditolak' ? 'text-danger border-danger' : 'text-muted border-transparent hover-danger' }}"
-               style="{{ $tab === 'ditolak' ? 'color: #dc3545 !important; border-color: #dc3545 !important;' : '' }}">
-                <i class="bi bi-x-circle"></i>
-                <span>Pengajuan Ditolak</span>
-                @if($rejectedCount > 0)
-                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 small">{{ $rejectedCount }}</span>
-                @endif
-            </a>
-        </div>
+        <a href="{{ route('rw.umkm.index', ['tab' => 'terdaftar']) }}"
+           class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 text-nowrap flex-shrink-0 {{ $tab === 'terdaftar' ? 'text-success border-success' : 'text-muted border-transparent hover-success' }}"
+           style="{{ $tab === 'terdaftar' ? 'color: #2E7D32 !important; border-color: #2E7D32 !important;' : '' }}">
+            <i class="bi bi-shop"></i>
+            <span>Daftar UMKM Terdaftar</span>
+            @if($terdaftarCount > 0)
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">{{ $terdaftarCount }}</span>
+            @endif
+        </a>
+
+        <a href="{{ route('rw.umkm.index', ['tab' => 'ditolak']) }}"
+           class="text-decoration-none fw-bold pb-2 px-3 border-bottom border-3 d-flex align-items-center gap-2 text-nowrap flex-shrink-0 {{ $tab === 'ditolak' ? 'text-danger border-danger' : 'text-muted border-transparent hover-danger' }}"
+           style="{{ $tab === 'ditolak' ? 'color: #dc3545 !important; border-color: #dc3545 !important;' : '' }}">
+            <i class="bi bi-x-circle"></i>
+            <span>Pengajuan Ditolak</span>
+            @if($rejectedCount > 0)
+                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 small">{{ $rejectedCount }}</span>
+            @endif
+        </a>
     </div>
 
     @if($tab === 'persetujuan')
@@ -105,8 +103,8 @@
                         </h5>
                     </div>
                     <p class="text-muted small mb-4" style="line-height: 1.6;">
-                        {{ $isPimpinan 
-                            ? 'Pantau seluruh aktivitas pendaftaran UMKM di wilayah RW. Klik kartu usaha mana saja untuk melihat data pemohon pendaftaran.' 
+                        {{ $isPimpinan
+                            ? 'Pantau seluruh aktivitas pendaftaran UMKM di wilayah RW. Klik kartu usaha mana saja untuk melihat data pemohon pendaftaran.'
                             : 'Tinjau pendaftaran bisnis baru yang diajukan oleh warga. Pastikan nama dan kategori bisnis mematuhi pedoman komunitas.' }}
                     </p>
 

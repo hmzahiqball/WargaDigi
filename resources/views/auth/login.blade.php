@@ -51,14 +51,14 @@
 
 
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold text-dark">Nomor WhatsApp</label>
+                            <label class="form-label small fw-semibold text-dark">Username atau Nomor WhatsApp</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
-                                    <i class="bi bi-whatsapp text-success"></i>
+                                    <i class="bi bi-person-badge text-success"></i>
                                 </span>
-                                <input type="text" name="no_wa" class="form-control @error('no_wa') is-invalid @enderror" placeholder="Contoh: 081234567890" inputmode="tel" required value="{{ old('no_wa') }}">
+                                <input type="text" name="login" class="form-control @error('login') is-invalid @enderror" placeholder="Username atau 081234567890" required value="{{ old('login', old('no_wa')) }}">
                             </div>
-                            @error('no_wa')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                            @error('login')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="mb-3">

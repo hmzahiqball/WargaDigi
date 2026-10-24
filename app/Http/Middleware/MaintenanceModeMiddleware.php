@@ -27,16 +27,18 @@ class MaintenanceModeMiddleware
             return $next($request);
         }
 
-        // 3. Allow authenticated Admin roles to access the entire system
+        // 3. Allow authenticated Admin roles to access the entire system.
+        //    Gunakan peran AKTIF (active role) untuk akun multi-peran.
         if (Auth::check()) {
             $user = Auth::user();
-            if (in_array($user->role, ['Admin Aplikasi', 'Admin RW'])) {
+            if (in_array($user->activeRole(), ['Admin Aplikasi', 'Admin RW'], true)) {
                 return $next($request);
             }
         }
 
-        // 4. Allow login and logout endpoints so administrators can authenticate
-        if ($request->is('login') || $request->is('logout')) {
+        // 4. Allow auth & role-selection endpoints so administrators can authenticate
+        //    and pick their active role during maintenance.
+        if ($request->is('login') || $request->is('logout') || $request->is('pilih-peran') || $request->is('ganti-peran')) {
             return $next($request);
         }
 

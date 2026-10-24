@@ -3,12 +3,15 @@
 @section('title', 'Pantau Iuran')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-center mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Pantau Iuran</h2>
         <p class="text-muted mb-0">Kelola tagihan warga dan pantau status pembayaran.</p>
     </div>
-    <div>
+    <div class="dash-header-actions d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalBuatTagihanRutin">
+            <i class="bi bi-arrow-repeat me-1"></i> Buat Tagihan Rutin
+        </button>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBuatTagihan">
             <i class="bi bi-plus-lg me-1"></i> Buat Tagihan Insidental
         </button>
@@ -99,7 +102,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Nominal (Rp)</label>
-                    <input type="number" name="nominal" class="form-control" placeholder="50000" min="0" required>
+                    <input type="text" inputmode="numeric" data-money name="nominal" class="form-control" placeholder="50000" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Tenggat Waktu</label>
@@ -113,6 +116,46 @@
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-primary">Buat & Sebar Tagihan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Buat Tagihan Rutin -->
+<div class="modal fade" id="modalBuatTagihanRutin" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content border-0 shadow" action="{{ route('opkeuangan.tagihan.store') }}" method="POST">
+            @csrf
+            <input type="hidden" name="jenis" value="rutin">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Buat Tagihan Rutin</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info small py-2">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Tagihan rutin juga dibuat otomatis oleh sistem setiap tanggal 1. Gunakan form ini untuk membuat tagihan rutin secara manual pada periode berjalan.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Judul Tagihan</label>
+                    <input type="text" name="judul" class="form-control" placeholder="Contoh: Iuran Bulanan Warga" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nominal (Rp)</label>
+                    <input type="text" inputmode="numeric" data-money name="nominal" class="form-control" placeholder="50000" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tenggat Waktu</label>
+                    <input type="date" name="tenggat" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Deskripsi (Opsional)</label>
+                    <textarea name="deskripsi" class="form-control" rows="3" placeholder="Tambahkan keterangan tagihan rutin..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Buat & Sebar Tagihan Rutin</button>
             </div>
         </form>
     </div>

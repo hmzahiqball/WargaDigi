@@ -74,27 +74,27 @@
             <div class="d-flex flex-column gap-4">
                 @forelse($anggota as $member)
                 <div class="border rounded-3 p-4" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
-                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
-                        <div>
+                    @php
+                        $badgeColor = 'bg-secondary';
+                        if($member->status_hubungan_keluarga == 'Kepala Keluarga') $badgeColor = 'bg-success text-white';
+                        else if($member->status_hubungan_keluarga == 'Istri') $badgeColor = 'bg-info bg-opacity-10 text-info border border-info';
+                        else if($member->status_hubungan_keluarga == 'Anak') $badgeColor = 'bg-secondary bg-opacity-10 text-secondary border border-secondary';
+                    @endphp
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2 mb-3 border-bottom pb-3">
+                        <div class="min-w-0">
                             <h6 class="fw-bold mb-1 text-dark" style="font-size: 1.1rem;">{{ $member->nama_lengkap }}</h6>
-                            <p class="text-muted mb-0" style="font-size: 0.85rem; font-family: monospace;">NIK: {{ $member->nik }}</p>
+                            <p class="text-muted mb-0 text-break" style="font-size: 0.85rem; font-family: monospace;">NIK: {{ $member->nik }}</p>
                         </div>
-                        <div>
-                            @php
-                                $badgeColor = 'bg-secondary';
-                                if($member->status_hubungan_keluarga == 'Kepala Keluarga') $badgeColor = 'bg-success text-white';
-                                else if($member->status_hubungan_keluarga == 'Istri') $badgeColor = 'bg-info bg-opacity-10 text-info border border-info';
-                                else if($member->status_hubungan_keluarga == 'Anak') $badgeColor = 'bg-secondary bg-opacity-10 text-secondary border border-secondary';
-                            @endphp
-                            <span class="badge {{ $badgeColor }} px-3 py-1 rounded-pill" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge {{ $badgeColor }} px-3 py-1 rounded-pill text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                 {{ strtoupper($member->status_hubungan_keluarga) }}
                             </span>
-                            <button type="button" class="btn btn-sm btn-outline-success ms-2 rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEditAnggota-{{ $member->id }}">
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#modalEditAnggota-{{ $member->id }}">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="mb-3">

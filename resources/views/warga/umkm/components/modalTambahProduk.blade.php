@@ -28,13 +28,13 @@
                 <div class="modal-body px-4 py-3">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-2">Unggah Foto Produk</label>
-                        <div class="upload-drag-drop-box text-center p-4 rounded-3 border-2 border-dashed position-relative" 
+                        <div class="upload-drag-drop-box text-center p-4 rounded-3 border-2 border-dashed position-relative"
                              style="border: 2px dashed #cbd5e1; background-color: #fafbfa; cursor: pointer;"
                              onclick="document.getElementById('inputFotoProdukTambah').click()"
                              ondragover="event.preventDefault(); this.style.borderColor='#4E8D5F';"
                              ondragleave="this.style.borderColor='#cbd5e1';"
                              ondrop="handleDropFotoTambah(event)">
-                            
+
                             <div id="previewWrapperTambah" class="d-none mb-2">
                                 <img id="imgPreviewTambah" src="" alt="Preview" class="rounded-3 shadow-sm" style="max-height: 120px; max-width: 100%; object-fit: cover;">
                             </div>
@@ -71,28 +71,28 @@
                         </div>
                         <div class="col-6 position-relative">
                             <label class="form-label small fw-semibold text-dark mb-1">Kategori</label>
-                            
+
                             <!-- Custom Dropdown Kategori (Scrollable ~5-7 item) -->
                             <div class="dropdown" id="dropdownKategoriTambahWrapper">
-                                <button class="btn border bg-white rounded-3 py-2 px-3 text-start w-100 d-flex justify-content-between align-items-center shadow-none text-dark" 
-                                        type="button" 
-                                        id="btnSelectKategoriTambah" 
-                                        data-bs-toggle="dropdown" 
-                                        aria-expanded="false" 
+                                <button class="btn border bg-white rounded-3 py-2 px-3 text-start w-100 d-flex justify-content-between align-items-center shadow-none text-dark"
+                                        type="button"
+                                        id="btnSelectKategoriTambah"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
                                         style="font-size: 14px; border-color: #cbd5e1 !important; height: 42px;">
                                     <span id="selectedKategoriLabelTambah" class="text-truncate text-muted">Pilih Kategori</span>
                                     <i class="bi bi-chevron-down small text-muted ms-1 flex-shrink-0"></i>
                                 </button>
 
-                                <ul class="dropdown-menu w-100 shadow-sm border rounded-3 p-1 mt-1 dropdown-kategori-menu" 
-                                    aria-labelledby="btnSelectKategoriTambah" 
+                                <ul class="dropdown-menu w-100 shadow-sm border rounded-3 p-1 mt-1 dropdown-kategori-menu"
+                                    aria-labelledby="btnSelectKategoriTambah"
                                     style="border-color: #e2e8f0; z-index: 1060; min-width: 100%;">
                                     <!-- Area scrollable: Dibatasi max-height ~200px (muat 5-7 item) -->
                                     <div class="kategori-scrollable-container" style="max-height: 200px; overflow-y: auto; overflow-x: hidden;">
                                         @if(isset($kategoriList) && count($kategoriList) > 0)
                                             @foreach($kategoriList as $kat)
                                                 <li>
-                                                    <button type="button" class="dropdown-item rounded-2 py-2 px-3 small d-flex align-items-center justify-content-between option-kategori-item" 
+                                                    <button type="button" class="dropdown-item rounded-2 py-2 px-3 small d-flex align-items-center justify-content-between option-kategori-item"
                                                             onclick="pilihKategoriTambah('{{ $kat->id }}', '{{ addslashes($kat->nama_kategori) }}')">
                                                         <span class="text-truncate">{{ $kat->nama_kategori }}</span>
                                                     </button>
@@ -100,13 +100,13 @@
                                             @endforeach
                                         @else
                                             <li>
-                                                <button type="button" class="dropdown-item rounded-2 py-2 px-3 small option-kategori-item" 
+                                                <button type="button" class="dropdown-item rounded-2 py-2 px-3 small option-kategori-item"
                                                         onclick="pilihKategoriTambah('Umum', 'Umum')">
                                                     Umum
                                                 </button>
                                             </li>
                                             <li>
-                                                <button type="button" class="dropdown-item rounded-2 py-2 px-3 small option-kategori-item" 
+                                                <button type="button" class="dropdown-item rounded-2 py-2 px-3 small option-kategori-item"
                                                         onclick="pilihKategoriTambah('Unggulan', 'Unggulan')">
                                                     Unggulan
                                                 </button>
@@ -116,7 +116,7 @@
 
                                     <li><hr class="dropdown-divider my-1"></li>
                                     <li>
-                                        <button type="button" class="dropdown-item rounded-2 py-2 px-3 small text-success fw-bold d-flex align-items-center gap-2" 
+                                        <button type="button" class="dropdown-item rounded-2 py-2 px-3 small text-success fw-bold d-flex align-items-center gap-2"
                                                 onclick="tampilkanInputKategoriBaru()">
                                             <i class="bi bi-plus-circle-fill"></i>Kategori Baru
                                         </button>
@@ -146,7 +146,7 @@
                         <label class="form-label small fw-semibold text-dark mb-1">Harga</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted px-3">Rp</span>
-                            <input type="number" name="harga" class="form-control border-start-0 rounded-end-3 py-2 px-3 shadow-none" value="0" min="0" required>
+                            <input type="text" inputmode="numeric" data-money name="harga" class="form-control border-start-0 rounded-end-3 py-2 px-3 shadow-none" placeholder="0" required>
                         </div>
                     </div>
 

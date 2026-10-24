@@ -2,86 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Agenda;
+use App\Models\Berita;
+use App\Models\Keluarga;
+use App\Models\LayananSurat;
+use App\Models\Penduduk;
+use App\Models\UmkmProduk;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
     public function index()
     {
+        // Statistik ringkas (struktur lama: number, suffix, label).
         $stats = [
-            ['number' => 150, 'suffix' => '+', 'label' => 'Kepala Keluarga'],
-            ['number' => 45, 'suffix' => '', 'label' => 'Jiwa Aktif'],
-            ['number' => 10, 'suffix' => '', 'label' => 'Layanan Digital'],
+            ['number' => Keluarga::count(), 'suffix' => '+', 'label' => 'Kepala Keluarga'],
+            ['number' => Penduduk::count(), 'suffix' => '', 'label' => 'Jiwa Aktif'],
+            ['number' => LayananSurat::count(), 'suffix' => '', 'label' => 'Layanan Digital'],
         ];
 
-        $berita = [
-            [
-                'image' => '/images/berita-1.jpg',
-                'date' => '10 Agustus 2024',
-                'title' => 'Kerja Bakti Warga: Inti Persiapan Lomba 17-an',
-                'excerpt' => 'Hari ini warga RW 21 berkumpul dan saling bekerja sama membersihkan lingkungan untuk mempersiapkan lomba kemerdekaan.',
-                'category' => 'kegiatan',
-            ],
-            [
-                'image' => '/images/berita-2.jpg',
-                'date' => '08 Agustus 2024',
-                'title' => 'Laporan Kas RW Bulan Agt 2024',
-                'excerpt' => 'Laporan arus kas terbaru RW 21 dirilis. Transparansi keuangan sebagai kunci kepercayaan masyarakat.',
-                'category' => 'transparansi',
-            ],
-            [
-                'image' => '/images/berita-3.jpg',
-                'date' => '05 Agustus 2024',
-                'title' => 'Jadwal Posyandu Balita & Lansia Bulan Ini',
-                'excerpt' => 'Cek jadwal posyandu terdekat dan fasilitas kesehatan yang tersedia di lingkungan sekitar di Balai RW.',
-                'category' => 'kesehatan',
-            ],
-        ];
+        // Berita terkini (Publish) terbaru.
+        $berita = Berita::where('status', 'Publish')
+            ->orderByDesc('tanggal_publish')
+            ->take(3)
+            ->get()
+            ->map(fn (Berita $b) => [
+                'id' => $b->id,
+                'image' => $b->featured_image,
+                'date' => optional($b->tanggal_publish)->format('d M Y') ?? '',
+                'title' => $b->judul_berita,
+                'excerpt' => Str::limit(strip_tags($b->isi_berita), 120),
+                'category' => $b->kategori,
+            ])
+            ->all();
 
-        $umkm = [
-            [
-                'image' => '/images/umkm-1.jpg',
-                'name' => 'Nasi Kuning Bu Siti',
-                'price' => 'Rp 25.000',
-                'rt' => 'Warga RT 02',
-                'desc' => 'Nasi kuning wangi dengan ayam goreng, telur balado, oreg tempe.',
-            ],
-            [
-                'image' => '/images/umkm-2.jpg',
-                'name' => 'Jasa Jahit Pak RT',
-                'price' => 'Mulai Rp 50k',
-                'rt' => 'Warga RT 05',
-                'desc' => 'Menerima jahitan baju, celana, dan perbaikan pakaian.',
-            ],
-            [
-                'image' => '/images/umkm-3.jpg',
-                'name' => 'Kripik Tempe Renyah',
-                'price' => 'Rp 35.000',
-                'rt' => 'Warga RT 01',
-                'desc' => 'Kripik tempe renyah buatan rumahan, gurih dan lezat.',
-            ],
-        ];
+        // Produk UMKM dari usaha yang sudah di-Approve.
+        $umkm = UmkmProduk::with(['usaha.user.penduduk.keluarga.rt'])
+            ->where('status_produk', 'Aktif')
+            ->whereHas('usaha', fn ($q) => $q->where('status_verifikasi', 'Approved'))
+            ->take(3)
+            ->get()
+            ->map(function (UmkmProduk $p) {
+                $namaRt = optional(optional(optional(optional(optional($p->usaha)->user)->penduduk)->keluarga)->rt)->nama_rt;
 
-        $agenda = [
-            [
-                'day' => '17',
-                'month' => 'Agt',
-                'title' => 'Perayaan HUT RI ke-79',
-                'time' => '08:00 - 14:00 Balai RW',
-            ],
-            [
-                'day' => '25',
-                'month' => 'Agt',
-                'title' => 'Rapat Rutin Pengurus',
-                'time' => '19:00 - 21:00 Pos RT',
-            ],
-            [
-                'day' => '01',
-                'month' => 'Sep',
-                'title' => 'Posyandu Balita',
-                'time' => '09:00 - 12:00 Balai RW',
-            ],
-        ];
+                return [
+                    'image' => $p->foto_produk,
+                    'name' => $p->nama_produk,
+                    'price' => 'Rp ' . number_format((float) $p->harga, 0, ',', '.'),
+                    'rt' => $namaRt ? 'Warga RT ' . $namaRt : 'Warga RW 21',
+                    'desc' => Str::limit(strip_tags($p->deskripsi), 90),
+                ];
+            })
+            ->all();
+
+        // Agenda mendatang (Publish) yang belum lewat.
+        $agenda = Agenda::where('status', 'Publish')
+            ->whereDate('tanggal_mulai', '>=', today())
+            ->orderBy('tanggal_mulai')
+            ->take(3)
+            ->get()
+            ->map(function (Agenda $a) {
+                $mulai = $a->tanggal_mulai;
+                $waktu = $mulai ? $mulai->format('H:i') : '';
+                $lokasi = $a->lokasi ? ' ' . $a->lokasi : '';
+
+                return [
+                    'day' => $mulai ? $mulai->format('d') : '--',
+                    'month' => $mulai ? $mulai->translatedFormat('M') : '',
+                    'title' => $a->judul_agenda,
+                    'time' => trim($waktu . $lokasi),
+                ];
+            })
+            ->all();
 
         return view('pages.home', compact('stats', 'berita', 'umkm', 'agenda'));
     }

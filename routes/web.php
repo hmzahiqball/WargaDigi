@@ -78,6 +78,16 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Pemilihan & penggantian peran aktif (akun multi-peran).
+// Hanya butuh 'auth' (tanpa RoleMiddleware) agar user multi-peran yang belum
+// memilih tetap bisa membuka halaman ini tanpa loop redirect.
+Route::middleware('auth')->group(function () {
+    Route::get('/pilih-peran', [\App\Http\Controllers\RoleSwitchController::class, 'show'])->name('pilih-peran');
+    Route::post('/pilih-peran', [\App\Http\Controllers\RoleSwitchController::class, 'store'])->name('pilih-peran.store');
+    // Ganti peran = kembali ke halaman pilih peran (reset pilihan saat ini).
+    Route::post('/ganti-peran', [\App\Http\Controllers\RoleSwitchController::class, 'switch'])->name('ganti-peran');
+});
+
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
 Route::post('/aktivasi/verifikasi', [RegisterController::class, 'prosesAktivasi'])->name('aktivasi.verifikasi');
@@ -92,8 +102,11 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
     Route::get('/pengaturan-sistem', [AdminController::class, 'pengaturanSistem'])->name('admin.pengaturan-sistem');
     Route::post('/pengaturan-sistem', [AdminController::class, 'updatePengaturanSistem'])->name('admin.pengaturan-sistem.update');
     Route::get('/manajemen-hak-akses', [AdminController::class, 'manajemenHakAkses'])->name('admin.manajemen-hak-akses');
+    Route::post('/manajemen-hak-akses/pengurus', [AdminController::class, 'storePengurus'])->name('admin.manajemen-hak-akses.pengurus.store');
     Route::put('/manajemen-hak-akses/{id}', [AdminController::class, 'updateHakAkses'])->name('admin.manajemen-hak-akses.update');
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('admin.log-aktivitas');
+    Route::get('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'index'])->name('admin.pejabat.index');
+    Route::post('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'store'])->name('admin.pejabat.store');
     Route::get('/arsip-data-warga', [AdminController::class, 'arsipDataWarga'])->name('admin.arsip-data-warga');
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
 });
@@ -140,6 +153,9 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'approve'])->name('mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rw\MutasiWargaController::class, 'reject'])->name('mutasi.reject');
     Route::get('/mutasi-warga/{id}/dokumen', [MutasiDocumentController::class, 'show'])->name('mutasi.dokumen');
+
+    // Manajemen Penduduk
+    Route::get('/penduduk', [PendudukController::class, 'index'])->name('penduduk.index');
     Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('penduduk.show');
 });
 
@@ -163,6 +179,12 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'reject'])->name('rt.mutasi.reject');
     Route::get('/mutasi-warga/{id}/dokumen', [MutasiDocumentController::class, 'show'])->name('rt.mutasi.dokumen');
     Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('rt.penduduk.show');
+
+    // Pendataan Keluarga & Kepala Keluarga oleh RT.
+    Route::get('/keluarga/create', [\App\Http\Controllers\Rt\KeluargaController::class, 'create'])->name('rt.keluarga.create');
+    Route::post('/keluarga', [\App\Http\Controllers\Rt\KeluargaController::class, 'store'])->name('rt.keluarga.store');
+    // Tambah anggota keluarga (tanpa akun) ke sebuah keluarga.
+    Route::post('/keluarga/{keluarga}/anggota', [\App\Http\Controllers\Rt\KeluargaController::class, 'storeAnggota'])->name('rt.keluarga.anggota.store');
 });
 
 // Operator Konten Routes (Role: Op Konten RW, Op Konten RT)

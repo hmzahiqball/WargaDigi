@@ -61,7 +61,43 @@ class RtController extends Controller
             ],
         ];
 
-        $chartData = ['labels' => ['Mei','Jun','Jul','Agu','Sep','Okt','Nov'], 'values' => [1205,1218,1220,1228,1236,1240,1248]];
+        // Tren saldo 6 bulan terakhir dari transaksi keuangan unit RT (rt_id ketua).
+        // Struktur dipertahankan: ['labels' => [...], 'values' => [...]].
+        $chartLabels = [];
+        $chartValues = [];
+        $saldoBerjalan = 0;
+
+        // Saldo awal sebelum jendela 6 bulan (akumulasi transaksi RT ter-Verified).
+        $cursor6 = now()->startOfMonth()->subMonths(5);
+        if ($rtId) {
+            $saldoBerjalan = (int) \App\Models\TransaksiKeuangan::where('status', 'Verified')
+                ->where('unit_sumber', 'RT')
+                ->where('rt_id', $rtId)
+                ->whereDate('tanggal', '<', $cursor6)
+                ->selectRaw("COALESCE(SUM(CASE WHEN tipe = 'pemasukan' THEN jumlah ELSE -jumlah END), 0) as saldo")
+                ->value('saldo');
+        }
+
+        for ($m = 0; $m < 6; $m++) {
+            $bulan = now()->startOfMonth()->subMonths(5 - $m);
+            $chartLabels[] = $bulan->translatedFormat('M');
+
+            $netBulan = 0;
+            if ($rtId) {
+                $netBulan = (int) \App\Models\TransaksiKeuangan::where('status', 'Verified')
+                    ->where('unit_sumber', 'RT')
+                    ->where('rt_id', $rtId)
+                    ->whereYear('tanggal', $bulan->year)
+                    ->whereMonth('tanggal', $bulan->month)
+                    ->selectRaw("COALESCE(SUM(CASE WHEN tipe = 'pemasukan' THEN jumlah ELSE -jumlah END), 0) as net")
+                    ->value('net');
+            }
+
+            $saldoBerjalan += $netBulan;
+            $chartValues[] = $saldoBerjalan;
+        }
+
+        $chartData = ['labels' => $chartLabels, 'values' => $chartValues];
 
         // Ambil aktivitas laporan keuangan riil
         $latestLaporan = \App\Models\LaporanKeuangan::where('unit', 'RT')
@@ -112,9 +148,30 @@ class RtController extends Controller
             ];
         }
 
-        $aktivitasDokumen = [
-            ['title' => 'Pengajuan surat baru menunggu verifikasi.', 'time' => 'Hari ini', 'badge' => 'Menunggu', 'badge_class' => 'bg-warning bg-opacity-20 text-dark', 'icon' => 'bi-person-vcard text-primary', 'bg_icon' => 'bg-primary bg-opacity-10'],
-        ];
+        // Aktivitas dokumen terbaru RT (status Diajukan / Disetujui RT).
+        $latestPengajuan = PengajuanSurat::with(['penduduk.keluarga'])
+            ->whereIn('status', ['Diajukan', 'Disetujui RT'])
+            ->when($rtId, function ($q) use ($rtId) {
+                $q->whereHas('penduduk.keluarga', fn ($sub) => $sub->where('rt_id', $rtId));
+            })
+            ->orderByDesc('created_at')
+            ->take(5)
+            ->get();
+
+        $aktivitasDokumen = [];
+        foreach ($latestPengajuan as $surat) {
+            $isDiajukan = $surat->status === 'Diajukan';
+            $nama = $surat->penduduk->nama_lengkap ?? 'Pemohon';
+
+            $aktivitasDokumen[] = [
+                'title' => $surat->tipe_surat . ' - ' . $nama,
+                'time' => $surat->created_at ? $surat->created_at->diffForHumans() : '-',
+                'badge' => $isDiajukan ? 'Menunggu' : 'Disetujui RT',
+                'badge_class' => $isDiajukan ? 'bg-warning bg-opacity-20 text-dark' : 'bg-success text-white',
+                'icon' => $isDiajukan ? 'bi-person-vcard text-primary' : 'bi-check-circle-fill text-success',
+                'bg_icon' => $isDiajukan ? 'bg-primary bg-opacity-10' : 'bg-success bg-opacity-10',
+            ];
+        }
 
         return view('rt.dashboard', compact('stats', 'chartData', 'aktivitasKeuangan', 'aktivitasDokumen'));
     }
@@ -169,7 +226,7 @@ class RtController extends Controller
     public function approveDokumen(Request $request, $id)
     {
         $pengajuan = PengajuanSurat::findOrFail($id);
-        
+
         $dataUpdate = [
             'status' => 'Disetujui RT',
             'catatan_rt' => $request->input('catatan', null),
@@ -238,14 +295,17 @@ class RtController extends Controller
             if ($rt) $kodeRt = $rt->kode_rt;
         }
 
-        // Use logged-in RT user's data
+        // Kode RT mengikuti RT pemohon; bila kosong pakai RT petugas yang login.
         $loggedInRt = auth()->user();
-        $namaKetuaRt = $loggedInRt->username ?? '..........................';
-        if ($loggedInRt && $loggedInRt->rt_id) {
-            $loggedRt = \App\Models\MasterRt::find($loggedInRt->rt_id);
-            if ($loggedRt) $kodeRt = $loggedRt->kode_rt;
+        $rtIdSurat = $k->rt_id ?? ($loggedInRt->rt_id ?? null);
+        if ($rtIdSurat) {
+            $rtSurat = \App\Models\MasterRt::find($rtIdSurat);
+            if ($rtSurat) $kodeRt = $rtSurat->kode_rt;
         }
-        $namaKetuaRw = \App\Models\User::where('role', 'Pimpinan RW')->first()->username ?? '..........................';
+
+        // Nama pejabat diambil dari data Pejabat aktif (bukan username akun).
+        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($rtIdSurat) ?? '..........................';
+        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
 
         $tanggalSelesai = $item->updated_at;
         $bulanRomawi = \App\Models\PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';

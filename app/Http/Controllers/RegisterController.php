@@ -35,6 +35,14 @@ class RegisterController extends Controller
             ])->withInput();
         }
 
+        // Hanya Kepala Keluarga yang boleh mengaktivasi akun warga.
+        // Anggota keluarga lain tidak memiliki akun ke sistem.
+        if ($penduduk->nik !== $keluarga->nik_kepala_keluarga) {
+            return back()->withErrors([
+                'nik' => 'Hanya Kepala Keluarga yang dapat mengaktivasi akun. Hubungi Kepala Keluarga Anda.',
+            ])->withInput();
+        }
+
         $existingUser = User::where('nik', $request->nik)->first();
         if ($existingUser?->status_akun === 'Active') {
             return back()->withErrors(['nik' => 'Akun untuk NIK tersebut sudah aktif.'])->withInput();
@@ -101,21 +109,42 @@ class RegisterController extends Controller
             return redirect()->route('register')->withErrors(['nik' => 'Data aktivasi tidak lagi valid.']);
         }
 
+        // Pastikan penduduk yang diaktivasi adalah Kepala Keluarga.
+        if ($penduduk->nik !== $penduduk->keluarga->nik_kepala_keluarga) {
+            $request->session()->forget('activation');
+            return redirect()->route('register')->withErrors(['nik' => 'Hanya Kepala Keluarga yang dapat mengaktivasi akun.']);
+        }
+
         $existingUser = User::where('nik', $penduduk->nik)->first();
-        if ($existingUser && $existingUser->role !== 'Warga') {
+        // Jika akun sudah ada namun TIDAK memiliki peran Warga sama sekali,
+        // berarti NIK itu dikelola murni sebagai akun petugas — tolak aktivasi warga.
+        if ($existingUser && ! in_array('Warga', $existingUser->roleNames(), true)) {
             return redirect()->route('register')->withErrors(['nik' => 'NIK tersebut dikelola sebagai akun petugas.']);
         }
 
         DB::transaction(function () use ($existingUser, $penduduk, $request): void {
             $user = $existingUser ?: new User(['nik' => $penduduk->nik]);
+            // Pertahankan username yang sudah dibuat RT; hanya isi bila akun baru.
             $user->fill([
-                'username' => $penduduk->nama_lengkap,
-                'role' => 'Warga',
+                'username' => $user->username ?: $penduduk->nama_lengkap,
+                'role' => $user->role ?: 'Warga',
                 'password' => $request->password,
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ]);
             $user->save();
+
+            // Pastikan peran Warga tersemat (tanpa menghapus peran lain yang mungkin ada).
+            if (class_exists(\Spatie\Permission\Models\Role::class)) {
+                try {
+                    \Spatie\Permission\Models\Role::findOrCreate('Warga', 'web');
+                    if (! $user->hasRole('Warga')) {
+                        $user->assignRole('Warga');
+                    }
+                } catch (\Throwable $e) {
+                    // Abaikan bila tabel permission belum ada.
+                }
+            }
 
             $penduduk->keluarga->update(['status_aktivasi' => 'Active']);
         });

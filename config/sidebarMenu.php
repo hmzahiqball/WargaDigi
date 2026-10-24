@@ -27,6 +27,14 @@ return [
         'active' => ['admin.manajemen-hak-akses', 'admin/manajemen-hak-akses*'],
     ],
     [
+        'title' => 'Kepengurusan',
+        'route' => 'admin.pejabat.index',
+        'url'   => '/admin/pejabat',
+        'icon'  => 'bi-person-vcard',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['admin.pejabat.index', 'admin/pejabat*'],
+    ],
+    [
         'title' => 'Log Aktivitas',
         'route' => 'admin.log-aktivitas',
         'url'   => '/admin/log-aktivitas',
@@ -34,22 +42,25 @@ return [
         'roles' => ['Admin Aplikasi'],
         'active' => ['admin.log-aktivitas', 'admin/log-aktivitas*'],
     ],
-    [
-        'title' => 'Arsip Data Warga',
-        'route' => 'admin.arsip-data-warga',
-        'url'   => '/admin/arsip-data-warga',
-        'icon'  => 'bi-archive-fill',
-        'roles' => ['Admin Aplikasi'],
-        'active' => ['admin.arsip-data-warga', 'admin/arsip-data-warga*'],
-    ],
-    [
-        'title' => 'Manajemen Data',
-        'route' => 'admin.manajemen-data',
-        'url'   => '/admin/manajemen-data',
-        'icon'  => 'bi-database-fill-gear',
-        'roles' => ['Admin Aplikasi'],
-        'active' => ['admin.manajemen-data', 'admin/manajemen-data*'],
-    ],
+    // Disembunyikan sementara: fitur backend "Arsip Data Warga" & "Manajemen Data"
+    // belum diimplementasikan (masih UI/mock). Route & controller tetap ada,
+    // aktifkan kembali entri di bawah ini bila backend sudah siap.
+    // [
+    //     'title' => 'Arsip Data Warga',
+    //     'route' => 'admin.arsip-data-warga',
+    //     'url'   => '/admin/arsip-data-warga',
+    //     'icon'  => 'bi-archive-fill',
+    //     'roles' => ['Admin Aplikasi'],
+    //     'active' => ['admin.arsip-data-warga', 'admin/arsip-data-warga*'],
+    // ],
+    // [
+    //     'title' => 'Manajemen Data',
+    //     'route' => 'admin.manajemen-data',
+    //     'url'   => '/admin/manajemen-data',
+    //     'icon'  => 'bi-database-fill-gear',
+    //     'roles' => ['Admin Aplikasi'],
+    //     'active' => ['admin.manajemen-data', 'admin/manajemen-data*'],
+    // ],
     [
         'title' => 'Galeri UMKM',
         'route' => 'umkm.galeri',
@@ -70,10 +81,11 @@ return [
     ],
     [
         'title' => 'Manajemen Penduduk',
-        'url'   => '#',
+        'route' => 'rw.penduduk.index',
+        'url'   => '/rw/penduduk',
         'icon'  => 'bi-people-fill',
         'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/penduduk*'],
+        'active' => ['rw.penduduk.index', 'rw.penduduk.show', 'rw/penduduk*'],
     ],
     [
         'title' => 'Manajemen RT',
@@ -133,13 +145,15 @@ return [
         'roles' => ['Admin RW', 'Pimpinan RW'],
         'active' => ['rw/pusat-informasi*'],
     ],
-    [
-        'title' => 'Koperasi',
-        'url'   => '#',
-        'icon'  => 'bi-storefront',
-        'roles' => ['Admin RW', 'Pimpinan RW'],
-        'active' => ['rw/koperasi*'],
-    ],
+    // Disembunyikan sementara: menu "Koperasi" belum memiliki fitur/halaman.
+    // Aktifkan kembali bila modul koperasi sudah diimplementasikan.
+    // [
+    //     'title' => 'Koperasi',
+    //     'url'   => '#',
+    //     'icon'  => 'bi-storefront',
+    //     'roles' => ['Admin RW', 'Pimpinan RW'],
+    //     'active' => ['rw/koperasi*'],
+    // ],
 
     // --- KETUA RT ---
     [
@@ -184,11 +198,12 @@ return [
         'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
     ],
     [
-        'title' => 'Informasi Keluarga',
-        'url'   => '#',
-        'icon'  => 'bi-people-fill',
+        'title' => 'Tambah Keluarga',
+        'route' => 'rt.keluarga.create',
+        'url'   => '/rt/keluarga/create',
+        'icon'  => 'bi-house-add',
         'roles' => ['Ketua RT'],
-        'active' => ['rt/keluarga*'],
+        'active' => ['rt/keluarga*', 'rt.keluarga.create'],
     ],
     [
         'title' => 'Galeri UMKM',

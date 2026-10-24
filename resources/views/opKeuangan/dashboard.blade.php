@@ -13,7 +13,7 @@
 </div>
 
 {{-- Top 3 Stat Cards --}}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 dash-stats">
     {{-- Card 1: TOTAL KAS RW --}}
     <div class="col-md-4">
         <div class="card card-custom p-4 h-100 shadow-sm border-0 d-flex flex-column">

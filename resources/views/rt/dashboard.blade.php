@@ -31,7 +31,7 @@
 @endif
 
 {{-- Top 3 Metric Cards --}}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 dash-stats">
     {{-- Card 1: TOTAL WARGA --}}
     <div class="col-md-4">
         <div class="card card-custom p-4 h-100 shadow-sm border-0">

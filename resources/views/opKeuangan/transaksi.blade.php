@@ -3,12 +3,12 @@
 @section('title', 'Catat Transaksi')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-center mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Catat Transaksi</h2>
         <p class="text-muted mb-0">Kelola arus kas masuk dan keluar dengan mudah.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="dash-header-actions d-flex gap-2">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCatatTransaksi">
             <i class="bi bi-plus-lg me-1"></i> Catat Transaksi Baru
         </button>
@@ -213,7 +213,7 @@
             <div class="modal-body p-4">
                 <form action="{{ route('opkeuangan.transaksi.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Tipe Transaksi</label>
                         <div class="d-flex gap-3">
@@ -251,7 +251,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Jumlah (Rp)</label>
-                        <input type="number" class="form-control bg-light border-0 py-2" placeholder="0" name="jumlah" value="{{ old('jumlah') }}" required>
+                        <input type="text" inputmode="numeric" data-money class="form-control bg-light border-0 py-2" placeholder="0" name="jumlah" value="{{ old('jumlah') }}" required>
                     </div>
 
                     <div class="mb-3">
@@ -303,7 +303,7 @@
                 <form id="formEditTransaksi" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Tipe Transaksi</label>
                         <div class="d-flex gap-3">
@@ -343,7 +343,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Jumlah (Rp)</label>
-                        <input type="number" class="form-control bg-light border-0 py-2" name="jumlah" id="editJumlah" required>
+                        <input type="text" inputmode="numeric" data-money class="form-control bg-light border-0 py-2" name="jumlah" id="editJumlah" required>
                     </div>
 
                     <div class="mb-3">
@@ -408,7 +408,7 @@
             <div class="modal-body p-4">
                 <form action="#" method="POST">
                     @csrf
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Target Penerima</label>
                         <select class="form-select bg-light border-0 py-2">

@@ -60,18 +60,106 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    /** Session key untuk menyimpan peran aktif (active role) per sesi login. */
+    public const ACTIVE_ROLE_SESSION_KEY = 'active_role';
+
     /**
      * Get the user's name (resolves from Penduduk if Warga, else username).
      */
     public function getNameAttribute()
     {
-        if ($this->role === 'Warga') {
+        if ($this->activeRole() === 'Warga' && $this->nik) {
             $penduduk = \App\Models\Penduduk::where('nik', $this->nik)->first();
             if ($penduduk) {
                 return $penduduk->nama_lengkap;
             }
         }
         return $this->username;
+    }
+
+    /**
+     * Daftar seluruh peran yang dimiliki akun ini.
+     *
+     * Sumber utama: Spatie roles (mendukung banyak peran per akun).
+     * Fallback: kolom `role` legacy bila Spatie belum tersemat (mis. saat test
+     * tanpa seed permission). Hasil selalu unik dan terurut stabil.
+     *
+     * @return array<int, string>
+     */
+    public function roleNames(): array
+    {
+        $names = [];
+
+        try {
+            if (class_exists(\Spatie\Permission\Models\Role::class)) {
+                $names = $this->getRoleNames()->all();
+            }
+        } catch (\Throwable $e) {
+            // Tabel permission mungkin belum ada; abaikan dan pakai fallback.
+        }
+
+        if (empty($names) && ! empty($this->role)) {
+            $names = [$this->role];
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * Apakah akun memiliki lebih dari satu peran (butuh pemilihan saat login).
+     */
+    public function hasMultipleRoles(): bool
+    {
+        return count($this->roleNames()) > 1;
+    }
+
+    /**
+     * Peran aktif untuk sesi berjalan.
+     *
+     * Mengambil dari session bila ada dan valid (termasuk salah satu peran
+     * yang dimiliki akun). Jika tidak, fallback ke satu-satunya peran yang
+     * dimiliki, lalu ke kolom `role` legacy. Dengan begitu seluruh kode lama
+     * yang membaca peran tetap bekerja melalui satu sumber kebenaran.
+     */
+    public function activeRole(): ?string
+    {
+        $available = $this->roleNames();
+
+        // Hanya baca session untuk user yang sedang login (hindari bocor antar-user).
+        if (\Illuminate\Support\Facades\Auth::id() === $this->getKey()) {
+            $sessionRole = session(self::ACTIVE_ROLE_SESSION_KEY);
+            if ($sessionRole && in_array($sessionRole, $available, true)) {
+                return $sessionRole;
+            }
+        }
+
+        if (count($available) === 1) {
+            return $available[0];
+        }
+
+        return $this->role ?: ($available[0] ?? null);
+    }
+
+    /**
+     * Set peran aktif ke session (hanya bila peran tsb dimiliki akun).
+     */
+    public function setActiveRole(string $role): bool
+    {
+        if (! in_array($role, $this->roleNames(), true)) {
+            return false;
+        }
+
+        session([self::ACTIVE_ROLE_SESSION_KEY => $role]);
+
+        return true;
+    }
+
+    /**
+     * Hapus peran aktif dari session (dipanggil saat logout / ganti peran).
+     */
+    public static function clearActiveRole(): void
+    {
+        session()->forget(self::ACTIVE_ROLE_SESSION_KEY);
     }
 
     /**
@@ -83,7 +171,7 @@ class User extends Authenticatable
             return $value;
         }
 
-        if (in_array($this->role, ['Ketua RT', 'Op Keuangan RT', 'Op Konten RT', 'Warga'])) {
+        if ($this->nik && in_array(trim($this->activeRole() ?? ''), ['Ketua RT', 'Op Keuangan RT', 'Op. Keuangan RT', 'Bendahara RT', 'Op Konten RT', 'Op. Konten RT', 'Warga'], true)) {
             $penduduk = \App\Models\Penduduk::where('nik', $this->nik)->first();
             if ($penduduk && $penduduk->keluarga_id) {
                 $keluarga = \App\Models\Keluarga::find($penduduk->keluarga_id);
@@ -152,7 +240,12 @@ class User extends Authenticatable
     }
 
     /**
-     * Assign the Spatie role matching the current `role` column value.
+     * Pastikan peran pada kolom `role` legacy juga tersemat di Spatie.
+     *
+     * Penting: memakai assignRole (menambahkan, idempoten) — BUKAN syncRoles —
+     * agar peran lain yang sudah dimiliki akun (multi-role) tidak terhapus saat
+     * kolom `role` berubah. Pengelolaan daftar peran lengkap dilakukan eksplisit
+     * (mis. oleh superadmin) via syncRoles di controller terkait.
      */
     public function syncSpatieRole(): void
     {
@@ -162,7 +255,9 @@ class User extends Authenticatable
 
         try {
             \Spatie\Permission\Models\Role::findOrCreate($this->role, 'web');
-            $this->syncRoles([$this->role]);
+            if (! $this->hasRole($this->role)) {
+                $this->assignRole($this->role);
+            }
         } catch (\Throwable $e) {
             // Permission tables may not exist yet (e.g. during initial migration). Ignore silently.
         }

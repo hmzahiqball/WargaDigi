@@ -3,16 +3,14 @@
 @section('title', 'Persetujuan Keuangan')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-center mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Persetujuan Keuangan</h2>
         <p class="text-muted mb-0">Tinjau dan setujui laporan keuangan bulanan yang diajukan oleh Bendahara.</p>
     </div>
-    <div>
-        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fs-6">
-            <i class="bi bi-person-badge me-1"></i> {{ $scope['label'] }}
-        </span>
-    </div>
+    <span class="dash-header-status badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fs-6">
+        <i class="bi bi-person-badge me-1"></i> {{ $scope['label'] }}
+    </span>
 </div>
 
 {{-- Flash Messages --}}

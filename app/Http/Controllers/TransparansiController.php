@@ -2,63 +2,146 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\LaporanKeuangan;
+use App\Models\TransaksiKeuangan;
+use Illuminate\Support\Carbon;
 
 class TransparansiController extends Controller
 {
     public function index()
     {
+        // Basis transaksi yang dianggap sah (bukan Rejected).
+        $base = TransaksiKeuangan::where('status', '!=', 'Rejected');
+
+        // Total Saldo Kas: akumulasi seluruh unit (RT/RW/DKM) = pemasukan - pengeluaran.
+        // Keputusan: memakai agregat semua unit agar mencerminkan total kas lingkungan.
+        $totalPemasukanAll = (clone $base)->where('tipe', 'pemasukan')->sum('jumlah');
+        $totalPengeluaranAll = (clone $base)->where('tipe', 'pengeluaran')->sum('jumlah');
+        $saldo = $totalPemasukanAll - $totalPengeluaranAll;
+
+        // Tanggal transaksi terbaru sebagai "diperbarui".
+        $latestTanggal = (clone $base)->max('tanggal');
+        $updated = $latestTanggal ? Carbon::parse($latestTanggal)->translatedFormat('d M Y') : '-';
+
+        // Rentang bulan berjalan.
+        $awalBulan = now()->startOfMonth();
+        $akhirBulan = now()->endOfMonth();
+        $bulanLabel = now()->translatedFormat('M');
+
+        $pemasukanBulan = (clone $base)
+            ->where('tipe', 'pemasukan')
+            ->whereBetween('tanggal', [$awalBulan, $akhirBulan]);
+        $pengeluaranBulan = (clone $base)
+            ->where('tipe', 'pengeluaran')
+            ->whereBetween('tanggal', [$awalBulan, $akhirBulan]);
+
         $summary = [
-            'saldo' => 'Rp 15.450.000',
-            'updated' => '15 Okt 2024',
+            'saldo' => 'Rp ' . number_format($saldo, 0, ',', '.'),
+            'updated' => $updated,
             'pemasukan' => [
-                'total' => 'Rp 4.200.000',
-                'bulan' => 'Okt',
-                'items' => [
-                    ['label' => 'Iuran Warga', 'amount' => 'Rp 3.500.000'],
-                    ['label' => 'Donasi Fasilitas', 'amount' => 'Rp 700.000'],
-                ],
+                'total' => 'Rp ' . number_format((clone $pemasukanBulan)->sum('jumlah'), 0, ',', '.'),
+                'bulan' => $bulanLabel,
+                'items' => $this->topKategori(clone $pemasukanBulan),
             ],
             'pengeluaran' => [
-                'total' => 'Rp 1.850.000',
-                'bulan' => 'Okt',
-                'items' => [
-                    ['label' => 'Petugas Keamanan', 'amount' => 'Rp 1.200.000'],
-                    ['label' => 'Perbaikan Lampu Jalan', 'amount' => 'Rp 650.000'],
-                ],
+                'total' => 'Rp ' . number_format((clone $pengeluaranBulan)->sum('jumlah'), 0, ',', '.'),
+                'bulan' => $bulanLabel,
+                'items' => $this->topKategori(clone $pengeluaranBulan),
             ],
         ];
 
-        $transactions = [
-            ['icon' => 'income', 'title' => 'Iuran RT 01', 'date' => '14 Okt 2024', 'amount' => '+ Rp 500.000', 'type' => 'positive'],
-            ['icon' => 'expense', 'title' => 'Perbaikan Gapura', 'date' => '10 Okt 2024', 'amount' => '- Rp 350.000', 'type' => 'negative'],
-            ['icon' => 'income', 'title' => 'Iuran RT 02', 'date' => '08 Okt 2024', 'amount' => '+ Rp 450.000', 'type' => 'positive'],
-        ];
+        // Transaksi terbaru (Verified) untuk daftar singkat.
+        $transactions = TransaksiKeuangan::where('status', 'Verified')
+            ->orderByDesc('tanggal')
+            ->take(5)
+            ->get()
+            ->map(function (TransaksiKeuangan $t) {
+                $isIncome = $t->tipe === 'pemasukan';
+                $prefix = $isIncome ? '+ ' : '- ';
 
-        $reports = [
-            ['title' => 'Laporan Triwulan III – 2024', 'period' => 'Juli - September 2024', 'size' => '1.2 MB', 'color' => 'blue'],
-            ['title' => 'Laporan Triwulan II – 2024', 'period' => 'April - Juni 2024', 'size' => '1.5 MB', 'color' => 'green'],
-            ['title' => 'Laporan Tahunan 2023', 'period' => 'Januari - Desember 2023', 'size' => '3.8 MB', 'color' => 'red'],
-        ];
+                return [
+                    'icon' => $isIncome ? 'income' : 'expense',
+                    'title' => $t->judul,
+                    'date' => $t->tanggal ? $t->tanggal->translatedFormat('d M Y') : '-',
+                    'amount' => $prefix . 'Rp ' . number_format($t->jumlah, 0, ',', '.'),
+                    'type' => $isIncome ? 'positive' : 'negative',
+                ];
+            })
+            ->all();
+
+        // Laporan resmi yang sudah dipublikasikan & disetujui.
+        $colorCycle = ['blue', 'green', 'red'];
+        $namaBulan = $this->namaBulanMap();
+
+        $reports = LaporanKeuangan::where('is_published', true)
+            ->where('status', 'Approved')
+            ->orderByDesc('periode_tahun')
+            ->orderByDesc('periode_bulan')
+            ->orderByDesc('updated_at')
+            ->get()
+            ->values()
+            ->map(function (LaporanKeuangan $r, int $i) use ($colorCycle, $namaBulan) {
+                $periodeBulan = $namaBulan[$r->periode_bulan] ?? $r->periode_bulan;
+
+                return [
+                    'id' => $r->id,
+                    'title' => $r->judul,
+                    'period' => trim($periodeBulan . ' ' . $r->periode_tahun),
+                    'size' => '-',
+                    'color' => $colorCycle[$i % count($colorCycle)],
+                ];
+            })
+            ->all();
 
         return view('pages.transparansi', compact('summary', 'transactions', 'reports'));
     }
 
     public function downloadPdf($id)
     {
-        $reports = [
-            ['title' => 'Laporan Triwulan III – 2024', 'period' => 'Juli - September 2024'],
-            ['title' => 'Laporan Triwulan II – 2024', 'period' => 'April - Juni 2024'],
-            ['title' => 'Laporan Tahunan 2023', 'period' => 'Januari - Desember 2023'],
+        $laporan = LaporanKeuangan::where('is_published', true)->findOrFail($id);
+
+        $namaBulan = $this->namaBulanMap();
+        $periodeBulan = $namaBulan[$laporan->periode_bulan] ?? $laporan->periode_bulan;
+
+        $report = [
+            'id' => $laporan->id,
+            'title' => $laporan->judul,
+            'period' => trim($periodeBulan . ' ' . $laporan->periode_tahun),
         ];
 
-        if (!isset($reports[$id])) {
-            abort(404);
-        }
-
-        $report = $reports[$id];
-        
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pages.transparansi_pdf', compact('report'));
         return $pdf->download(str_replace(' ', '_', $report['title']) . '.pdf');
+    }
+
+    /**
+     * Ambil top kategori (maks 2) dari query transaksi beserta total nominalnya.
+     *
+     * @return array<int, array{label: string, amount: string}>
+     */
+    private function topKategori($query): array
+    {
+        return $query
+            ->selectRaw('kategori, SUM(jumlah) as total')
+            ->groupBy('kategori')
+            ->orderByDesc('total')
+            ->take(2)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => $row->kategori ?: 'Lainnya',
+                'amount' => 'Rp ' . number_format((int) $row->total, 0, ',', '.'),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function namaBulanMap(): array
+    {
+        return [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
     }
 }

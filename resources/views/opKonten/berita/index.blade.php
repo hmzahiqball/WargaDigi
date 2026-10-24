@@ -43,7 +43,7 @@
         pointer-events: none;
         display: block;
     }
-    
+
     /* Quill Customization */
     .ql-toolbar.ql-snow {
         border-color: #BFCABA;
@@ -64,7 +64,7 @@
     .quill-wrapper:focus-within .ql-toolbar.ql-snow {
         border-color: #0D631B;
     }
-    
+
     /* Custom Blockquote (Highlight Hijau) */
     .ql-editor blockquote,
     #detailKonten blockquote {
@@ -78,7 +78,7 @@
         font-size: 14px !important;
         font-style: normal !important;
     }
-    
+
     /* Blur background when modal is open */
     .modal-backdrop {
         backdrop-filter: blur(5px) !important;
@@ -124,9 +124,9 @@
         line-height: 1.7;
         margin-bottom: 1.25rem;
     }
-    #detailKonten h1, #detailKonten h2, #detailKonten h3, 
+    #detailKonten h1, #detailKonten h2, #detailKonten h3,
     #detailKonten h4, #detailKonten h5, #detailKonten h6,
-    .ql-editor h1, .ql-editor h2, .ql-editor h3, 
+    .ql-editor h1, .ql-editor h2, .ql-editor h3,
     .ql-editor h4, .ql-editor h5, .ql-editor h6 {
         font-family: inherit !important;
         color: #1F2937 !important;
@@ -135,7 +135,7 @@
         margin-bottom: 0.75rem;
         line-height: 1.4;
     }
-    
+
     /* Make sure content headings are strictly smaller than the main modal title */
     #detailKonten h1, .ql-editor h1 { font-size: 1.35rem !important; }
     #detailKonten h2, .ql-editor h2 { font-size: 1.25rem !important; }
@@ -216,14 +216,16 @@
 
 @section('content')
 {{-- Page Header --}}
-<div class="d-flex justify-content-between align-items-end mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-end mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Manajemen Berita</h2>
         <p class="text-muted mb-0">Kelola artikel berita, persetujuan, dan tinjauan draf.</p>
     </div>
-    <button type="button" class="btn fw-semibold px-3 py-2 rounded-3 text-white shadow-sm btn-gradient-green" data-bs-toggle="modal" data-bs-target="#modalBuatBerita" onclick="resetToCreate()">
-        <i class="bi bi-plus-lg me-1"></i> Buat Berita Baru
-    </button>
+    <div class="dash-header-actions">
+        <button type="button" class="btn fw-semibold px-3 py-2 rounded-3 text-white shadow-sm btn-gradient-green" data-bs-toggle="modal" data-bs-target="#modalBuatBerita" onclick="resetToCreate()">
+            <i class="bi bi-plus-lg me-1"></i> Buat Berita Baru
+        </button>
+    </div>
 </div>
 
 {{-- Status Workflow Bento --}}
@@ -350,9 +352,9 @@
                         // Mapping status colors and labels
                         $statusColors = [
                             'Draft' => ['bg' => '#F3F4F6', 'color' => '#6B7280', 'label' => 'Draf'],
-                            'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'], 
-                            'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'], 
-                            'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'], 
+                            'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'],
+                            'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'],
+                            'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'],
                             'Archive' => ['bg' => '#E5E7EB', 'color' => '#4B5563', 'label' => 'Diarsipkan'],
                         ];
                         $s_bg = $statusColors[$item->status]['bg'] ?? '#F3F4F6';
@@ -388,8 +390,8 @@
                             </span>
                         </td>
                         <td class="py-3 px-3">
-                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;" onclick="openDetailModal('{{ $item->id }}')">
-                                Lihat Detail
+                            <button type="button" class="btn btn-sm rounded-3 fw-semibold px-3" style="font-size: 12px; background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7;" onclick="openDetailModal('{{ $item->id }}')">
+                                <i class="bi bi-eye me-1"></i> Lihat Detail
                             </button>
                         </td>
                     </tr>
@@ -462,10 +464,10 @@
                         <div class="rounded-3 overflow-hidden mb-3 border" style="height: 200px; background-color: #f8f9fa;">
                             <img id="detailImage" src="" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
-                        
+
                         <div class="p-4 rounded-3" style="background-color: #F3F4F6; border: 1px solid #E5E7EB;">
                             <h6 class="fw-bold mb-4" style="font-size: 13px; letter-spacing: 0.5px; color: #6B7280;">INFORMASI PUBLIKASI</h6>
-                            
+
                             <div class="mb-3">
                                 <span class="d-block text-muted small mb-1">Status</span>
                                 <span id="detailStatus" class="badge rounded-pill px-3 py-2 fw-semibold small d-inline-flex align-items-center gap-2">
@@ -473,14 +475,14 @@
                                     <span class="status-text">Publish</span>
                                 </span>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <span class="d-block text-muted small mb-1">Kategori</span>
                                 <span id="detailKategori" class="badge rounded-1 px-2 py-1 fw-medium" style="background: #E5E7EB; color: #374151; font-size: 12px; border: 1px solid #D1D5DB;">
                                     SOSIAL
                                 </span>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <span class="d-block text-muted small mb-1">Penulis</span>
                                 <div class="text-dark fw-medium fs-6 d-flex align-items-center gap-2">
@@ -488,7 +490,7 @@
                                     <span id="detailPenulis">Budi Santoso</span>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <span class="d-block text-muted small mb-1">Tanggal Publikasi</span>
                                 <div class="text-dark fw-medium fs-6 d-flex align-items-center gap-2">
@@ -498,25 +500,25 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     {{-- Right Column: Content --}}
                     <div class="col-lg-8">
                         <h3 id="detailJudul" class="fw-bold text-dark mb-4" style="line-height: 1.4;">Vaksinasi Massal Warga 04</h3>
-                        
+
                         <div id="detailKonten" class="text-dark" style="line-height: 1.7; font-size: 15px;">
                             <p>Dalam upaya mempercepat program pemerintah dan memastikan kekebalan kelompok (herd immunity) di lingkungan kita, Pengurus RW 04 bersama dengan Puskesmas Kecamatan dan relawan kesehatan setempat telah sukses menyelenggarakan acara Vaksinasi Massal. Acara ini ditujukan khusus bagi seluruh warga RW 04 yang belum mendapatkan dosis vaksin lengkap atau vaksin booster.</p>
-                            
+
                             <h6 class="fw-bold mt-4 mb-2">Detail Pelaksanaan</h6>
                             <ul class="mb-4 text-dark">
                                 <li class="mb-2"><strong>Lokasi:</strong> Balai Warga RW 04, Jl. Merdeka Bersama No. 45.</li>
                                 <li class="mb-2"><strong>Waktu Pelaksanaan:</strong> Sabtu, 12 Agustus 2023, mulai pukul 08.00 WIB hingga selesai.</li>
                                 <li class="mb-2"><strong>Jenis Vaksin Tersedia:</strong> Sinovac, AstraZeneca, dan Pfizer (khusus booster).</li>
                             </ul>
-                            
+
                             <p>Antusiasme warga sangat luar biasa. Sejak pagi hari, antrean sudah terlihat memanjang namun tetap tertib berkat pengaturan dari panitia lokal dan petugas keamanan lingkungan. Tercatat lebih dari 350 warga dari berbagai rentang usia, mulai dari lansia hingga remaja, turut berpartisipasi dalam kegiatan ini.</p>
-                            
+
                             <p>"Kami sangat berterima kasih atas partisipasi aktif warga. Kesehatan lingkungan adalah tanggung jawab bersama. Dengan cakupan vaksinasi yang tinggi, kita berharap RW 04 bisa menjadi kawasan yang lebih aman dan tangguh menghadapi ancaman penyakit," ujar Ketua RW 04 dalam sambutannya.</p>
-                            
+
                             <div class="p-3 mt-4 rounded-end-2 border-start border-4 border-success" style="background-color: #F0FDF4; color: #166534; font-size: 14px;">
                                 Bagi warga yang berhalangan hadir pada acara ini, Puskesmas Kecamatan tetap melayani vaksinasi reguler setiap hari Senin-Jumat pukul 08.00 - 12.00 WIB. Harap membawa KTP dan bukti vaksinasi sebelumnya.
                             </div>
@@ -524,10 +526,10 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer px-4 py-3 bg-light border-top">
-                <div class="w-100 d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-sm fw-semibold px-3 rounded-3" style="font-size: 12px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;" onclick="previewBeritaAsWarga()">
-                        <i class="bi bi-eye me-1"></i> Pratinjau Tampilan Warga
+            <div class="modal-footer px-4 py-3 bg-white border-top modal-action-footer" style="border-color: #BFCABA !important;">
+                <div class="w-100 d-flex flex-wrap flex-sm-nowrap justify-content-between align-items-center gap-2">
+                    <button type="button" class="btn fw-semibold px-4 rounded-3 text-nowrap d-flex align-items-center justify-content-center" onclick="previewBeritaAsWarga()" data-bs-toggle="tooltip" title="Pratinjau Tampilan Warga" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
+                        <i class="bi bi-eye me-1"></i> <span class="label-full">Pratinjau Tampilan Warga</span><span class="label-short">Pratinjau</span>
                     </button>
                     <div id="detailFooterActions" class="d-flex flex-wrap gap-2">
                         <!-- Action buttons will be injected dynamically based on status -->
@@ -546,7 +548,7 @@
             <input type="hidden" name="isi_berita" id="isiBeritaInput">
             <input type="hidden" name="action" id="actionInput">
             <input type="hidden" name="berita_id" id="beritaIdInput">
-            
+
             <div class="modal-header px-4 py-3 border-bottom" style="border-color: #BFCABA !important;">
                 <h5 class="modal-title fw-bold text-dark" id="modalBuatBeritaLabel" style="font-size: 20px;">Buat Konten Berita</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -596,7 +598,7 @@
                         <h6 class="fw-bold text-dark mb-1" style="font-size: 14px;">Tarik dan lepas gambar di sini, atau klik untuk mencari</h6>
                         <p class="text-muted small mb-0" style="font-size: 12px;">Format didukung: JPG, PNG, WEBP (Maks 5MB)</p>
                     </div>
-                    
+
                     {{-- Thumbnail Preview (muncul setelah diunggah) --}}
                     <div id="previewContainer" class="d-none mt-3">
                         <div class="position-relative d-inline-block rounded border shadow-sm p-1 bg-white">
@@ -661,12 +663,12 @@
         // Tampilkan Toast
         const toast = document.getElementById('customToast');
         const toastMsg = document.getElementById('customToastMessage');
-        
+
         if (toast && toastMsg) {
             toastMsg.textContent = message;
             toast.style.background = isError ? 'rgba(220, 53, 69, 0.95)' : 'rgba(13, 99, 27, 0.95)';
             document.getElementById('customToastIcon').className = isError ? 'bi bi-exclamation-triangle-fill fs-5' : 'bi bi-check-circle-fill fs-5';
-            
+
             toast.style.opacity = '1';
 
             // Sembunyikan setelah 3 detik
@@ -797,7 +799,7 @@
             el.addEventListener('input', () => formDirty = true);
             el.addEventListener('change', () => formDirty = true);
         });
-        
+
         // Track quill changes
         quill.on('text-change', function() {
             formDirty = true;
@@ -829,7 +831,7 @@
             confirmModalEl.addEventListener('show.bs.modal', function () {
                 const formContent = document.getElementById('formBuatBerita');
                 formContent.style.filter = 'blur(5px)';
-                
+
                 // Sembunyikan backdrop lapis kedua agar tidak terlalu gelap (tumpang tindih)
                 setTimeout(() => {
                     const backdrops = document.querySelectorAll('.modal-backdrop');
@@ -861,28 +863,28 @@
         form.action = "{{ route('opkonten.berita.store') }}";
         document.getElementById('beritaIdInput').value = '';
         document.getElementById('alertCatatanRevisi').classList.add('d-none');
-        
+
         const methodInput = form.querySelector('input[name="_method"]');
         if (methodInput) methodInput.remove();
-        
+
         quill.setText('');
         removeImage();
     }
 
     function forceCloseModal() {
         allowModalClose = true;
-        
+
         const confirmModalEl = document.getElementById('confirmCloseModal');
         const confirmModal = bootstrap.Modal.getInstance(confirmModalEl);
-        
+
         if (confirmModal) {
             // Hide main modal after confirm modal is completely hidden to avoid backdrop freeze
             confirmModalEl.addEventListener('hidden.bs.modal', function onHidden() {
                 confirmModalEl.removeEventListener('hidden.bs.modal', onHidden);
-                
+
                 const buatBeritaModal = bootstrap.Modal.getInstance(document.getElementById('modalBuatBerita'));
                 if (buatBeritaModal) buatBeritaModal.hide();
-                
+
                 cleanupForm();
             });
             confirmModal.hide();
@@ -892,7 +894,7 @@
             cleanupForm();
         }
     }
-    
+
     function saveDraftFromConfirm() {
         // removed as no longer needed
     }
@@ -940,7 +942,7 @@
         document.getElementById('footerCreateActions').classList.remove('d-none');
         document.getElementById('footerEditActions').classList.add('d-none');
         cleanupForm(); // Clean up form without hiding the modal (Bootstrap handles showing it)
-        
+
         // Reset form dirty state after cleaning up
         setTimeout(() => { formDirty = false; }, 100);
     }
@@ -952,7 +954,7 @@
         if (!currentDetailBeritaItem) return;
         const item = currentDetailBeritaItem;
 
-        const dateStr = item.tanggal_publish 
+        const dateStr = item.tanggal_publish
             ? new Date(item.tanggal_publish).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : new Date(item.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -975,6 +977,15 @@
     }
 
     const dummyBeritaData = @json($berita->items());
+
+    function initFooterTooltips() {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+        document.querySelectorAll('#modalDetailBerita [data-bs-toggle="tooltip"]').forEach(function (el) {
+            const existing = bootstrap.Tooltip.getInstance(el);
+            if (existing) existing.dispose();
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+    }
 
     function openDetailModal(id) {
         const item = dummyBeritaData.find(b => b.id == id);
@@ -1002,9 +1013,9 @@
                 document.getElementById('detailImage').parentNode.appendChild(placeholder);
             }
         }
-        
+
         const statusBadge = document.getElementById('detailStatus');
-        
+
         const statusColors = {
             'Draft': { bg: '#F3F4F6', color: '#6B7280', label: 'Draf' },
             'Review': { bg: '#FEF3C7', color: '#D97706', label: 'Ditinjau' },
@@ -1015,7 +1026,7 @@
         const s_bg = statusColors[item.status]?.bg || '#F3F4F6';
         const s_color = statusColors[item.status]?.color || '#6B7280';
         const s_label = statusColors[item.status]?.label || item.status;
-        
+
         statusBadge.style.background = s_bg;
         statusBadge.style.color = s_color;
         statusBadge.querySelector('.status-dot').style.background = s_color;
@@ -1025,7 +1036,7 @@
         document.getElementById('detailPenulis').textContent = item.operator ? item.operator.username : 'Unknown';
         document.getElementById('detailJudul').textContent = item.judul_berita;
         document.getElementById('detailKonten').innerHTML = item.isi_berita || '<p class="text-muted italic">Tidak ada konten</p>';
-        
+
         const dateStr = item.tanggal_publish ? new Date(item.tanggal_publish).toLocaleString('id-ID') : '-';
         document.getElementById('detailTanggal').textContent = dateStr;
 
@@ -1040,17 +1051,17 @@
         // Dynamic Footer Buttons
         const detailFooter = document.getElementById('detailFooterActions');
         let actionsHtml = '';
-        
+
         if (item.status === 'Draft' || item.status === 'Revisi') {
             actionsHtml += `
-                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editBerita()">
-                    <i class="bi bi-pencil"></i> Edit Berita
+                <button type="button" class="btn btn-outline-dark fw-semibold px-4 d-flex align-items-center justify-content-center gap-2 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="editBerita()" data-bs-toggle="tooltip" title="Edit Berita">
+                    <i class="bi bi-pencil"></i> <span class="label-full">Edit Berita</span><span class="label-short">Edit</span>
                 </button>
                 <form action="/op-konten/berita/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="PUT">
-                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="confirmSubmit('${item.id}')">
-                        Ajukan Berita
+                    <button type="button" class="btn fw-semibold px-4 text-nowrap text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Berita">
+                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Berita</span><span class="label-short">Ajukan</span>
                     </button>
                 </form>
             `;
@@ -1059,8 +1070,8 @@
                     <form action="/op-konten/berita/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="_method" value="DELETE">
-                        <button type="button" class="btn btn-outline-danger fw-semibold px-4" onclick="confirmDelete('${item.id}')">
-                            <i class="bi bi-trash"></i> Hapus
+                        <button type="button" class="btn btn-outline-danger fw-semibold px-4 text-nowrap d-flex align-items-center justify-content-center gap-2" onclick="confirmDelete('${item.id}')" data-bs-toggle="tooltip" title="Hapus">
+                            <i class="bi bi-trash"></i> <span class="label-full">Hapus</span><span class="label-short">Hapus</span>
                         </button>
                     </form>
                 `;
@@ -1070,8 +1081,8 @@
                 <form action="/op-konten/berita/${item.id}/revoke" method="POST" class="d-inline" id="formRevoke_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="PUT">
-                    <button type="button" class="btn btn-outline-warning fw-semibold px-4" onclick="confirmRevoke('${item.id}')">
-                        <i class="bi bi-arrow-return-left"></i> Batalkan Pengajuan
+                    <button type="button" class="btn btn-outline-warning fw-semibold px-4 text-nowrap d-flex align-items-center justify-content-center gap-2" onclick="confirmRevoke('${item.id}')" data-bs-toggle="tooltip" title="Batalkan Pengajuan">
+                        <i class="bi bi-arrow-return-left"></i> <span class="label-full">Batalkan Pengajuan</span><span class="label-short">Batalkan</span>
                     </button>
                 </form>
             `;
@@ -1080,8 +1091,8 @@
                 <form action="/op-konten/berita/${item.id}/archive" method="POST" class="d-inline" id="formArchive_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="PUT">
-                    <button type="button" class="btn btn-outline-secondary fw-semibold px-4" onclick="document.getElementById('formArchive_${item.id}').submit()">
-                        <i class="bi bi-archive"></i> Arsipkan
+                    <button type="button" class="btn btn-outline-secondary fw-semibold px-4 text-nowrap d-flex align-items-center justify-content-center gap-2" onclick="document.getElementById('formArchive_${item.id}').submit()" data-bs-toggle="tooltip" title="Arsipkan">
+                        <i class="bi bi-archive"></i> <span class="label-full">Arsipkan</span><span class="label-short">Arsip</span>
                     </button>
                 </form>
             `;
@@ -1090,14 +1101,15 @@
                 <form action="/op-konten/berita/${item.id}/unarchive" method="POST" class="d-inline" id="formUnarchive_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="PUT">
-                    <button type="button" class="btn btn-outline-primary fw-semibold px-4" onclick="document.getElementById('formUnarchive_${item.id}').submit()">
-                        <i class="bi bi-box-arrow-up"></i> Buka Arsip
+                    <button type="button" class="btn btn-outline-primary fw-semibold px-4 text-nowrap d-flex align-items-center justify-content-center gap-2" onclick="document.getElementById('formUnarchive_${item.id}').submit()" data-bs-toggle="tooltip" title="Buka Arsip">
+                        <i class="bi bi-box-arrow-up"></i> <span class="label-full">Buka Arsip</span><span class="label-short">Arsip</span>
                     </button>
                 </form>
             `;
         }
-        
+
         detailFooter.innerHTML = actionsHtml;
+        initFooterTooltips();
 
         // Save ID for edit
         document.getElementById('beritaIdInput').value = item.id;
@@ -1122,12 +1134,12 @@
 
         const detailModal = bootstrap.Modal.getInstance(document.getElementById('modalDetailBerita'));
         if (detailModal) detailModal.hide();
-        
+
         if (item) {
             document.getElementById('judulBeritaInput').value = item.judul_berita;
             document.getElementById('kategoriSelect').value = item.kategori;
             quill.root.innerHTML = item.isi_berita;
-            
+
             if (item.featured_image) {
                 document.getElementById('imagePreview').src = item.featured_image;
                 document.getElementById('previewContainer').classList.remove('d-none');
@@ -1141,11 +1153,11 @@
             } else {
                 alertRevisi.classList.add('d-none');
             }
-            
+
             // Set form to update
             const form = document.getElementById('formBuatBerita');
             form.action = `/op-konten/berita/${item.id}`;
-            
+
             // Inject PUT method securely
             if (!form.querySelector('input[name="_method"]')) {
                 const putMethod = document.createElement('input');
@@ -1155,10 +1167,10 @@
                 form.appendChild(putMethod);
             }
         }
-        
+
         // Reset form dirty state after loading data
         setTimeout(() => { formDirty = false; }, 100);
-        
+
         const buatBeritaModal = new bootstrap.Modal(document.getElementById('modalBuatBerita'));
         buatBeritaModal.show();
     }
@@ -1252,7 +1264,7 @@
             showNotification("{!! addslashes(session('success')) !!}");
         });
     @endif
-    
+
     @if(session('error'))
         document.addEventListener('DOMContentLoaded', function() {
             showNotification("{!! addslashes(session('error')) !!}", true);

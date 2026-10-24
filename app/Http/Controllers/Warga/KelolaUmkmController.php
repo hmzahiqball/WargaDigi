@@ -10,9 +10,12 @@ use App\Models\UmkmProduk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Concerns\NormalizesMoney;
 
 class KelolaUmkmController extends Controller
 {
+    use NormalizesMoney;
+
     public function index(Request $request)
     {
         $search = $request->get('q');
@@ -233,6 +236,9 @@ class KelolaUmkmController extends Controller
             $kategoriProdukId = $katDefault->id;
         }
 
+        // Normalisasi harga dari number formatter sebelum validasi.
+        $request->merge(['harga' => $this->normalizeMoney($request->input('harga'))]);
+
         $validated = $request->validate([
             'nama_produk' => 'required|string|max:100',
             'harga' => 'required|numeric|min:0|max:999999999',
@@ -308,6 +314,9 @@ class KelolaUmkmController extends Controller
             ]);
             $request->merge(['kategori_produk_id' => $katDefault->id]);
         }
+
+        // Normalisasi harga dari number formatter sebelum validasi.
+        $request->merge(['harga' => $this->normalizeMoney($request->input('harga'))]);
 
         $validated = $request->validate([
             'nama_produk' => 'required|string|max:100',

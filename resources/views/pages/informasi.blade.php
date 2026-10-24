@@ -43,11 +43,11 @@
                 </div>
                 <div class="gender-box">
                     <div class="gender-item">
-                        <div class="gender-count">713</div>
+                        <div class="gender-count">{{ number_format($genderData['data'][0] ?? 0, 0, ',', '.') }}</div>
                         <div class="gender-label">Laki-laki</div>
                     </div>
                     <div class="gender-item">
-                        <div class="gender-count">733</div>
+                        <div class="gender-count">{{ number_format($genderData['data'][1] ?? 0, 0, ',', '.') }}</div>
                         <div class="gender-label">Perempuan</div>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                     </table>
                 </div>
                 <div class="mt-3 text-muted" style="font-size: 0.85rem;">
-                    Menampilkan 4 dari 6 RT... <a href="#" class="link-green">Lihat Selengkapnya</a>
+                    Menampilkan {{ count($rtData) }} RT.
                 </div>
             </div>
         </div>

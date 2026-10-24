@@ -1,5 +1,5 @@
 @php
-    $userRole = Auth::user()->role ?? 'default';
+    $userRole = (Auth::check() ? Auth::user()->activeRole() : null) ?? 'default';
     $config = config("topbar.{$userRole}") ?? config('topbar.default');
 
     if ($userRole === 'Warga') {
@@ -195,8 +195,8 @@
     </div>
     <div class="notif-panel-body" id="notifPanelBody">
         @forelse($notifications as $index => $notif)
-            @php 
-                $hasUrl = !empty($notif['url']) && $notif['url'] !== '#'; 
+            @php
+                $hasUrl = !empty($notif['url']) && $notif['url'] !== '#';
                 $notifKey = md5(($notif['text'] ?? '') . ($notif['time'] ?? ''));
                 $isDeferred = $index >= 8;
             @endphp
@@ -205,11 +205,11 @@
                  data-unread="{{ !empty($notif['unread']) ? '1' : '0' }}"
                  style="{{ $isDeferred ? 'display: none !important;' : '' }}"
                  @if($hasUrl) onclick="window.location.href='{{ $notif['url'] }}'" style="cursor: pointer;" title="Klik untuk membuka" @endif>
-                
+
                 {{-- Tombol Sembunyikan Notifikasi (Icon Mata Silang di Pojok Kanan Atas) --}}
-                <button type="button" 
-                        class="notif-hide-btn" 
-                        onclick="hideNotification(event, this, '{{ $notifKey }}')" 
+                <button type="button"
+                        class="notif-hide-btn"
+                        onclick="hideNotification(event, this, '{{ $notifKey }}')"
                         title="Sembunyikan notifikasi ini"
                         aria-label="Sembunyikan notifikasi">
                     <i class="bi bi-eye-slash"></i>

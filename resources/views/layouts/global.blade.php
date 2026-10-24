@@ -14,6 +14,9 @@
     {{-- Dynamic Sidebar Component --}}
     @include('components.sidebar')
 
+    {{-- Overlay gelap untuk drawer sidebar di mobile --}}
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     {{-- Main Wrapper --}}
     <div class="admin-main" id="adminMain">
         {{-- Dynamic Topbar Component --}}
@@ -47,14 +50,52 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Sidebar toggle
+        // Sidebar toggle (responsif: drawer di mobile, collapse di desktop)
         const sidebar = document.getElementById('adminSidebar');
         const mainContent = document.getElementById('adminMain');
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        const isMobile = () => window.innerWidth < 992;
+
+        function closeMobileSidebar() {
+            sidebar?.classList.remove('open');
+            sidebarOverlay?.classList.remove('show');
+        }
 
         sidebarToggle?.addEventListener('click', function() {
-            sidebar?.classList.toggle('collapsed');
-            mainContent?.classList.toggle('expanded');
+            if (isMobile()) {
+                // Mode drawer: buka/tutup sidebar dengan overlay
+                const willOpen = !sidebar?.classList.contains('open');
+                sidebar?.classList.toggle('open', willOpen);
+                sidebarOverlay?.classList.toggle('show', willOpen);
+            } else {
+                // Mode desktop: lebarkan/sempitkan area konten
+                sidebar?.classList.toggle('collapsed');
+                mainContent?.classList.toggle('expanded');
+            }
+        });
+
+        // Tutup drawer saat overlay diklik
+        sidebarOverlay?.addEventListener('click', closeMobileSidebar);
+
+        // Tutup drawer saat memilih menu di mobile
+        sidebar?.querySelectorAll('.sidebar-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (isMobile()) {
+                    closeMobileSidebar();
+                }
+            });
+        });
+
+        // Reset state saat ukuran layar berubah (hindari state nyangkut antar breakpoint)
+        window.addEventListener('resize', function() {
+            if (!isMobile()) {
+                closeMobileSidebar();
+            } else {
+                sidebar?.classList.remove('collapsed');
+                mainContent?.classList.remove('expanded');
+            }
         });
 
         // Notification panel toggle
@@ -112,10 +153,11 @@
             }, 4000);
         };
 
-        // Mobile Responsive Handling
-        if (window.innerWidth < 992) {
-            sidebar?.classList.add('collapsed');
-            mainContent?.classList.add('expanded');
+        // State awal mobile: pastikan sidebar tertutup sebagai drawer (tanpa class desktop)
+        if (isMobile()) {
+            sidebar?.classList.remove('collapsed');
+            mainContent?.classList.remove('expanded');
+            closeMobileSidebar();
         }
 
         // Helper untuk memulihkan tombol submit form jika validasi gagal

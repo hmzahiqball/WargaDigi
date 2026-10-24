@@ -3,12 +3,12 @@
 @section('title', 'Laporan Keuangan')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="dash-header d-flex justify-content-between align-items-center mb-4">
+    <div class="dash-header-title">
         <h2 class="fw-bold text-dark mb-1">Laporan Keuangan</h2>
         <p class="text-muted mb-0">Lihat rekapitulasi arus kas bulanan dan ekspor data ke PDF.</p>
     </div>
-    <div>
+    <div class="dash-header-actions">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalGenerateLaporan">
             <i class="bi bi-file-earmark-plus me-1"></i> Generate Laporan Baru
         </button>
@@ -97,7 +97,7 @@
                         <td class="py-3 text-end">
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('laporan-keuangan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
-                                
+
                                 @if(in_array($lap->status, ['Draft', 'Rejected']))
                                 <form action="{{ route('opkeuangan.laporan.submit', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengajukan laporan ini ke Ketua untuk persetujuan?');">
                                     @csrf
@@ -151,7 +151,7 @@
             <div class="modal-body p-4">
                 <form action="{{ route('opkeuangan.laporan.store') }}" method="POST">
                     @csrf
-                    
+
                     <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-3 align-items-start rounded-3 mb-4">
                         <i class="bi bi-info-circle-fill text-info mt-1"></i>
                         <div>

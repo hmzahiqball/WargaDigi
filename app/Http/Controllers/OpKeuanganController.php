@@ -12,16 +12,23 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Http\Controllers\Concerns\NormalizesMoney;
 
 class OpKeuanganController extends Controller
 {
+    use NormalizesMoney;
+
     private function getRoleFilterData()
     {
         $user = Auth::user();
         $unit = null;
         $rt_id = null;
 
-        if ($user->role === 'Op Keuangan RT') {
+        $role = trim($user->activeRole() ?? '');
+
+        // IR27: kenali seluruh varian penamaan role agar unit tidak jatuh ke null
+        // (null yang lolos ke query dapat membocorkan/menghapus data lintas unit).
+        if (in_array($role, ['Op Keuangan RT', 'Op. Keuangan RT', 'Bendahara RT'], true)) {
             $unit = 'RT';
             $rt_id = $user->rt_id;
             if (!$rt_id) {
@@ -34,9 +41,9 @@ class OpKeuanganController extends Controller
                     $rt_id = $rt01 ? $rt01->id : null;
                 }
             }
-        } elseif ($user->role === 'Op Keuangan RW') {
+        } elseif (in_array($role, ['Op Keuangan RW', 'Op. Keuangan RW', 'Bendahara RW'], true)) {
             $unit = 'RW';
-        } elseif ($user->role === 'DKM') {
+        } elseif (in_array($role, ['DKM', 'Bendahara DKM', 'Op Keuangan DKM', 'Op. Keuangan DKM'], true)) {
             $unit = 'DKM';
         }
 
@@ -539,6 +546,9 @@ class OpKeuanganController extends Controller
 
     public function transaksiStore(Request $request)
     {
+        // Normalisasi nominal: hapus pemisah ribuan dari number formatter (mis. "100.000" -> "100000").
+        $request->merge(['jumlah' => $this->normalizeMoney($request->input('jumlah'))]);
+
         $request->validate([
             'tipe' => 'required|in:pemasukan,pengeluaran',
             'judul' => 'required|string|max:255',
@@ -549,8 +559,13 @@ class OpKeuanganController extends Controller
         ]);
 
         $roleData = $this->getRoleFilterData();
-        $unit = $roleData['unit'] ?? 'RW';
+        $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        // IR27: tolak bila unit tidak terpetakan (hindari default 'RW' yang membocorkan data)
+        if (!$unit) {
+            abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
 
         // EV-009: Cegah penambahan transaksi pada periode yang laporannya sudah terkunci
         $bulanTx = (int) Carbon::parse($request->tanggal)->format('m');
@@ -602,6 +617,9 @@ class OpKeuanganController extends Controller
 
     public function transaksiUpdate(Request $request, $id)
     {
+        // Normalisasi nominal dari number formatter sebelum validasi.
+        $request->merge(['jumlah' => $this->normalizeMoney($request->input('jumlah'))]);
+
         $request->validate([
             'tipe' => 'required|in:pemasukan,pengeluaran',
             'judul' => 'required|string|max:255',
@@ -614,6 +632,10 @@ class OpKeuanganController extends Controller
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        if (!$unit) {
+            abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
 
         $transaksi = TransaksiKeuangan::findOrFail($id);
 
@@ -691,8 +713,12 @@ class OpKeuanganController extends Controller
         ]);
 
         $roleData = $this->getRoleFilterData();
-        $unit = $roleData['unit'] ?? 'RW';
+        $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        if (!$unit) {
+            abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
 
         // Cek apakah ada laporan sebelumnya untuk periode ini
         $existingQuery = LaporanKeuangan::where('periode_bulan', $request->bulan)
@@ -889,8 +915,12 @@ class OpKeuanganController extends Controller
     public function transaksiDestroy($id)
     {
         $roleData = $this->getRoleFilterData();
-        $unit = $roleData['unit'] ?? 'RW';
+        $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        if (!$unit) {
+            abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
 
         $tx = TransaksiKeuangan::findOrFail($id);
 
@@ -925,8 +955,12 @@ class OpKeuanganController extends Controller
     public function laporanDestroy($id)
     {
         $roleData = $this->getRoleFilterData();
-        $unit = $roleData['unit'] ?? 'RW';
+        $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        if (!$unit) {
+            abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
 
         $laporan = LaporanKeuangan::findOrFail($id);
 
