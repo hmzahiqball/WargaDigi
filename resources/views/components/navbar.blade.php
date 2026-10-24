@@ -12,9 +12,12 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/informasi">Informasi</a>
                 </li>
+                {{-- Disembunyikan sementara: menu Transparansi di landing page.
+                     Aktifkan kembali bila diperlukan.
                 <li class="nav-item">
                     <a class="nav-link" href="/transparansi">Transparansi</a>
                 </li>
+                --}}
                 <li class="nav-item">
                     <a class="nav-link" href="/layanan-mandiri">Layanan Mandiri</a>
                 </li>

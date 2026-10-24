@@ -18,7 +18,7 @@
     </div>
 @endif
 
-<form method="POST" action="{{ route('rt.keluarga.store') }}">
+<form method="POST" action="{{ route('rt.keluarga.store') }}" enctype="multipart/form-data">
     @csrf
 
     {{-- Data Kartu Keluarga --}}
@@ -112,6 +112,24 @@
                 <div class="col-md-6">
                     <label class="form-label small fw-semibold">Nama Ibu <span class="text-muted">(opsional)</span></label>
                     <input type="text" name="nama_ibu" class="form-control admin-input" value="{{ old('nama_ibu') }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Berkas Kepala Keluarga (opsional) --}}
+    <div class="admin-card mb-4">
+        <div class="admin-card-body">
+            <h5 class="fw-bold mb-1"><i class="bi bi-file-earmark-image me-2 text-success"></i>Berkas Kepala Keluarga</h5>
+            <p class="text-muted small mb-3">Opsional. Dapat dilengkapi kemudian oleh warga. Format: JPG, PNG, atau PDF (maks 5 MB).</p>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Berkas Kartu Keluarga (KK)</label>
+                    <input type="file" name="file_kk" class="form-control admin-input" accept=".jpg,.jpeg,.png,.pdf">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Berkas KTP Kepala Keluarga</label>
+                    <input type="file" name="file_ktp" class="form-control admin-input" accept=".jpg,.jpeg,.png,.pdf">
                 </div>
             </div>
         </div>

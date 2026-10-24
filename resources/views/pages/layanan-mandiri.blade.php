@@ -21,7 +21,7 @@
                 </div>
                 <h5 style="font-weight: 600; color: #1a1a2e; margin-bottom: 0.75rem;">{{ $service['title'] }}</h5>
                 <p class="text-muted" style="font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">{{ $service['desc'] }}</p>
-                <a href="#" class="service-link" style="color: #2E7D32; font-weight: 600; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <a href="{{ route('warga.surat.index') }}" class="service-link" style="color: #2E7D32; font-weight: 600; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.3rem;">
                     Buat Pengajuan <i class="bi bi-arrow-right"></i>
                 </a>
             </div>

@@ -43,7 +43,34 @@ class SuratController extends Controller
             }
         }
 
-        return view('warga.permohonan-surat', compact('user', 'penduduk', 'pengajuan', 'tipeSurat', 'ktpUrl', 'kkUrl'));
+        // Anggota keluarga (termasuk KK) sebagai pilihan pemohon.
+        // Kepala Keluarga dapat mengajukan surat untuk dirinya atau anggota keluarganya.
+        $anggotaKeluarga = collect();
+        if ($penduduk && $penduduk->keluarga) {
+            $alamat = $penduduk->keluarga->alamat;
+            $anggotaKeluarga = Penduduk::where('keluarga_id', $penduduk->keluarga_id)
+                ->orderByRaw("CASE WHEN status_hubungan_keluarga = 'Kepala Keluarga' THEN 0 ELSE 1 END")
+                ->orderBy('nama_lengkap')
+                ->get()
+                ->map(fn (Penduduk $a) => [
+                    'id' => $a->id,
+                    'nama_lengkap' => $a->nama_lengkap,
+                    'nik' => $a->nik,
+                    'tempat_lahir' => $a->tempat_lahir,
+                    'tanggal_lahir' => $a->tanggal_lahir ? $a->tanggal_lahir->format('d-m-Y') : '-',
+                    'jenis_kelamin' => $a->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+                    'pekerjaan' => $a->pekerjaan ?? '-',
+                    'agama' => $a->agama ?? '-',
+                    'status_perkawinan' => $a->status_perkawinan ?? '-',
+                    'status_hubungan_keluarga' => $a->status_hubungan_keluarga ?? '-',
+                    'alamat' => $alamat ?? '-',
+                    'ktp_url' => $a->file_ktp ? asset('storage/' . $a->file_ktp) : null,
+                    'kk_url' => $a->file_kk ? asset('storage/' . $a->file_kk) : null,
+                ])
+                ->values();
+        }
+
+        return view('warga.permohonan-surat', compact('user', 'penduduk', 'pengajuan', 'tipeSurat', 'ktpUrl', 'kkUrl', 'anggotaKeluarga'));
     }
 
     /**
@@ -60,6 +87,7 @@ class SuratController extends Controller
 
         $request->validate([
             'tipe_surat' => 'required|string|max:100',
+            'pemohon_id' => 'nullable|string',
             'keperluan' => 'nullable|string|max:1000',
             'file_ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'file_kk' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
@@ -69,24 +97,40 @@ class SuratController extends Controller
             'pernyataan.accepted' => 'Anda harus menyetujui pernyataan kebenaran data.',
         ]);
 
-        // Tentukan file KTP: upload baru > data penduduk
-        $fileKtp = $penduduk->file_ktp;
+        // Tentukan pemohon: default KK yang login. Bila dipilih anggota lain,
+        // pastikan anggota tsb berada di keluarga yang sama (keamanan).
+        $pemohon = $penduduk;
+        if ($request->filled('pemohon_id') && $request->pemohon_id !== $penduduk->id) {
+            $kandidat = Penduduk::where('id', $request->pemohon_id)
+                ->where('keluarga_id', $penduduk->keluarga_id)
+                ->first();
+
+            if (! $kandidat) {
+                return back()->withErrors([
+                    'pemohon_id' => 'Pemohon yang dipilih tidak terdaftar sebagai anggota keluarga Anda.',
+                ])->withInput();
+            }
+            $pemohon = $kandidat;
+        }
+
+        // Tentukan file KTP: upload baru > data pemohon
+        $fileKtp = $pemohon->file_ktp;
         if ($request->hasFile('file_ktp')) {
             $fileKtp = $request->file('file_ktp')->store('dokumen/ktp', 'public');
-            // Update juga di penduduk supaya tersimpan permanen
-            $penduduk->update(['file_ktp' => $fileKtp]);
+            // Update juga di data pemohon supaya tersimpan permanen
+            $pemohon->update(['file_ktp' => $fileKtp]);
         }
 
-        // Tentukan file KK: upload baru > data penduduk
-        $fileKk = $penduduk->file_kk;
+        // Tentukan file KK: upload baru > data pemohon
+        $fileKk = $pemohon->file_kk;
         if ($request->hasFile('file_kk')) {
             $fileKk = $request->file('file_kk')->store('dokumen/kk', 'public');
-            $penduduk->update(['file_kk' => $fileKk]);
+            $pemohon->update(['file_kk' => $fileKk]);
         }
 
-        // Simpan pengajuan ke database
+        // Simpan pengajuan ke database (atas nama pemohon terpilih).
         PengajuanSurat::create([
-            'penduduk_id' => $penduduk->id,
+            'penduduk_id' => $pemohon->id,
             'tipe_surat' => $request->tipe_surat,
             'keterangan_tambahan' => $request->keperluan,
             'file_ktp' => $fileKtp,

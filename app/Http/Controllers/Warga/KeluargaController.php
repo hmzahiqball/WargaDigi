@@ -52,17 +52,46 @@ class KeluargaController extends Controller
 
         $keluarga = $penduduk->keluarga;
 
+        // Hanya Kepala Keluarga yang boleh mengubah identitas keluarga.
+        if ($penduduk->nik !== $keluarga->nik_kepala_keluarga) {
+            return redirect()->route('warga.keluarga.index')
+                ->with('error', 'Hanya Kepala Keluarga yang dapat mengubah identitas keluarga.');
+        }
+
         $request->validate([
+            'nama_kepala_keluarga' => 'nullable|string|max:100',
             'alamat' => 'required|string|max:255',
             'no_wa' => 'nullable|string|max:20',
+            'file_kk' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
+        // Perbarui data keluarga (alamat & kontak). no_kk & nik_kepala_keluarga tidak diubah.
         $keluarga->update([
             'alamat' => $request->alamat,
             'no_wa' => $request->no_wa,
         ]);
 
-        return redirect()->route('warga.keluarga.index')->with('success', 'Data domisili/kontak keluarga berhasil diperbarui.');
+        // Perbarui data Kepala Keluarga pada penduduk (NIK tetap).
+        $kepala = $keluarga->kepalaKeluarga;
+        if ($kepala) {
+            $dataKepala = [];
+
+            // Nama KK hanya diubah bila dikirim (form modal identitas).
+            if ($request->filled('nama_kepala_keluarga')) {
+                $dataKepala['nama_lengkap'] = $request->nama_kepala_keluarga;
+            }
+
+            // File KK (opsional) disimpan di data penduduk Kepala Keluarga.
+            if ($request->hasFile('file_kk')) {
+                $dataKepala['file_kk'] = $request->file('file_kk')->store('dokumen/kk', 'public');
+            }
+
+            if (! empty($dataKepala)) {
+                $kepala->update($dataKepala);
+            }
+        }
+
+        return redirect()->route('warga.keluarga.index')->with('success', 'Identitas keluarga berhasil diperbarui.');
     }
 
     public function storeAnggota(Request $request)
@@ -183,10 +212,6 @@ class KeluargaController extends Controller
         $filePath = null;
         if ($request->hasFile('file_kk')) {
             $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');
-        } else {
-            // Is file_kk mandatory for edit if NIK/Nama changed? Yes in mockup.
-            // Simplified: let's just make it required if NIK or Nama changes, or optional if not.
-            // In the mockup it says "Wajib jika menambahkan NIK/Nama baru". We will just trust validation or handle it simply.
         }
 
         $dataPengajuan = $request->except(['_token', 'file_kk', '_method']);

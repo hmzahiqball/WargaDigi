@@ -64,6 +64,10 @@ class KeluargaController extends Controller
             'nama_ayah'           => ['nullable', 'string', 'max:100'],
             'nama_ibu'            => ['nullable', 'string', 'max:100'],
 
+            // Berkas Kepala Keluarga (opsional).
+            'file_kk'  => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'file_ktp' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+
             // Akun login Kepala Keluarga.
             'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -74,7 +78,15 @@ class KeluargaController extends Controller
             'username.regex'  => 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.',
         ]);
 
-        DB::transaction(function () use ($validated, $rtId) {
+        // Simpan berkas (opsional) di luar transaksi; path dimasukkan ke penduduk.
+        $fileKkPath = $request->hasFile('file_kk')
+            ? $request->file('file_kk')->store('dokumen/kk', 'public')
+            : null;
+        $fileKtpPath = $request->hasFile('file_ktp')
+            ? $request->file('file_ktp')->store('dokumen/ktp', 'public')
+            : null;
+
+        DB::transaction(function () use ($validated, $rtId, $fileKkPath, $fileKtpPath) {
             // 1) Keluarga.
             $keluarga = Keluarga::create([
                 'no_kk' => $validated['no_kk'],
@@ -101,6 +113,8 @@ class KeluargaController extends Controller
                 'kewarganegaraan' => $validated['kewarganegaraan'],
                 'nama_ayah' => $validated['nama_ayah'] ?? null,
                 'nama_ibu' => $validated['nama_ibu'] ?? null,
+                'file_kk' => $fileKkPath,
+                'file_ktp' => $fileKtpPath,
             ]);
 
             // 3) Akun warga untuk Kepala Keluarga (role "Warga").

@@ -54,8 +54,8 @@
                                 default => ['bg' => '#E2E3E5', 'color' => '#383D41', 'label' => $item->status, 'icon' => 'bi-info-circle'],
                             };
                         @endphp
-                        <button type="button" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 border-0 shadow-none" 
-                                style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px; cursor:pointer;" 
+                        <button type="button" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 border-0 shadow-none"
+                                style="background:{{ $sc['bg'] }};color:{{ $sc['color'] }};font-size:11px; cursor:pointer;"
                                 data-bs-toggle="modal" data-bs-target="#modalStatusWarga{{ $item->id }}"
                                 title="Klik untuk melihat detail dan alasan status">
                             <i class="bi {{ $sc['icon'] }}"></i>
@@ -233,45 +233,61 @@
                     @csrf
                     <input type="hidden" name="tipe_surat" id="tipeSuratHidden">
 
-                    {{-- Data Diri Pemohon (readonly dari database) --}}
+                    <input type="hidden" name="pemohon_id" id="pemohonIdHidden" value="{{ $penduduk->id ?? '' }}">
+
+                    {{-- Pilih Pemohon (anggota keluarga) --}}
+                    <div class="mb-4">
+                        <h6 class="fw-bold"><i class="bi bi-people-fill me-2 text-success"></i>Pilih Pemohon</h6>
+                        <p class="text-muted small mb-2">Pilih anggota keluarga yang akan mengajukan surat ini.</p>
+                        <select class="form-select bg-white border" id="pemohonSelect">
+                            @foreach($anggotaKeluarga as $a)
+                                <option value="{{ $a['id'] }}" {{ ($penduduk && $a['id'] === $penduduk->id) ? 'selected' : '' }}>
+                                    {{ $a['nama_lengkap'] }} — {{ $a['status_hubungan_keluarga'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('pemohon_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </div>
+
+                    {{-- Data Diri Pemohon (readonly, otomatis mengikuti pemohon terpilih) --}}
                     <div class="mb-4">
                         <h6 class="fw-bold"><i class="bi bi-person-fill me-2 text-success"></i>Data Diri Pemohon</h6>
                         <div class="row g-3 mt-1">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Nama Lengkap</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->nama_lengkap ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonNama" value="{{ $penduduk->nama_lengkap ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">NIK</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->nik ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonNik" value="{{ $penduduk->nik ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Tempat Lahir</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->tempat_lahir ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonTempatLahir" value="{{ $penduduk->tempat_lahir ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Tanggal Lahir</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk && $penduduk->tanggal_lahir ? $penduduk->tanggal_lahir->format('d-m-Y') : '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonTanggalLahir" value="{{ $penduduk && $penduduk->tanggal_lahir ? $penduduk->tanggal_lahir->format('d-m-Y') : '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Jenis Kelamin</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk ? ($penduduk->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonJk" value="{{ $penduduk ? ($penduduk->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Pekerjaan</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->pekerjaan ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonPekerjaan" value="{{ $penduduk->pekerjaan ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Agama</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->agama ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonAgama" value="{{ $penduduk->agama ?? '-' }}" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Status Perkawinan</label>
-                                <input type="text" class="form-control bg-light border" value="{{ $penduduk->status_perkawinan ?? '-' }}" readonly>
+                                <input type="text" class="form-control bg-light border" id="pemohonStatusKawin" value="{{ $penduduk->status_perkawinan ?? '-' }}" readonly>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">Alamat Domisili</label>
-                                <textarea class="form-control bg-light border" rows="2" readonly>{{ $penduduk && $penduduk->keluarga ? $penduduk->keluarga->alamat : '-' }}</textarea>
+                                <textarea class="form-control bg-light border" id="pemohonAlamat" rows="2" readonly>{{ $penduduk && $penduduk->keluarga ? $penduduk->keluarga->alamat : '-' }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -409,6 +425,33 @@ document.addEventListener('DOMContentLoaded', function() {
             formCard.classList.add('d-none');
         }
     });
+
+    // --- Pemilihan pemohon dari anggota keluarga ---
+    const anggota = @json($anggotaKeluarga);
+    const pemohonSelect = document.getElementById('pemohonSelect');
+    const pemohonIdHidden = document.getElementById('pemohonIdHidden');
+
+    function isiDataPemohon(data) {
+        if (!data) return;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? '-'; };
+        set('pemohonNama', data.nama_lengkap);
+        set('pemohonNik', data.nik);
+        set('pemohonTempatLahir', data.tempat_lahir);
+        set('pemohonTanggalLahir', data.tanggal_lahir);
+        set('pemohonJk', data.jenis_kelamin);
+        set('pemohonPekerjaan', data.pekerjaan);
+        set('pemohonAgama', data.agama);
+        set('pemohonStatusKawin', data.status_perkawinan);
+        set('pemohonAlamat', data.alamat);
+        pemohonIdHidden.value = data.id;
+    }
+
+    if (pemohonSelect) {
+        pemohonSelect.addEventListener('change', function () {
+            const data = anggota.find(a => String(a.id) === String(this.value));
+            isiDataPemohon(data);
+        });
+    }
 });
 
 function showImageModal(src, title) {
