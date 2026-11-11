@@ -17,6 +17,9 @@ class Tagihan extends Model
         'deskripsi',
         'jenis',
         'nominal',
+        'kategori_id',
+        'nominal_fix',
+        'via_rt',
         'periode_bulan',
         'periode_tahun',
         'unit',
@@ -24,12 +27,21 @@ class Tagihan extends Model
         'pembuat_id',
         'status',
         'tenggat',
+        'reminder_tanggal',
     ];
 
     protected $casts = [
-        'nominal' => 'integer',
-        'tenggat' => 'date',
+        'nominal'          => 'integer',
+        'nominal_fix'      => 'boolean',
+        'via_rt'           => 'boolean',
+        'tenggat'          => 'date',
+        'reminder_tanggal' => 'array',
     ];
+
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriTransaksi::class, 'kategori_id');
+    }
 
     public function rt()
     {

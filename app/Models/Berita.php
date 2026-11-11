@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Berita extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt;
 
     protected $table = 'berita';
 
@@ -21,6 +21,7 @@ class Berita extends Model
         'status',
         'catatan_revisi',
         'operator_id',
+        'rt_id',
         'approval_id',
         'tanggal_publish',
     ];

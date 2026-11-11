@@ -1,5 +1,5 @@
-﻿# Dokumen Teknis Pengembangan Aplikasi
-# WargaDigi — Platform Digital Manajemen Lingkungan RW/RT
+# Dokumen Teknis Pengembangan Aplikasi
+# WargaDigi � Platform Digital Manajemen Lingkungan RW/RT
 
 | Item | Keterangan |
 |------|------------|
@@ -52,9 +52,9 @@ Dokumen ini mencakup kebutuhan fungsional dan non-fungsional, daftar pengguna da
 | RF-02 | Sistem mengarahkan pengguna ke dashboard sesuai peran setelah login berhasil. |
 | RF-03 | Warga dapat mengajukan permohonan surat (mis. Surat Keterangan Domisili) secara daring. |
 | RF-04 | Ketua RT dapat menyetujui/menolak permohonan surat pada tahap RT. |
-| RF-05 | Admin/Pimpinan RW dapat mengesahkan permohonan surat pada tahap akhir (RW) dan menghasilkan PDF. |
+| RF-05 | Admin/Ketua RW dapat mengesahkan permohonan surat pada tahap akhir (RW) dan menghasilkan PDF. |
 | RF-06 | Operator Keuangan dapat mencatat transaksi keuangan (pemasukan/pengeluaran) dan membuat laporan keuangan. |
-| RF-07 | Ketua RT dan Pimpinan RW dapat menyetujui laporan/transaksi keuangan secara berjenjang. |
+| RF-07 | Ketua RT dan Ketua RW dapat menyetujui laporan/transaksi keuangan secara berjenjang. |
 | RF-08 | Sistem menampilkan laporan keuangan yang dipublikasikan kepada seluruh pengguna terautentikasi. |
 | RF-09 | Operator Keuangan dapat membuat tagihan iuran (rutin/insidental) dan warga dapat membayar serta mengunggah bukti. |
 | RF-10 | Sistem mengirim pengingat tagihan melalui kanal pesan (WhatsApp/Telegram). |
@@ -65,7 +65,7 @@ Dokumen ini mencakup kebutuhan fungsional dan non-fungsional, daftar pengguna da
 | RF-15 | Admin Aplikasi dapat mengelola Pengaturan Sistem (nama instansi, domain, logo, notifikasi, keamanan, mode pemeliharaan) dan menyimpannya secara permanen. |
 | RF-16 | Admin Aplikasi dapat mengelola hak akses (role) pengguna asli dari basis data, terintegrasi RBAC. |
 | RF-17 | Sistem mencatat aktivitas penting pengguna (login, perubahan data) secara otomatis ke log aktivitas. |
-| RF-18 | Admin/Pimpinan RW dapat mengelola data master RT (tambah, ubah, hapus). |
+| RF-18 | Admin/Ketua RW dapat mengelola data master RT (tambah, ubah, hapus). |
 
 ### 2.2 Kebutuhan Non-Fungsional
 
@@ -90,7 +90,7 @@ Sistem mendefinisikan 10 peran yang tersimpan pada kolom `role` tabel `users` se
 |----|-------|-------------------|
 | 1 | Admin Aplikasi | Pengelola sistem: pengaturan, hak akses, log aktivitas, arsip & manajemen data. |
 | 2 | Admin RW | Administrasi tingkat RW: master RT, persetujuan dokumen/keuangan, UMKM, pusat informasi. |
-| 3 | Pimpinan RW | Setara Admin RW untuk pengesahan/persetujuan tingkat RW. |
+| 3 | Ketua RW | Setara Admin RW untuk pengesahan/persetujuan tingkat RW. |
 | 4 | Op Konten RW | Operator konten tingkat RW: berita, agenda, pengumuman, galeri. |
 | 5 | Op Keuangan RW | Operator keuangan tingkat RW: transaksi, laporan, tagihan/iuran, rekening. |
 | 6 | Ketua RT | Persetujuan dokumen & keuangan tahap RT, informasi keluarga. |
@@ -103,23 +103,23 @@ Selain itu terdapat **Pengunjung Publik** (tanpa autentikasi) yang dapat mengaks
 
 ### 3.2 Matriks Hak Akses (Ringkas)
 
-| Modul / Fitur | Warga | Ketua RT | Admin/Pimpinan RW | Op Konten | Op Keuangan/DKM | Admin Aplikasi |
+| Modul / Fitur | Warga | Ketua RT | Admin/Ketua RW | Op Konten | Op Keuangan/DKM | Admin Aplikasi |
 |---------------|:-----:|:--------:|:-----------------:|:---------:|:---------------:|:--------------:|
-| Permohonan Surat (ajukan) | ✔ | | | | | |
-| Persetujuan Surat (RT) | | ✔ | | | | |
-| Pengesahan Surat (RW) | | | ✔ | | | |
-| Master Data RT | | | ✔ | | | |
-| Transaksi & Laporan Keuangan | | | | | ✔ | |
-| Persetujuan Keuangan | | ✔ | ✔ | | | |
-| Tagihan/Iuran (kelola) | | | | | ✔ | |
-| Bayar Iuran | ✔ | | | | | |
-| Berita/Agenda/Pengumuman (kelola) | | | | ✔ | | |
-| Persetujuan Konten | | | ✔ | | | |
-| UMKM (daftar & kelola) | ✔ | | | | | |
-| Verifikasi UMKM | | | ✔ | | | |
-| Pengaturan Sistem | | | | | | ✔ |
-| Manajemen Hak Akses | | | | | | ✔ |
-| Log Aktivitas | | | | | | ✔ |
+| Permohonan Surat (ajukan) | ? | | | | | |
+| Persetujuan Surat (RT) | | ? | | | | |
+| Pengesahan Surat (RW) | | | ? | | | |
+| Master Data RT | | | ? | | | |
+| Transaksi & Laporan Keuangan | | | | | ? | |
+| Persetujuan Keuangan | | ? | ? | | | |
+| Tagihan/Iuran (kelola) | | | | | ? | |
+| Bayar Iuran | ? | | | | | |
+| Berita/Agenda/Pengumuman (kelola) | | | | ? | | |
+| Persetujuan Konten | | | ? | | | |
+| UMKM (daftar & kelola) | ? | | | | | |
+| Verifikasi UMKM | | | ? | | | |
+| Pengaturan Sistem | | | | | | ? |
+| Manajemen Hak Akses | | | | | | ? |
+| Log Aktivitas | | | | | | ? |
 
 *Catatan: kontrol akses ditegakkan melalui middleware `role` pada grup rute dan disinkronkan dengan Spatie Permission.*
 
@@ -138,7 +138,7 @@ Selain itu terdapat **Pengunjung Publik** (tanpa autentikasi) yang dapat mengaks
 
 ### 4.3 Layanan Persuratan
 - Warga mengajukan permohonan surat dengan lampiran (KTP/KK).
-- Alur status: Diajukan → Disetujui RT / Ditolak RT → Selesai (disahkan RW) / Ditolak RW.
+- Alur status: Diajukan ? Disetujui RT / Ditolak RT ? Selesai (disahkan RW) / Ditolak RW.
 - Tanda tangan digital dan stempel didukung; surat resmi dihasilkan sebagai PDF (dompdf).
 
 ### 4.4 Keuangan
@@ -155,7 +155,7 @@ Selain itu terdapat **Pengunjung Publik** (tanpa autentikasi) yang dapat mengaks
 
 ### 4.6 Informasi & Komunikasi
 - Berita, Pengumuman, Agenda, dan Galeri Dokumentasi.
-- Alur konten: Draft → Review → Revisi → Publish (persetujuan oleh RW).
+- Alur konten: Draft ? Review ? Revisi ? Publish (persetujuan oleh RW).
 - RSVP kehadiran agenda oleh warga.
 
 ### 4.7 UMKM Warga
@@ -168,7 +168,7 @@ Selain itu terdapat **Pengunjung Publik** (tanpa autentikasi) yang dapat mengaks
 - **Manajemen Hak Akses**: menampilkan pengguna asli dari basis data, mengubah role per pengguna, tersinkron dengan RBAC.
 - **Log Aktivitas**: pencatatan otomatis login/logout, percobaan login gagal, dan perubahan data model penting; dilengkapi pencarian, filter kategori, dan paginasi.
 
-### 4.9 Master Data RT (Admin/Pimpinan RW)
+### 4.9 Master Data RT (Admin/Ketua RW)
 - CRUD data RT (kode RT, nama RT) dengan pencarian dan paginasi.
 - Perlindungan integritas: RT yang masih memiliki data keluarga tidak dapat dihapus.
 
@@ -306,12 +306,12 @@ Mayoritas entitas menggunakan **UUID** sebagai primary key. Berikut daftar tabel
 **notifications**: tabel notifikasi standar Laravel untuk pengingat (mis. tagihan).
 
 ### 6.9 Ringkasan Relasi Utama
-- `master_rt` 1—N `keluarga` 1—N `penduduk`.
+- `master_rt` 1�N `keluarga` 1�N `penduduk`.
 - `users.nik` <-> `penduduk.nik` (satu-satu logis); `users.rt_id` -> `master_rt`.
-- `keluarga` 1—N `pembayaran_tagihan` N—1 `tagihan`.
-- `users.nik` 1—N `umkm_usaha` 1—N `umkm_produk`.
-- `penduduk` 1—N `pengajuan_surat`.
-- `agenda` 1—N `agenda_kehadiran` N—1 `users`.
+- `keluarga` 1�N `pembayaran_tagihan` N�1 `tagihan`.
+- `users.nik` 1�N `umkm_usaha` 1�N `umkm_produk`.
+- `penduduk` 1�N `pengajuan_surat`.
+- `agenda` 1�N `agenda_kehadiran` N�1 `users`.
 
 ---
 
@@ -349,7 +349,7 @@ Kriteria penerimaan berikut menjadi acuan pengujian penerimaan (UAT) tiap fitur.
 - **AC-04.5** Bila belum ada aktivitas; Maka tampil status kosong yang informatif.
 
 ### AC-05 Master Data RT
-- **AC-05.1** Diberikan Admin/Pimpinan RW; Ketika menambah RT dengan kode unik; Maka RT tersimpan dan muncul di daftar.
+- **AC-05.1** Diberikan Admin/Ketua RW; Ketika menambah RT dengan kode unik; Maka RT tersimpan dan muncul di daftar.
 - **AC-05.2** Ketika menambah RT dengan kode yang sudah ada; Maka sistem menolak dengan pesan "Kode RT tersebut sudah terdaftar".
 - **AC-05.3** Ketika mengubah data RT; Maka perubahan tersimpan dan tervalidasi (kode tetap unik).
 - **AC-05.4** Ketika menghapus RT yang masih memiliki data keluarga; Maka sistem menolak dan menampilkan alasan.

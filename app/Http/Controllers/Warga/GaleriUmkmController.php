@@ -59,13 +59,13 @@ class GaleriUmkmController extends Controller
             : 0;
 
         return view('warga.umkm.galeri', compact(
-            'produk', 
-            'kategori', 
-            'search', 
-            'sort', 
-            'daftarKategoriUmkm', 
-            'produkUnggulan', 
-            'produkTerbaru', 
+            'produk',
+            'kategori',
+            'search',
+            'sort',
+            'daftarKategoriUmkm',
+            'produkUnggulan',
+            'produkTerbaru',
             'pendingUsahaCount'
         ));
     }
@@ -214,9 +214,9 @@ class GaleriUmkmController extends Controller
 
         $usaha = $produk->usaha;
         $isDashboard = true;
-        $isFromKelola = request('from') === 'kelola_umkm' 
-            || request('from') === 'kelola' 
-            || str_contains(url()->previous(), 'galeri/kelola') 
+        $isFromKelola = request('from') === 'kelola_umkm'
+            || request('from') === 'kelola'
+            || str_contains(url()->previous(), 'galeri/kelola')
             || str_contains(request()->header('referer', ''), 'galeri/kelola');
 
         return view('pages.detail_produk', compact('produk', 'usaha', 'isDashboard', 'isFromKelola'));
@@ -275,7 +275,7 @@ class GaleriUmkmController extends Controller
         $validated['is_active'] = false;
 
         // no_wa otomatis diformat oleh mutator setNoWaAttribute di model UmkmUsaha
-        
+
         $file = $request->file('foto_sampul') ?? $request->file('foto_usaha');
         if ($file) {
             $path = $file->store('umkm-photos', 'public');
@@ -288,6 +288,18 @@ class GaleriUmkmController extends Controller
         if (Auth::check()) {
             Auth::user()->notify(new \App\Notifications\UmkmStatusNotification($usahaBaru, 'Pending'));
         }
+
+        // Notifikasi: UMKM baru menunggu verifikasi → Admin RW + Ketua RW.
+        $targetRw = \App\Services\NotificationService::adminRw()
+            ->merge(\App\Services\NotificationService::ketuaRw())->unique('id')->values();
+        \App\Services\NotificationService::kirimKeBanyak($targetRw, [
+            'type'     => 'warning',
+            'icon'     => 'bi-shop',
+            'judul'    => 'UMKM Baru Menunggu Verifikasi',
+            'pesan'    => "Usaha \"{$usahaBaru->nama_usaha}\" menunggu verifikasi RW.",
+            'url'      => \Illuminate\Support\Facades\Route::has('rw.umkm.index') ? route('rw.umkm.index') : route('rw.dashboard'),
+            'kategori' => 'umkm',
+        ]);
 
         KategoriProduk::firstOrCreate([
             'umkm_usaha_id' => $usahaBaru->id,

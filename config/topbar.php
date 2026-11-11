@@ -57,11 +57,11 @@ return [
         ],
     ],
 
-    'Pimpinan RW' => [
+    'Ketua RW' => [
         'search_placeholder' => 'Cari di WargaDigi...',
         'notif_title'        => 'Notifikasi RW',
         'notif_badge'        => '2',
-        'default_name'       => 'Pimpinan RW',
+        'default_name'       => 'Ketua RW',
         'settings_url'       => '#',
         'notifications'      => [
             [

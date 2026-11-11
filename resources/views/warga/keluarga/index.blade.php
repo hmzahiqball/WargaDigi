@@ -2,305 +2,242 @@
 
 @section('title', 'Profil Keluarga')
 
+@php
+    // Susun alamat KK lengkap (gaya RT).
+    $bagian = [];
+    if (! empty($keluarga->alamat)) { $bagian[] = $keluarga->alamat; }
+    $rtKode = $keluarga->rt?->kode_rt;
+    if ($rtKode || $keluarga->rw) {
+        $bagian[] = 'RT ' . str_pad((string) ($rtKode ?? '000'), 3, '0', STR_PAD_LEFT)
+            . '/RW ' . str_pad((string) ($keluarga->rw ?? '000'), 3, '0', STR_PAD_LEFT);
+    }
+    if (! empty($keluarga->kelurahan)) { $bagian[] = 'Kel. ' . $keluarga->kelurahan; }
+    if (! empty($keluarga->kecamatan)) { $bagian[] = 'Kec. ' . $keluarga->kecamatan; }
+    if (! empty($keluarga->kabupaten)) { $bagian[] = $keluarga->kabupaten; }
+    $prov = $keluarga->provinsi;
+    if (! empty($keluarga->kode_pos)) { $prov = ($prov ? $prov . ' ' : '') . $keluarga->kode_pos; }
+    if (! empty($prov)) { $bagian[] = $prov; }
+    $alamatLengkap = implode(', ', $bagian);
+
+    $badgeStatus = function ($status) {
+        return match ($status) {
+            'disetujui'   => ['bg-success bg-opacity-10 text-success', 'Disetujui'],
+            'ditolak'     => ['bg-danger bg-opacity-10 text-danger', 'Ditolak'],
+            'menunggu_rw' => ['bg-info bg-opacity-10 text-info', 'Menunggu RW'],
+            default       => ['bg-warning bg-opacity-10 text-warning', 'Menunggu RT'],
+        };
+    };
+@endphp
+
 @section('content')
 <div class="container-fluid px-0">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <!-- Alert Akses Terbatas -->
     <div class="alert alert-success bg-success bg-opacity-10 border-0 border-start border-success border-4 d-flex align-items-start p-3 mb-4 rounded-3" role="alert">
         <i class="bi bi-info-circle-fill text-success fs-5 me-3 mt-1"></i>
         <div>
             <h6 class="fw-bold text-success mb-1" style="font-size: 0.95rem;">Akses Terbatas</h6>
-            <p class="text-muted mb-0" style="font-size: 0.85rem;">Data ini merupakan rekaman resmi administrasi warga. Pembaruan data dasar hanya dapat dilakukan oleh <strong>Kepala Keluarga</strong> dan disetujui oleh <strong>Staff RT dan RW</strong>. Pastikan informasi kontak akurat dan up-to-date.</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">Data ini merupakan rekaman resmi administrasi warga. Penambahan maupun perubahan data dilakukan melalui <strong>pengajuan</strong> yang disetujui oleh <strong>Staff RT dan RW</strong>. Data penduduk hanya berubah setelah RW menyetujui.</p>
         </div>
     </div>
 
-    <!-- Header Profil Keluarga -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <div class="bg-success bg-opacity-10 text-success rounded-3 d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
-                <i class="bi bi-people-fill fs-3"></i>
-            </div>
-            <div>
-                <h3 class="fw-bold mb-1" style="color: #1e293b;">Profil Keluarga</h3>
-                <p class="text-muted mb-0" style="font-size: 0.9rem;">Kelola data domisili dan informasi kontak utama keluarga Anda.</p>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2 fw-medium">
-                <i class="bi bi-check-circle me-1"></i> Kepala Keluarga
-            </span>
+            <h3 class="fw-bold mb-1">Profil Keluarga</h3>
+            <p class="text-muted mb-0">Data Kartu Keluarga dan anggota penduduk.</p>
         </div>
+        @if($isPemegangAkun)
+        <div class="d-flex gap-2">
+            <a href="{{ route('warga.keluarga.edit') }}" class="btn btn-outline-success" style="border-radius:0.5rem;">
+                <i class="bi bi-pencil-square me-1"></i> Ajukan Perubahan KK
+            </a>
+            <a href="{{ route('warga.keluarga.anggota.create') }}" class="btn btn-success" style="background-color: #559e66; border: none; border-radius:0.5rem;">
+                <i class="bi bi-person-plus me-1"></i> Tambah Anggota
+            </a>
+        </div>
+        @endif
     </div>
 
-    <div class="mb-4">
-        <button class="btn btn-success fw-medium px-4 py-2" style="background-color: #559e66; border: none; border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#modalTambahAnggota">
-            <i class="bi bi-file-earmark-text me-1"></i> Ajukan Perubahan Data/KK Baru
-        </button>
-    </div>
-
-    <!-- Identitas Keluarga -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid #e2e8f0 !important;">
-        <div class="card-header bg-white border-bottom pt-3 pb-2 px-4 d-flex align-items-center justify-content-between gap-2">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-card-heading text-success fs-5"></i>
-                <h5 class="fw-bold mb-0 text-dark">Identitas Keluarga</h5>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEditIdentitas">
-                <i class="bi bi-pencil-square me-1"></i> Edit
-            </button>
-        </div>
+    {{-- Profil KK --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-            <div class="mb-4">
-                <p class="text-muted mb-1" style="font-size: 0.85rem;">Nomor Kartu Keluarga (KK)</p>
-                <h6 class="fw-semibold mb-0" style="font-size: 1rem;">{{ $keluarga->no_kk }}</h6>
-            </div>
-            <div class="mb-4">
-                <p class="text-muted mb-1" style="font-size: 0.85rem;">Nama Kepala Keluarga</p>
-                <h6 class="fw-semibold mb-0" style="font-size: 1rem;">{{ $keluarga->kepalaKeluarga->nama_lengkap ?? '-' }}</h6>
-            </div>
-            <div class="mb-4">
-                <p class="text-muted mb-1" style="font-size: 0.85rem;">Alamat Sesuai KK</p>
-                <p class="fw-medium text-dark mb-0" style="font-size: 0.95rem; line-height: 1.5;">
-                    {{ $keluarga->alamat ?? '-' }}, <br>
-                    RT {{ $keluarga->rt->kode_rt ?? '-' }} / RW 21,<br>
-                    Kelurahan Tanimulya, Kecamatan Ngamprah,<br>
-                    Kabupaten Bandung Barat, Jawa Barat 40552
+            <h6 class="fw-bold mb-3"><i class="bi bi-house-door me-2 text-success"></i>Profil Kartu Keluarga</h6>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Nomor KK</dt>
+                <dd class="col-sm-9" style="font-family: monospace;">{{ $keluarga->no_kk }}</dd>
+                <dt class="col-sm-3">Kepala Keluarga</dt>
+                <dd class="col-sm-9">{{ $keluarga->kepalaKeluarga?->nama_lengkap ?? '-' }}</dd>
+                <dt class="col-sm-3">Alamat (sesuai KK)</dt>
+                <dd class="col-sm-9">{{ $alamatLengkap ?: '-' }}</dd>
+                <dt class="col-sm-3">Alamat Domisili</dt>
+                <dd class="col-sm-9">{{ $keluarga->alamat_domisili ?: '-' }}</dd>
+                <dt class="col-sm-3">Status KK</dt>
+                <dd class="col-sm-9">
+                    @if($keluarga->status_warga === 'tetap')
+                        <span class="badge bg-success bg-opacity-10 text-success">Warga Tetap</span>
+                    @else
+                        <span class="badge bg-warning bg-opacity-10 text-warning">Bukan Warga Tetap</span>
+                    @endif
+                </dd>
+                <dt class="col-sm-3">Pemilik Rumah</dt>
+                <dd class="col-sm-9">{{ $keluarga->pemilik_rumah ? 'Ya' : 'Bukan' }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    {{-- Akun Keluarga --}}
+    @if($akun)
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-person-lock me-2 text-success"></i>Akun Keluarga</h6>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Username</dt>
+                <dd class="col-sm-9">{{ $akun->username }}</dd>
+                <dt class="col-sm-3">Pemegang Akun</dt>
+                <dd class="col-sm-9">{{ $keluarga->pemegangAkun?->nama_lengkap ?? $keluarga->kepalaKeluarga?->nama_lengkap ?? '-' }}</dd>
+                <dt class="col-sm-3">Status Akun</dt>
+                <dd class="col-sm-9">
+                    @if($akun->status_akun === 'Active')
+                        <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
+                    @elseif($akun->status_akun === 'Nonaktif')
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary">Nonaktif</span>
+                    @else
+                        <span class="badge bg-warning bg-opacity-10 text-warning">Belum Diaktivasi</span>
+                    @endif
+                </dd>
+            </dl>
+            @if($isPemegangAkun)
+            <div class="mt-3 pt-3 border-top">
+                <a href="{{ route('warga.keluarga.pindah-akun') }}" class="btn btn-outline-success" style="border-radius:0.5rem;">
+                    <i class="bi bi-arrow-left-right me-1"></i> Pindahkan Akun ke Anggota Lain
+                </a>
+                <p class="text-muted small mb-0 mt-2">
+                    Pindahkan hak pemegang akun keluarga kepada anggota keluarga lain. Akun Anda akan dinonaktifkan dan anggota terpilih menerima link aktivasi melalui Ketua RT.
                 </p>
             </div>
-            <div>
-                <p class="text-muted mb-1" style="font-size: 0.85rem;">Berkas Kartu Keluarga</p>
-                @php $kkFile = $keluarga->kepalaKeluarga->file_kk ?? null; @endphp
-                @if($kkFile)
-                    <a href="{{ asset('storage/' . $kkFile) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                        <i class="bi bi-file-earmark-text me-1"></i> Lihat Berkas KK
-                    </a>
-                @else
-                    <span class="text-muted" style="font-size: 0.9rem;">Belum ada berkas KK diunggah.</span>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- Anggota Keluarga --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-people me-2 text-success"></i>Anggota Keluarga ({{ $anggota->count() }} jiwa)</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-muted small fw-semibold py-3">NAMA</th>
+                            <th class="text-muted small fw-semibold py-3">NIK</th>
+                            <th class="text-muted small fw-semibold py-3">L/P</th>
+                            <th class="text-muted small fw-semibold py-3">HUBUNGAN</th>
+                            <th class="text-muted small fw-semibold py-3 text-end">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($anggota as $a)
+                        <tr>
+                            <td class="py-3"><div class="fw-semibold text-dark">{{ $a->nama_lengkap }}</div></td>
+                            <td class="py-3"><span style="font-family: monospace;">{{ $a->nik }}</span></td>
+                            <td class="py-3">{{ $a->jenis_kelamin === 'L' ? 'Laki-laki' : ($a->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</td>
+                            <td class="py-3">{{ $a->status_hubungan_keluarga }}</td>
+                            <td class="py-3 text-end">
+                                @if($isPemegangAkun)
+                                <a href="{{ route('warga.keluarga.anggota.show', $a->id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                                <a href="{{ route('warga.keluarga.anggota.edit', $a->id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                @else
+                                <span class="text-muted small">-</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada anggota.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- Riwayat Pengajuan --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-5">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-success"></i>Riwayat Pengajuan</h6>
+                @if($riwayatTotal > $riwayat->count())
+                    <a href="{{ route('warga.keluarga.riwayat') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Lihat Semua ({{ $riwayatTotal }})</a>
                 @endif
             </div>
-        </div>
-    </div>
-
-    {{-- Modal Edit Identitas Keluarga --}}
-    <div class="modal fade" id="modalEditIdentitas" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 rounded-4">
-                <form method="POST" action="{{ route('warga.keluarga.update') }}" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header border-bottom">
-                        <h5 class="modal-title fw-bold">Edit Identitas Keluarga</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Nomor KK</label>
-                            <input type="text" class="form-control bg-light" value="{{ $keluarga->no_kk }}" readonly disabled>
-                            <small class="text-muted">Nomor KK tidak dapat diubah dari sini.</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Nama Kepala Keluarga</label>
-                            <input type="text" name="nama_kepala_keluarga" class="form-control" value="{{ old('nama_kepala_keluarga', $keluarga->kepalaKeluarga->nama_lengkap ?? '') }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Alamat Sesuai KK</label>
-                            <textarea name="alamat" class="form-control" rows="2" required>{{ old('alamat', $keluarga->alamat) }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">No. WhatsApp Keluarga</label>
-                            <input type="text" name="no_wa" inputmode="tel" class="form-control" value="{{ old('no_wa', $keluarga->no_wa) }}" placeholder="08...">
-                        </div>
-                        <div class="mb-0">
-                            <label class="form-label small fw-semibold">Unggah Berkas KK <span class="text-muted">(opsional)</span></label>
-                            <input type="file" name="file_kk" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
-                            <small class="text-muted">Format: JPG, PNG, atau PDF. Maks 5 MB. Kosongkan bila tidak ingin mengganti.</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success rounded-pill px-4"><i class="bi bi-save me-1"></i> Simpan</button>
-                    </div>
-                </form>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-muted small fw-semibold py-3">TANGGAL</th>
+                            <th class="text-muted small fw-semibold py-3">JENIS</th>
+                            <th class="text-muted small fw-semibold py-3">STATUS</th>
+                            <th class="text-muted small fw-semibold py-3">KETERANGAN</th>
+                            <th class="text-muted small fw-semibold py-3 text-end">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($riwayat as $r)
+                        @php [$badgeClass, $badgeLabel] = $badgeStatus($r->status); @endphp
+                        <tr>
+                            <td class="py-3">{{ $r->created_at->format('d M Y H:i') }}</td>
+                            <td class="py-3">{{ $r->labelJenis() }}</td>
+                            <td class="py-3"><span class="badge {{ $badgeClass }}">{{ $badgeLabel }}</span></td>
+                            <td class="py-3 text-muted small">{{ $r->keterangan_tolak ?: '-' }}</td>
+                            <td class="py-3 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalRiwayatIdx-{{ $r->id }}">
+                                    <i class="bi bi-eye"></i> Detail
+                                </button>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada riwayat pengajuan.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </div>
-    </div>
-
-    <!-- Tabel Anggota Keluarga -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid #e2e8f0 !important;">
-        <div class="card-header bg-white border-bottom pt-3 pb-2 px-4 d-flex align-items-center gap-2">
-            <i class="bi bi-people text-success fs-5"></i>
-            <h5 class="fw-bold mb-0 text-dark">Tabel Anggota Keluarga</h5>
-        </div>
-        <div class="card-body p-4">
-            <div class="d-flex flex-column gap-4">
-                @forelse($anggota as $member)
-                <div class="border rounded-3 p-4" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
-                    @php
-                        $badgeColor = 'bg-secondary';
-                        if($member->status_hubungan_keluarga == 'Kepala Keluarga') $badgeColor = 'bg-success text-white';
-                        else if($member->status_hubungan_keluarga == 'Istri') $badgeColor = 'bg-info bg-opacity-10 text-info border border-info';
-                        else if($member->status_hubungan_keluarga == 'Anak') $badgeColor = 'bg-secondary bg-opacity-10 text-secondary border border-secondary';
-                    @endphp
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2 mb-3 border-bottom pb-3">
-                        <div class="min-w-0">
-                            <h6 class="fw-bold mb-1 text-dark" style="font-size: 1.1rem;">{{ $member->nama_lengkap }}</h6>
-                            <p class="text-muted mb-0 text-break" style="font-size: 0.85rem; font-family: monospace;">NIK: {{ $member->nik }}</p>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <span class="badge {{ $badgeColor }} px-3 py-1 rounded-pill text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                                {{ strtoupper($member->status_hubungan_keluarga) }}
-                            </span>
-                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#modalEditAnggota-{{ $member->id }}">
-                                <i class="bi bi-pencil-square"></i> Edit
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Jenis Kelamin</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">{{ $member->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Agama</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">{{ $member->agama ?? '-' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Jenis Pekerjaan</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">{{ $member->pekerjaan ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Kewarganegaraan</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">WNI</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Tempat, Tgl Lahir</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">{{ $member->tempat_lahir ?? '-' }}, {{ $member->tanggal_lahir ? $member->tanggal_lahir->format('d-m-Y') : '-' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Pendidikan Terakhir</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">-</p>
-                            </div>
-                            <div class="mb-3">
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Status Perkawinan</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">{{ $member->status_perkawinan ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-muted mb-0" style="font-size: 0.8rem;">Nama Orang Tua</p>
-                                <p class="fw-medium text-dark mb-0" style="font-size: 0.9rem;">- / -</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Dokumen: KTP & KK yang sudah ada --}}
-                    @php
-                        $ktpUrl = $member->file_ktp ? asset('storage/' . $member->file_ktp) : null;
-                        $kkUrl = $member->file_kk ? asset('storage/' . $member->file_kk) : null;
-                        $isImg = fn ($p) => $p && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $p);
-                    @endphp
-                    <div class="mt-3 pt-3 border-top">
-                        <p class="text-muted mb-2" style="font-size: 0.8rem;">Dokumen Terlampir</p>
-                        <div class="row g-3">
-                            {{-- KTP --}}
-                            <div class="col-sm-6">
-                                <p class="fw-semibold mb-1" style="font-size: 0.8rem;">KTP</p>
-                                @if($ktpUrl)
-                                    <div class="border rounded-3 p-2 text-center" style="background:#f8fafc;">
-                                        @if($isImg($member->file_ktp))
-                                            <a href="{{ $ktpUrl }}" target="_blank">
-                                                <img src="{{ $ktpUrl }}" alt="KTP {{ $member->nama_lengkap }}" class="img-fluid rounded" style="max-height:120px; object-fit:contain;">
-                                            </a>
-                                        @else
-                                            <a href="{{ $ktpUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i> Lihat Berkas KTP
-                                            </a>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted" style="font-size:0.85rem;">Belum ada dokumen KTP.</span>
-                                @endif
-                            </div>
-                            {{-- KK --}}
-                            <div class="col-sm-6">
-                                <p class="fw-semibold mb-1" style="font-size: 0.8rem;">Kartu Keluarga</p>
-                                @if($kkUrl)
-                                    <div class="border rounded-3 p-2 text-center" style="background:#f8fafc;">
-                                        @if($isImg($member->file_kk))
-                                            <a href="{{ $kkUrl }}" target="_blank">
-                                                <img src="{{ $kkUrl }}" alt="KK {{ $member->nama_lengkap }}" class="img-fluid rounded" style="max-height:120px; object-fit:contain;">
-                                            </a>
-                                        @else
-                                            <a href="{{ $kkUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                                                <i class="bi bi-file-earmark-pdf me-1"></i> Lihat Berkas KK
-                                            </a>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted" style="font-size:0.85rem;">Belum ada dokumen KK.</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <div class="text-center py-4 text-muted">
-                    <p>Belum ada data anggota keluarga</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
-    </div>
-
-    <!-- Detail Kontak -->
-    <div class="card border-0 shadow-sm rounded-4 mb-5" style="border: 1px solid #e2e8f0 !important;">
-        <div class="card-header bg-white border-bottom pt-3 pb-2 px-4 d-flex align-items-center gap-2">
-            <i class="bi bi-telephone text-success fs-5"></i>
-            <h5 class="fw-bold mb-0 text-dark">Detail Kontak & Domisili</h5>
-        </div>
-        <div class="card-body p-4">
-            <form action="{{ route('warga.keluarga.update') }}" method="POST">
-                @csrf
-                @method('PUT')
-
-                <div class="mb-4">
-                    <label for="no_wa" class="form-label text-muted mb-1" style="font-size: 0.85rem;">Kontak Darurat (HP) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-phone"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0 @error('no_wa') is-invalid @enderror" id="no_wa" name="no_wa" value="{{ old('no_wa', $keluarga->no_wa) }}" placeholder="Contoh: 081234567890" style="box-shadow: none;">
-                        @error('no_wa')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="form-text" style="font-size: 0.75rem;">Nomor yang dapat dihubungi saat darurat.</div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="alamat" class="form-label text-muted mb-1" style="font-size: 0.85rem;">Alamat Domisili <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-geo-alt"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0 @error('alamat') is-invalid @enderror" id="alamat" name="alamat" value="{{ old('alamat', $keluarga->alamat) }}" placeholder="Contoh: Jl. Merdeka Barat No. 45" required style="box-shadow: none;">
-                        @error('alamat')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="form-text" style="font-size: 0.75rem;">Alamat tempat tinggal saat ini (bisa berbeda dengan KK).</div>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                    <button type="reset" class="btn btn-outline-secondary px-4 py-2" style="border-radius: 8px;">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-success px-4 py-2" style="background-color: #559e66; border: none; border-radius: 8px;">
-                        <i class="bi bi-save me-1"></i> Simpan Perubahan
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
 
-@include('warga.keluarga.modals')
+{{-- Modal detail riwayat (di luar tabel agar HTML valid & modal berfungsi) --}}
+@foreach($riwayat as $r)
+<div class="modal fade" id="modalRiwayatIdx-{{ $r->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">{{ $r->labelJenis() }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <h6 class="fw-bold mb-2"><i class="bi bi-table me-2 text-success"></i>Perubahan Data</h6>
+                @include('partials._mutasi-diff', ['mutasi' => $r])
 
+                <h6 class="fw-bold mt-4 mb-3"><i class="bi bi-clock-history me-2 text-success"></i>Riwayat Proses</h6>
+                @include('partials._mutasi-timeline', ['mutasi' => $r])
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

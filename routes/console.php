@@ -8,8 +8,17 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// IR39: Generate tagihan rutin bulanan (Iuran RT & Dana Kematian DKM) otomatis setiap tanggal 1.
-Schedule::command('tagihan:generate-rutin')
-    ->monthlyOn(1, '00:05')
+// Catatan: scheduler 'tagihan:generate-rutin' lama dinonaktifkan. Iuran rutin
+// bulanan kini ditangani modul Iuran Wajib (grid tahunan), bukan generate tagihan.
+
+// Pengingat Iuran Wajib ke KK yang belum lunas: tanggal 1, 10, dan 28.
+Schedule::command('iuran:reminder')
+    ->cron('0 8 1,10,28 * *')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping();
+
+// Pengingat Iuran Lainnya sesuai daftar tanggal tiap tagihan: dicek tiap hari.
+Schedule::command('iuran:reminder-lainnya')
+    ->dailyAt('08:05')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping();

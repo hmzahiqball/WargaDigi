@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Agenda;
 use App\Models\GaleriDokumentasi;
+use App\Support\KontenScope;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -16,7 +17,7 @@ class GaleriController extends Controller
         $nowWib = Carbon::now('Asia/Jakarta')->format('Y-m-d H:i:s');
 
         // Only show agendas that are "Publish" AND whose end date has passed
-        $query = Agenda::with('galeriDokumentasi')
+        $query = KontenScope::untukKelola(Agenda::with('galeriDokumentasi'), auth()->user())
             ->where('status', 'Publish')
             ->where('tanggal_selesai', '<=', $nowWib);
 
@@ -41,14 +42,14 @@ class GaleriController extends Controller
         $agendaSelesai = $query->latest('tanggal_selesai')->paginate(9)->withQueryString();
 
         // Stats
-        $baseQuery = Agenda::where('status', 'Publish')->where('tanggal_selesai', '<=', $nowWib);
+        $baseQuery = KontenScope::untukKelola(Agenda::query(), auth()->user())->where('status', 'Publish')->where('tanggal_selesai', '<=', $nowWib);
         $totalSelesai = (clone $baseQuery)->count();
         $sudahDokumentasi = (clone $baseQuery)->whereHas('galeriDokumentasi')->count();
         $belumDokumentasi = $totalSelesai - $sudahDokumentasi;
 
         // Total foto across all galeri
         $totalFoto = 0;
-        $allGaleri = GaleriDokumentasi::all();
+        $allGaleri = GaleriDokumentasi::whereHas('agenda', fn ($q) => KontenScope::untukKelola($q, auth()->user()))->get();
         foreach ($allGaleri as $g) {
             $totalFoto += count($g->foto ?? []);
         }
@@ -65,7 +66,7 @@ class GaleriController extends Controller
 
     public function show($id)
     {
-        $agenda = Agenda::with('galeriDokumentasi.operator')->findOrFail($id);
+        $agenda = KontenScope::untukKelola(Agenda::with('galeriDokumentasi.operator'), auth()->user())->findOrFail($id);
 
         if ($agenda->status !== 'Publish') {
             abort(404);
@@ -90,7 +91,7 @@ class GaleriController extends Controller
         ]);
 
         // Check agenda is eligible
-        $agenda = Agenda::findOrFail($request->agenda_id);
+        $agenda = KontenScope::untukKelola(Agenda::query(), auth()->user())->findOrFail($request->agenda_id);
         $nowWib = Carbon::now('Asia/Jakarta')->format('Y-m-d H:i:s');
         $selesaiWib = Carbon::parse($agenda->tanggal_selesai)->format('Y-m-d H:i:s');
 

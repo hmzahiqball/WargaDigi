@@ -100,7 +100,7 @@ Login (Operator Keuangan) → Dashboard Keuangan
       → Buat Laporan (pilih bulan & tahun) → Status: Draft
       → Review lalu klik Ajukan → Status: Menunggu Persetujuan
 
-Ketua RT / Pimpinan RW → Menu Persetujuan Keuangan
+Ketua RT / Ketua RW → Menu Persetujuan Keuangan
  → Setujui → Status: Disetujui
  → Tolak (beri catatan) → dikembalikan untuk diperbaiki
 

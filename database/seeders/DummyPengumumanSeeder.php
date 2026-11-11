@@ -18,7 +18,7 @@ class DummyPengumumanSeeder extends Seeder
             $operator = User::factory()->create(['role' => 'Op Konten RW']);
         }
 
-        // Temukan ketua RW (Admin RW / Pimpinan RW)
+        // Temukan ketua RW (Admin RW / Ketua RW)
         $approval = User::where('role', 'Admin RW')->first();
 
         $pengumumans = [

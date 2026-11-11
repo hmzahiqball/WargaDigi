@@ -8,9 +8,56 @@ import * as bootstrap from 'bootstrap';
 import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
+// Import Tom Select (dropdown dengan pencarian, tanpa jQuery)
+import TomSelect from 'tom-select';
+import 'tom-select/dist/css/tom-select.bootstrap5.css';
+
+// PWA: registrasi service worker + Web Push
+import { initPwa } from './pwa.js';
+initPwa();
+
+// OCR KTP di browser (tesseract.js) — mengekspos window.ocrKtpBrowser
+import './ocr-ktp.js';
+
 // Make Chart available globally for Blade templates
 window.Chart = Chart;
 window.bootstrap = bootstrap;
+window.TomSelect = TomSelect;
+
+// ========================================
+// Tom Select: aktifkan pada <select data-tomselect>
+// ========================================
+function initTomSelect(root = document) {
+    root.querySelectorAll('select[data-tomselect]').forEach(function (el) {
+        if (el.tomselect) return; // sudah diinisialisasi
+
+        // Jadikan option kosong pertama sebagai placeholder murni: kosongkan
+        // teksnya agar tidak ikut tampil/menyatu dengan teks pencarian.
+        var placeholder = el.getAttribute('data-placeholder') || 'Cari...';
+        var emptyOption = el.querySelector('option[value=""]');
+        if (emptyOption) {
+            if (!el.getAttribute('data-placeholder')) {
+                placeholder = emptyOption.textContent.trim() || placeholder;
+            }
+            emptyOption.textContent = '';
+        }
+
+        new TomSelect(el, {
+            allowEmptyOption: false,
+            placeholder: placeholder,
+            controlInput: '<input class="dropdown-input">',
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initTomSelect();
+
+    // Inisialisasi ulang ketika modal Bootstrap dibuka (dropdown di dalam modal).
+    document.addEventListener('shown.bs.modal', function (e) {
+        initTomSelect(e.target);
+    });
+});
 
 // ========================================
 // Count-Up Animation

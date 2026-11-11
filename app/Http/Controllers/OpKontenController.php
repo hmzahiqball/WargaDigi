@@ -103,6 +103,9 @@ class OpKontenController extends Controller
                 return $agenda;
             });
 
-        return view('opKonten.dashboard', compact('stats', 'antreanRevisi', 'aktivitasTerkini', 'pengumumanPin', 'semuaAgenda'));
+        $rtKonten = \App\Support\KontenScope::cakupanKelola(auth()->user());
+        $asalKonten = $rtKonten ? 'RT ' . (\App\Models\MasterRt::find($rtKonten)?->kode_rt ?? '') : 'RW';
+
+        return view('opKonten.dashboard', compact('stats', 'antreanRevisi', 'aktivitasTerkini', 'pengumumanPin', 'semuaAgenda', 'asalKonten'));
     }
 }

@@ -1435,6 +1435,36 @@ $transition-base: all 0.3s ease;
             }
         }
     }
+
+    // --- Submenu (menu induk dengan children) ---
+    .sidebar-parent {
+        .sidebar-caret {
+            font-size: 0.85rem;
+            width: auto;
+            transition: transform 0.25s ease;
+        }
+
+        &.collapsed .sidebar-caret {
+            transform: rotate(-90deg);
+        }
+    }
+
+    .sidebar-submenu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        background: rgba(0, 0, 0, 0.015);
+
+        .sidebar-sublink {
+            padding-left: 3.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+
+            i {
+                font-size: 1rem;
+            }
+        }
+    }
 }
 
 // --- Main Content Area ---
@@ -3757,5 +3787,33 @@ textarea.form-control,
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+}
+
+// --- Tab pill: teks tab aktif selalu putih, tab tidak aktif gelap ---
+// Kelas utilitas seperti .text-dark bersifat !important dan sebelumnya
+// membuat teks tab aktif (latar hijau) tetap gelap. Aturan ini menjamin
+// kontras yang benar di semua halaman yang memakai .nav-pills.
+.nav-pills {
+    .nav-link {
+        color: #495057;
+        font-weight: 600;
+
+        &:not(.active):hover {
+            color: $primary-dark;
+        }
+
+        &.active,
+        &.active.text-dark,
+        &.active i,
+        &.active .bi {
+            color: #fff !important;
+        }
+    }
+
+    // Badge di dalam tab aktif tetap terbaca di atas latar hijau.
+    .nav-link.active .badge {
+        background-color: #fff !important;
+        color: $primary-dark !important;
     }
 }

@@ -57,10 +57,10 @@ class PejabatTest extends TestCase
         $this->assertSame(1, Pejabat::aktif()->where('jabatan', 'ketua_rt')->where('rt_id', $rt->id)->count());
         $this->assertSame(2, Pejabat::where('jabatan', 'ketua_rt')->where('rt_id', $rt->id)->count());
 
-        // Pejabat lama ditutup periodenya.
+        // Pejabat lama dinonaktifkan TANPA mengisi tanggal selesai otomatis.
         $lama = Pejabat::where('penduduk_nik', '3217010100000011')->first();
         $this->assertFalse($lama->is_active);
-        $this->assertNotNull($lama->selesai_menjabat);
+        $this->assertNull($lama->selesai_menjabat);
 
         $this->assertSame('Budi Baru', Pejabat::namaKetuaRt($rt->id));
     }
@@ -99,11 +99,95 @@ class PejabatTest extends TestCase
                 'jabatan' => 'ketua_rt',
                 'rt_id' => $rt->id,
                 'penduduk_nik' => '3217010100000031',
+                'mulai_menjabat' => '2026-01-10',
             ])
             ->assertRedirect(route('admin.pejabat.index'))
             ->assertSessionHas('success');
 
         $this->assertSame('Pak Ketua', Pejabat::namaKetuaRt($rt->id));
+    }
+
+    public function test_store_wajib_tanggal_mulai_menjabat(): void
+    {
+        Role::findOrCreate('Admin Aplikasi', 'web');
+        $rt = MasterRt::create(['kode_rt' => '03', 'nama_rt' => 'RT 03']);
+        $this->penduduk($rt, '3217010100000035', 'Tanpa Tanggal');
+        $admin = User::create([
+            'nik' => null, 'username' => 'admin_tgl', 'role' => 'Admin Aplikasi',
+            'status_akun' => 'Active', 'password' => 'password123',
+        ]);
+        $admin->syncRoles(['Admin Aplikasi']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.pejabat.store'), [
+                'jabatan' => 'ketua_rt',
+                'rt_id' => $rt->id,
+                'penduduk_nik' => '3217010100000035',
+            ])
+            ->assertSessionHasErrors('mulai_menjabat');
+    }
+
+    public function test_store_menyimpan_tanggal_dari_input_apa_adanya(): void
+    {
+        Role::findOrCreate('Admin Aplikasi', 'web');
+        $rt = MasterRt::create(['kode_rt' => '03', 'nama_rt' => 'RT 03']);
+        $this->penduduk($rt, '3217010100000036', 'Pak Ketua Tanggal');
+        $admin = User::create([
+            'nik' => null, 'username' => 'admin_tgl2', 'role' => 'Admin Aplikasi',
+            'status_akun' => 'Active', 'password' => 'password123',
+        ]);
+        $admin->syncRoles(['Admin Aplikasi']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.pejabat.store'), [
+                'jabatan' => 'ketua_rt',
+                'rt_id' => $rt->id,
+                'penduduk_nik' => '3217010100000036',
+                'mulai_menjabat' => '2026-02-01',
+                'selesai_menjabat' => '2026-12-31',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $pejabat = Pejabat::where('penduduk_nik', '3217010100000036')->first();
+        $this->assertSame('2026-02-01', $pejabat->mulai_menjabat->toDateString());
+        $this->assertSame('2026-12-31', $pejabat->selesai_menjabat->toDateString());
+        $this->assertTrue($pejabat->is_active);
+    }
+
+    public function test_aktifkan_by_id_hanya_ubah_status_tanpa_tambah_baris(): void
+    {
+        Role::findOrCreate('Admin Aplikasi', 'web');
+        $rt = MasterRt::create(['kode_rt' => '04', 'nama_rt' => 'RT 04']);
+        $this->penduduk($rt, '3217010100000051', 'Ketua Lama');
+        $this->penduduk($rt, '3217010100000052', 'Ketua Baru');
+        $admin = User::create([
+            'nik' => null, 'username' => 'admin_akt', 'role' => 'Admin Aplikasi',
+            'status_akun' => 'Active', 'password' => 'password123',
+        ]);
+        $admin->syncRoles(['Admin Aplikasi']);
+
+        // Dua baris: lama (aktif), baru (riwayat/non-aktif) dengan tanggal tetap.
+        $lama = Pejabat::buatBaru('ketua_rt', $rt->id, '3217010100000051', '2025-01-01', null, true);
+        $baru = Pejabat::buatBaru('ketua_rt', $rt->id, '3217010100000052', '2024-01-01', '2024-12-31', false);
+
+        $jumlahSebelum = Pejabat::where('rt_id', $rt->id)->count();
+
+        $this->actingAs($admin)
+            ->post(route('admin.pejabat.aktifkan', $baru->id))
+            ->assertRedirect(route('admin.pejabat.index'))
+            ->assertSessionHas('success');
+
+        // Tidak menambah baris baru.
+        $this->assertSame($jumlahSebelum, Pejabat::where('rt_id', $rt->id)->count());
+
+        $baru->refresh();
+        $lama->refresh();
+        // Status berpindah, tanggal tidak berubah.
+        $this->assertTrue($baru->is_active);
+        $this->assertFalse($lama->is_active);
+        $this->assertSame('2024-01-01', $baru->mulai_menjabat->toDateString());
+        $this->assertSame('2024-12-31', $baru->selesai_menjabat->toDateString());
+        $this->assertNull($lama->selesai_menjabat); // tidak diisi otomatis
     }
 
     public function test_preview_surat_rt_menampilkan_nama_pejabat_bukan_username(): void

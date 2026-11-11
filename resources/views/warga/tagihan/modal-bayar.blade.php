@@ -2,7 +2,9 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             @php
-                $unit = $bayar->tagihan->unit;
+                $viaRt = $bayar->tagihan->unit === 'RW' && $bayar->tagihan->via_rt;
+                // Iuran RW yang dikumpulkan lewat RT dibayar ke rekening RT.
+                $unit = $viaRt ? 'RT' : $bayar->tagihan->unit;
                 $rek = match($unit) {
                     'RT' => $rekeningRt,
                     'RW' => $rekeningRw,
@@ -17,8 +19,11 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            
+
             <div class="modal-body p-4 bg-white">
+                @if($viaRt)
+                    <div class="alert alert-info border-0 small py-2 px-3 mb-3"><i class="bi bi-info-circle-fill me-1"></i>Iuran ini dari RW dan dibayar lewat RT. Gunakan rekening atau QRIS RT di bawah, atau bayar tunai ke bendahara RT.</div>
+                @endif
                 <!-- Info Tagihan -->
                 <div class="card border-0 bg-success bg-opacity-10 rounded-3 mb-4">
                     <div class="card-body p-3">
@@ -36,21 +41,21 @@
                 </div>
 
                 <p class="fw-semibold text-dark mb-2">Metode Pembayaran</p>
-                
+
                 <!-- Custom Tabs -->
                 <ul class="nav nav-pills nav-fill bg-light p-1 rounded-3 mb-4" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active rounded-3 py-2 fw-medium text-dark" data-bs-toggle="pill" data-bs-target="#tf-{{ $bayar->id }}" type="button" role="tab">
+                        <button class="nav-link active rounded-3 py-2 fw-medium" data-bs-toggle="pill" data-bs-target="#tf-{{ $bayar->id }}" type="button" role="tab">
                             <i class="bi bi-bank me-1"></i> Transfer Bank
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-3 py-2 fw-medium text-dark" data-bs-toggle="pill" data-bs-target="#qris-{{ $bayar->id }}" type="button" role="tab">
+                        <button class="nav-link rounded-3 py-2 fw-medium" data-bs-toggle="pill" data-bs-target="#qris-{{ $bayar->id }}" type="button" role="tab">
                             <i class="bi bi-qr-code-scan me-1"></i> QRIS
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-3 py-2 fw-medium text-dark" data-bs-toggle="pill" data-bs-target="#cash-{{ $bayar->id }}" type="button" role="tab">
+                        <button class="nav-link rounded-3 py-2 fw-medium" data-bs-toggle="pill" data-bs-target="#cash-{{ $bayar->id }}" type="button" role="tab">
                             <i class="bi bi-wallet2 me-1"></i> Cash
                         </button>
                     </li>
@@ -58,7 +63,7 @@
 
                 <form action="{{ route('warga.tagihan.bayar', $bayar->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    
+
                     <div class="tab-content mb-3">
                         <!-- TRANSFER TAB -->
                         <div class="tab-pane fade show active" id="tf-{{ $bayar->id }}" role="tabpanel">
@@ -121,6 +126,21 @@
                         </div>
                     </div>
 
+                    <!-- NOMINAL YANG DIBAYAR -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nominal Dibayar (Rp)</label>
+                        <input type="text" inputmode="numeric" data-money name="nominal" class="form-control"
+                            value="{{ number_format($bayar->tagihan->nominal, 0, ',', '.') }}"
+                            {{ $bayar->tagihan->nominal_fix ? 'readonly' : '' }}>
+                        <div class="form-text small">
+                            @if($bayar->tagihan->nominal_fix)
+                                Nominal sudah ditetapkan dan tidak dapat diubah.
+                            @else
+                                Minimal Rp {{ number_format($bayar->tagihan->nominal, 0, ',', '.') }}. Anda boleh membayar lebih.
+                            @endif
+                        </div>
+                    </div>
+
                     <!-- UPLOAD SECTION (Aktif untuk Transfer & QRIS) -->
                     <div class="mb-3" id="uploadSection-{{ $bayar->id }}">
                         <label class="form-label fw-semibold">
@@ -135,9 +155,9 @@
                             <img id="buktiPreview-{{ $bayar->id }}" src="" alt="Preview Bukti" class="img-fluid rounded border shadow-sm" style="max-height: 180px;">
                         </div>
                     </div>
-                    
+
                     <input type="hidden" name="metode" id="realMetode-{{ $bayar->id }}" value="Transfer">
-                    
+
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-success px-4 fw-semibold" id="submitBtn-{{ $bayar->id }}">
@@ -154,7 +174,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('modalBayar{{ $bayar->id }}');
         if (!modal) return;
-        
+
         const realMetode = document.getElementById('realMetode-{{ $bayar->id }}');
         const submitBtn = document.getElementById('submitBtn-{{ $bayar->id }}');
         const uploadSection = document.getElementById('uploadSection-{{ $bayar->id }}');
@@ -179,7 +199,7 @@
                 }
             });
         }
-        
+
         modal.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tab => {
             tab.addEventListener('shown.bs.tab', function (event) {
                 const target = event.target.getAttribute('data-bs-target');

@@ -132,7 +132,39 @@ class AdminController extends Controller
             $userRoles[$u->id] = $u->roleNames();
         }
 
-        return view('admin.manajemen-hak-akses', compact('users', 'roles', 'pengurusRoles', 'userRoles', 'search'));
+        // Opsi "Ambil dari warga": semua penduduk yang BELUM memiliki akun.
+        $nikBerakun = \App\Models\User::whereNotNull('nik')->pluck('nik')->all();
+        $pendudukOptions = \App\Models\Penduduk::with('keluarga.rt:id,kode_rt')
+            ->whereNotIn('nik', $nikBerakun)
+            ->orderBy('nama_lengkap')
+            ->get(['nik', 'nama_lengkap', 'status_hubungan_keluarga', 'keluarga_id'])
+            ->map(fn ($p) => [
+                'nik' => $p->nik,
+                'nama_lengkap' => $p->nama_lengkap,
+                // Tampilkan RT (bukan status hubungan keluarga).
+                'rt' => optional(optional($p->keluarga)->rt)->kode_rt,
+                // Saran username dari nama lengkap (bisa diubah admin).
+                'username_saran' => \Illuminate\Support\Str::slug($p->nama_lengkap, ''),
+            ])
+            ->values();
+
+        // Daftar RT untuk penetapan operator/ketua RT.
+        $rtOptions = \App\Models\MasterRt::orderBy('kode_rt')->get(['id', 'kode_rt', 'nama_rt']);
+        // rt_id per user (untuk pre-fill saat edit peran).
+        $userRtId = [];
+        foreach ($users as $u) {
+            $userRtId[$u->id] = $u->rt_id;
+        }
+        // Peran yang memerlukan penetapan RT.
+        $rolesButuhRt = $this->rolesButuhRt();
+
+        return view('admin.manajemen-hak-akses', compact('users', 'roles', 'pengurusRoles', 'userRoles', 'search', 'pendudukOptions', 'rtOptions', 'userRtId', 'rolesButuhRt'));
+    }
+
+    /** Peran yang lingkup kerjanya terikat ke sebuah RT (butuh rt_id). */
+    protected function rolesButuhRt(): array
+    {
+        return ['Ketua RT', 'Op Konten RT', 'Op Keuangan RT'];
     }
 
     /**
@@ -146,6 +178,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'roles'   => ['required', 'array', 'min:1'],
             'roles.*' => ['string', Rule::in($this->availableRoles())],
+            'rt_id'   => ['nullable', 'uuid', Rule::exists('master_rt', 'id')],
         ], [
             'roles.required' => 'Pilih minimal satu peran.',
         ]);
@@ -155,13 +188,37 @@ class AdminController extends Controller
 
         // Guard: peran Warga membutuhkan NIK kependudukan (akun warga = kepala keluarga).
         if (in_array('Warga', $roles, true) && empty($user->nik)) {
-            return back()->withErrors([
-                'roles' => 'Peran Warga hanya untuk akun yang tertaut NIK kependudukan.',
-            ]);
+            return back()
+                ->with('open_edit_user', $user->id)
+                ->withErrors([
+                    'roles' => 'Peran Warga hanya untuk akun yang tertaut NIK kependudukan.',
+                ]);
+        }
+
+        // Guard: peran Ketua RT / Ketua RW hanya untuk akun yang sudah ditetapkan
+        // sebagai pejabat AKTIF pada menu Kepengurusan (menghindari role tanpa jabatan nyata).
+        if ($pesan = $this->pelanggaranRolePejabat($user, $roles)) {
+            return back()
+                ->with('open_edit_user', $user->id)
+                ->withErrors(['roles' => $pesan]);
+        }
+
+        // RT: wajib bila ada peran RT. Bila peran RT, pakai pilihan admin atau
+        // pertahankan rt_id lama / RT warga; bila bukan peran RT, kosongkan.
+        if (array_intersect($roles, $this->rolesButuhRt())) {
+            $rtId = $validated['rt_id'] ?? $user->rt_id
+                ?? optional(optional(\App\Models\Penduduk::with('keluarga')->where('nik', $user->nik)->first())->keluarga)->rt_id;
+            if (! $rtId) {
+                return back()->with('open_edit_user', $user->id)->withErrors([
+                    'rt_id' => 'Pilih RT untuk peran operator/ketua RT.',
+                ]);
+            }
+        } else {
+            $rtId = null;
         }
 
         // Kolom role legacy = peran pertama; Spatie menyimpan daftar lengkap.
-        $user->update(['role' => $roles[0]]);
+        $user->update(['role' => $roles[0], 'rt_id' => $rtId]);
         $this->syncUserRoles($user, $roles);
 
         return redirect()
@@ -170,22 +227,67 @@ class AdminController extends Controller
     }
 
     /**
-     * Buat akun pengurus baru (tanpa NIK, login via username).
+     * Buat/akun-kan pengurus. Dua mode (field `sumber`):
+     *  - 'warga': ambil dari data penduduk (akun tertaut NIK). Bila penduduk
+     *    sudah punya akun, peran pengurus ditambahkan ke akun yang ada.
+     *  - 'baru' : akun pengurus tanpa NIK, login via username (perilaku lama).
      */
     public function storePengurus(Request $request)
+    {
+        $sumber = $request->input('sumber', 'baru');
+
+        if ($sumber === 'warga') {
+            return $this->storePengurusDariWarga($request);
+        }
+
+        return $this->storePengurusUsernameBaru($request);
+    }
+
+    /**
+     * Mode 'baru': akun pengurus tanpa NIK (login via username).
+     * Peran Ketua RT / Ketua RW tidak diperbolehkan di sini (butuh NIK pejabat).
+     */
+    protected function storePengurusUsernameBaru(Request $request)
     {
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'roles'    => ['required', 'array', 'min:1'],
             'roles.*'  => ['string', Rule::in($this->pengurusRoles())],
+            'rt_id'    => ['nullable', 'uuid', Rule::exists('master_rt', 'id')],
         ], [
-            'username.regex'  => 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.',
-            'username.unique' => 'Username sudah digunakan. Pilih username lain.',
-            'roles.required'  => 'Pilih minimal satu peran pengurus.',
+            'username.required'  => 'Username wajib diisi.',
+            'username.regex'     => 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.',
+            'username.unique'    => 'Username sudah digunakan. Pilih username lain.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
+            'roles.required'     => 'Pilih minimal satu peran pengurus.',
         ]);
 
         $roles = array_values(array_unique($validated['roles']));
+
+        // Guard: akun tanpa NIK tidak bisa menyandang peran Ketua RT / Ketua RW.
+        $butuhPejabat = array_intersect($roles, $this->rolePejabat());
+        if (! empty($butuhPejabat)) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'roles' => 'Peran ' . implode(', ', $butuhPejabat) . ' tidak dapat diberikan ke akun tanpa NIK. '
+                        . 'Gunakan opsi "Ambil dari warga" dan pastikan orangnya sudah menjadi pejabat aktif di menu Kepengurusan.',
+                ]);
+        }
+
+        // RT wajib bila ada peran yang butuh RT (mis. Op Keuangan RT / Op Konten RT).
+        $rtId = $validated['rt_id'] ?? null;
+        if (array_intersect($roles, $this->rolesButuhRt()) && ! $rtId) {
+            return back()->withInput()->withErrors([
+                'rt_id' => 'Pilih RT untuk peran operator RT.',
+            ]);
+        }
+        if (! array_intersect($roles, $this->rolesButuhRt())) {
+            $rtId = null; // peran RW/DKM tidak terikat RT
+        }
 
         $user = new \App\Models\User();
         $user->fill([
@@ -195,6 +297,7 @@ class AdminController extends Controller
             'password' => $validated['password'],
             'status_akun' => 'Active',
             'nik_verified_at' => now(),
+            'rt_id' => $rtId,
         ]);
         $user->save();
 
@@ -203,6 +306,78 @@ class AdminController extends Controller
         return redirect()
             ->route('admin.manajemen-hak-akses')
             ->with('success', 'Akun pengurus "' . $user->username . '" berhasil dibuat dengan peran: ' . implode(', ', $roles) . '.');
+    }
+
+    /**
+     * Mode 'warga': buat akun pengurus dari penduduk yang BELUM punya akun.
+     *
+     * Akun baru dibuat ber-NIK dengan username + password. Peran Ketua RT /
+     * Ketua RW diizinkan, tetap divalidasi harus pejabat aktif.
+     */
+    protected function storePengurusDariWarga(Request $request)
+    {
+        $validated = $request->validate([
+            'nik'      => ['required', 'string', 'size:16', 'exists:penduduk,nik'],
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'roles'    => ['required', 'array', 'min:1'],
+            'roles.*'  => ['string', Rule::in($this->availableRoles())],
+            'rt_id'    => ['nullable', 'uuid', Rule::exists('master_rt', 'id')],
+        ], [
+            'nik.required'       => 'Pilih warga terlebih dahulu.',
+            'nik.exists'         => 'Penduduk tidak ditemukan.',
+            'username.required'  => 'Username wajib diisi.',
+            'username.regex'     => 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.',
+            'username.unique'    => 'Username sudah digunakan. Pilih username lain.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
+            'roles.required'     => 'Pilih minimal satu peran.',
+        ]);
+
+        $roles = array_values(array_unique($validated['roles']));
+
+        // NIK ini tidak boleh sudah memiliki akun.
+        if (\App\Models\User::where('nik', $validated['nik'])->exists()) {
+            return back()->withInput()->withErrors([
+                'nik' => 'Warga ini sudah memiliki akun. Gunakan Edit Peran pada akun tersebut.',
+            ]);
+        }
+
+        // RT: default dari RT warga, tetapi bisa ditimpa pilihan admin. Wajib untuk peran RT.
+        $penduduk = \App\Models\Penduduk::with('keluarga')->where('nik', $validated['nik'])->first();
+        $rtId = $validated['rt_id'] ?? optional(optional($penduduk)->keluarga)->rt_id;
+        if (array_intersect($roles, $this->rolesButuhRt()) && ! $rtId) {
+            return back()->withInput()->withErrors([
+                'rt_id' => 'Pilih RT untuk peran operator/ketua RT.',
+            ]);
+        }
+        if (! array_intersect($roles, $this->rolesButuhRt())) {
+            $rtId = null;
+        }
+
+        $user = new \App\Models\User();
+        $user->fill([
+            'nik' => $validated['nik'],
+            'username' => $validated['username'],
+            'role' => $roles[0],
+            'password' => $validated['password'],
+            'status_akun' => 'Active',
+            'nik_verified_at' => now(),
+            'rt_id' => $rtId,
+        ]);
+
+        // Validasi pejabat aktif untuk Ketua RT / Ketua RW sebelum menyimpan.
+        if ($pesan = $this->pelanggaranRolePejabat($user, $roles)) {
+            return back()->withInput()->withErrors(['roles' => $pesan]);
+        }
+
+        $user->save();
+        $this->syncUserRoles($user, $roles);
+
+        return redirect()
+            ->route('admin.manajemen-hak-akses')
+            ->with('success', 'Akun pengurus untuk warga "' . $user->username . '" berhasil dibuat dengan peran: ' . implode(', ', $roles) . '.');
     }
 
     /**
@@ -225,6 +400,65 @@ class AdminController extends Controller
     }
 
     /**
+     * Peran yang WAJIB tertaut pejabat aktif (menu Kepengurusan).
+     *
+     * Hanya Ketua RT dan Ketua RW. Peran lain tidak terpengaruh validasi ini.
+     *
+     * @return array<int,string>
+     */
+    protected function rolePejabat(): array
+    {
+        return ['Ketua RT', 'Ketua RW'];
+    }
+
+    /**
+     * Periksa apakah pemberian daftar peran ke sebuah akun melanggar aturan
+     * "Ketua RT / Ketua RW harus pejabat aktif".
+     *
+     * Mengembalikan pesan error (string) bila melanggar, atau null bila lolos.
+     * Peran selain Ketua RT / Ketua RW diabaikan (selalu lolos).
+     */
+    protected function pelanggaranRolePejabat(\App\Models\User $user, array $roles): ?string
+    {
+        $perluCek = array_values(array_intersect($roles, $this->rolePejabat()));
+        if (empty($perluCek)) {
+            return null;
+        }
+
+        // Keduanya ditaut lewat NIK kependudukan pada tabel pejabat.
+        if (empty($user->nik)) {
+            return 'Peran ' . implode(', ', $perluCek) . ' hanya untuk akun yang tertaut NIK kependudukan '
+                . 'dan sudah ditetapkan sebagai pejabat aktif di menu Kepengurusan.';
+        }
+
+        foreach ($perluCek as $role) {
+            if ($role === 'Ketua RW') {
+                $aktif = \App\Models\Pejabat::aktif()
+                    ->where('jabatan', 'ketua_rw')
+                    ->where('penduduk_nik', $user->nik)
+                    ->exists();
+                if (! $aktif) {
+                    return 'Akun ini belum terdaftar sebagai Ketua RW aktif di menu Kepengurusan. '
+                        . 'Tetapkan dulu yang bersangkutan sebagai Ketua RW aktif sebelum memberi peran ini.';
+                }
+            }
+
+            if ($role === 'Ketua RT') {
+                $aktif = \App\Models\Pejabat::aktif()
+                    ->where('jabatan', 'ketua_rt')
+                    ->where('penduduk_nik', $user->nik)
+                    ->exists();
+                if (! $aktif) {
+                    return 'Akun ini belum terdaftar sebagai Ketua RT aktif di menu Kepengurusan. '
+                        . 'Tetapkan dulu yang bersangkutan sebagai Ketua RT aktif sebelum memberi peran ini.';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Daftar peran pengurus/petugas (tanpa Warga, karena Warga butuh NIK).
      */
     protected function pengurusRoles(): array
@@ -243,7 +477,7 @@ class AdminController extends Controller
         return [
             'Admin Aplikasi',
             'Admin RW',
-            'Pimpinan RW',
+            'Ketua RW',
             'Op Konten RW',
             'Op Keuangan RW',
             'Ketua RT',
@@ -279,6 +513,20 @@ class AdminController extends Controller
             });
         }
 
+        // Filter rentang tanggal. Default: 7 hari terakhir agar tidak berat
+        // saat pertama kali dibuka (bila tidak ada filter tanggal dari user).
+        $defaultDari = now()->subDays(6)->toDateString(); // 7 hari inklusif hari ini
+        $defaultSampai = now()->toDateString();
+        $dari = $request->input('tgl_dari', $defaultDari);
+        $sampai = $request->input('tgl_sampai', $defaultSampai);
+
+        if ($dari) {
+            $query->where('created_at', '>=', \Illuminate\Support\Carbon::parse($dari)->startOfDay());
+        }
+        if ($sampai) {
+            $query->where('created_at', '<=', \Illuminate\Support\Carbon::parse($sampai)->endOfDay());
+        }
+
         $paginated = $query->paginate(15)->withQueryString();
         $totalLogs = $activityModel::count();
 
@@ -290,7 +538,58 @@ class AdminController extends Controller
             'logs' => $logs,
             'totalLogs' => $totalLogs,
             'paginator' => $paginated,
+            'filterDari' => $dari,
+            'filterSampai' => $sampai,
         ]);
+    }
+
+    /**
+     * Hapus log aktivitas pada rentang tanggal (inklusif).
+     *
+     * Rentang berdasarkan kolom created_at. Tanggal akhir dibuat inklusif
+     * sampai akhir hari (23:59:59).
+     */
+    public function hapusLogAktivitas(Request $request)
+    {
+        $validated = $request->validate([
+            'dari'   => ['required', 'date'],
+            'sampai' => ['required', 'date', 'after_or_equal:dari'],
+        ], [
+            'dari.required'         => 'Tanggal mulai wajib diisi.',
+            'sampai.required'       => 'Tanggal akhir wajib diisi.',
+            'sampai.after_or_equal' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+        ]);
+
+        $dari = \Illuminate\Support\Carbon::parse($validated['dari'])->startOfDay();
+        $sampai = \Illuminate\Support\Carbon::parse($validated['sampai'])->endOfDay();
+
+        $activityModel = \Spatie\Activitylog\Models\Activity::class;
+        $jumlah = $activityModel::whereBetween('created_at', [$dari, $sampai])->count();
+
+        if ($jumlah === 0) {
+            return redirect()
+                ->route('admin.log-aktivitas')
+                ->with('error', 'Tidak ada log aktivitas pada rentang tanggal tersebut.');
+        }
+
+        $activityModel::whereBetween('created_at', [$dari, $sampai])->delete();
+
+        // Catat aksi penghapusan sebagai log baru agar tetap akuntabel.
+        $rentangLabel = $dari->translatedFormat('d M Y') . ' - ' . $sampai->translatedFormat('d M Y');
+        activity('log-aktivitas')
+            ->causedBy($request->user())
+            ->withProperties([
+                'category'  => 'log-aktivitas',
+                'dari'      => $dari->toDateString(),
+                'sampai'    => $sampai->toDateString(),
+                'jumlah'    => $jumlah,
+            ])
+            ->event('deleted')
+            ->log("Menghapus {$jumlah} log aktivitas periode {$rentangLabel}.");
+
+        return redirect()
+            ->route('admin.log-aktivitas')
+            ->with('success', "Berhasil menghapus {$jumlah} log aktivitas pada rentang {$rentangLabel}.");
     }
 
     /**
@@ -356,7 +655,7 @@ class AdminController extends Controller
     {
         return match ($role) {
             'Admin Aplikasi'                 => '#1B5E20',
-            'Admin RW', 'Pimpinan RW'        => '#2E7D32',
+            'Admin RW', 'Ketua RW'        => '#2E7D32',
             'Ketua RT'                       => '#546E7A',
             'Op Keuangan RW', 'Op Keuangan RT', 'DKM' => '#43A047',
             'Op Konten RW', 'Op Konten RT'   => '#0288D1',

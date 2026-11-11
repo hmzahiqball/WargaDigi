@@ -182,54 +182,92 @@
             <div class="periode">Periode Bulan: {{ $namaBulan }} {{ $laporan->periode_tahun }}</div>
         </div>
 
-        {{-- Data Table --}}
+        {{-- Hint istilah --}}
+        <p style="font-size:9px;color:#666;margin-bottom:6px;font-style:italic;">Debet = uang masuk (pemasukan). Kredit = uang keluar (pengeluaran). Saldo dihitung berjalan sejak saldo awal periode.</p>
+
+        {{-- Buku Kas: tabel transaksi dengan saldo berjalan --}}
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">No</th>
-                    <th style="width: 15%;">Tanggal</th>
-                    <th style="width: 36%;">Keterangan</th>
-                    <th style="width: 22%;">Pemasukan (Rp)</th>
-                    <th style="width: 22%;">Pengeluaran (Rp)</th>
+                    <th style="width: 4%;">No</th>
+                    <th style="width: 12%;">Tanggal</th>
+                    <th style="width: 30%;">Keterangan</th>
+                    <th style="width: 16%;">Kategori</th>
+                    <th style="width: 13%;">Debet (Rp)</th>
+                    <th style="width: 13%;">Kredit (Rp)</th>
+                    <th style="width: 12%;">Saldo (Rp)</th>
                 </tr>
             </thead>
             <tbody>
-                @php $no = 1; @endphp
+                @php $no = 1; $saldo = $laporan->saldo_awal; @endphp
                 <tr>
                     <td class="text-center">{{ $no++ }}</td>
                     <td class="text-center">01 {{ substr($namaBulan, 0, 3) }}</td>
                     <td><strong>Saldo Bulan Sebelumnya</strong></td>
-                    <td class="text-right"><strong>{{ number_format($laporan->saldo_awal, 0, ',', '.') }}</strong></td>
+                    <td class="text-center">-</td>
                     <td class="text-right">-</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right"><strong>{{ number_format($saldo, 0, ',', '.') }}</strong></td>
                 </tr>
 
                 @foreach($transaksiList as $tx)
-                <tr>
-                    <td class="text-center">{{ $no++ }}</td>
-                    <td class="text-center">{{ $tx->tanggal->format('d/m/Y') }}</td>
-                    <td>{{ $tx->judul }}</td>
-                    <td class="text-right col-pemasukan">
-                        {{ $tx->tipe === 'pemasukan' ? number_format($tx->jumlah, 0, ',', '.') : '-' }}
-                    </td>
-                    <td class="text-right col-pengeluaran">
-                        {{ $tx->tipe === 'pengeluaran' ? number_format($tx->jumlah, 0, ',', '.') : '-' }}
-                    </td>
-                </tr>
+                    @php $saldo += $tx->tipe === 'pemasukan' ? $tx->jumlah : -$tx->jumlah; @endphp
+                    <tr>
+                        <td class="text-center">{{ $no++ }}</td>
+                        <td class="text-center">{{ $tx->tanggal->format('d/m/Y') }}</td>
+                        <td>{{ $tx->judul }}</td>
+                        <td class="text-center" style="font-size:9px;">{{ $tx->kategori ?: '-' }}</td>
+                        <td class="text-right col-pemasukan">{{ $tx->tipe === 'pemasukan' ? number_format($tx->jumlah, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right col-pengeluaran">{{ $tx->tipe === 'pengeluaran' ? number_format($tx->jumlah, 0, ',', '.') : '-' }}</td>
+                        <td class="text-right">{{ number_format($saldo, 0, ',', '.') }}</td>
+                    </tr>
                 @endforeach
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-right" style="border:1px solid #000;padding:6px 8px;font-weight:bold;background:#f0f0f0;">TOTAL</td>
+                    <td class="text-right col-pemasukan" style="border:1px solid #000;padding:6px 8px;font-weight:bold;background:#f0f0f0;">{{ number_format($laporan->total_pemasukan, 0, ',', '.') }}</td>
+                    <td class="text-right col-pengeluaran" style="border:1px solid #000;padding:6px 8px;font-weight:bold;background:#f0f0f0;">{{ number_format($laporan->total_pengeluaran, 0, ',', '.') }}</td>
+                    <td style="border:1px solid #000;background:#f0f0f0;"></td>
+                </tr>
+                <tr>
+                    <td colspan="6" class="text-right" style="border:1px solid #000;padding:8px;font-weight:bold;background:#e8f5e9;font-size:12px;">SALDO AKHIR KAS</td>
+                    <td class="text-right" style="border:1px solid #000;padding:8px;font-weight:bold;background:#e8f5e9;font-size:12px;{{ $laporan->saldo_akhir < 0 ? 'color:#842029;' : '' }}">{{ number_format($laporan->saldo_akhir, 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
         </table>
 
-        {{-- Summary Box --}}
-        <table class="summary-box">
+        @if($laporan->saldo_akhir < 0)
+            <p style="font-size:10px;color:#842029;font-weight:bold;margin-bottom:15px;">Catatan: Saldo akhir negatif menunjukkan pengeluaran melebihi kas tersedia (defisit).</p>
+        @endif
+
+        {{-- Rekap per Kategori --}}
+        <table style="width:100%;border-collapse:collapse;margin-bottom:25px;page-break-inside:avoid;">
             <tr>
-                <td class="summary-label">Total Pemasukan Bulan Ini</td>
-                <td class="summary-value col-pemasukan">{{ number_format($laporan->total_pemasukan, 0, ',', '.') }}</td>
-                <td class="summary-label">Total Pengeluaran Bulan Ini</td>
-                <td class="summary-value col-pengeluaran">{{ number_format($laporan->total_pengeluaran, 0, ',', '.') }}</td>
-            </tr>
-            <tr class="saldo-akhir-row">
-                <td colspan="3" style="text-align: right; background-color: #e8f5e9;"><strong>SALDO AKHIR KAS</strong></td>
-                <td class="text-right"><strong>Rp {{ number_format($laporan->saldo_akhir, 0, ',', '.') }}</strong></td>
+                <td style="width:50%;vertical-align:top;padding-right:10px;">
+                    <table class="data-table" style="margin-bottom:0;">
+                        <thead><tr><th colspan="2" style="background:#e8f5e9;">Rekap Pemasukan per Kategori</th></tr></thead>
+                        <tbody>
+                            @forelse($rekapPemasukan as $kat => $jml)
+                                <tr><td style="font-size:10px;">{{ $kat }}</td><td class="text-right col-pemasukan" style="width:40%;">{{ number_format($jml, 0, ',', '.') }}</td></tr>
+                            @empty
+                                <tr><td colspan="2" class="text-center" style="font-size:10px;color:#888;">Tidak ada</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </td>
+                <td style="width:50%;vertical-align:top;padding-left:10px;">
+                    <table class="data-table" style="margin-bottom:0;">
+                        <thead><tr><th colspan="2" style="background:#fdecea;">Rekap Pengeluaran per Kategori</th></tr></thead>
+                        <tbody>
+                            @forelse($rekapPengeluaran as $kat => $jml)
+                                <tr><td style="font-size:10px;">{{ $kat }}</td><td class="text-right col-pengeluaran" style="width:40%;">{{ number_format($jml, 0, ',', '.') }}</td></tr>
+                            @empty
+                                <tr><td colspan="2" class="text-center" style="font-size:10px;color:#888;">Tidak ada</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </td>
             </tr>
         </table>
 
@@ -241,14 +279,14 @@
                         Disetujui Oleh,<br>
                         <strong>Ketua {{ $laporan->unit === 'RT' ? 'RT '.$rtLabel : ($laporan->unit === 'DKM' ? 'RW 21' : $laporan->unit) }}</strong>
                         <div class="signature-name">
-                            {{ $laporan->penyetuju->name ?? '.........................................' }}
+                            {{ $ttd['ketua'] ?? '.........................................' }}
                         </div>
                     </td>
                     <td>
                         Dibuat Oleh,<br>
                         <strong>Bendahara {{ $laporan->unit === 'RT' ? 'RT '.$rtLabel : $laporan->unit }}</strong>
                         <div class="signature-name">
-                            {{ $laporan->pembuat->name ?? '.........................................' }}
+                            {{ $ttd['bendahara'] ?? '.........................................' }}
                         </div>
                     </td>
                 </tr>

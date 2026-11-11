@@ -17,20 +17,30 @@ class PembayaranTagihan extends Model
         'keluarga_id',
         'warga_id',
         'status',
+        'nominal',
+        'tanggal_bayar',
         'metode',
         'bukti_file',
+        'transaksi_id',
         'catatan',
         'approved_by',
         'approved_at',
     ];
 
     protected $casts = [
-        'approved_at' => 'datetime',
+        'approved_at'   => 'datetime',
+        'tanggal_bayar' => 'date',
+        'nominal'       => 'integer',
     ];
 
     public function tagihan()
     {
         return $this->belongsTo(Tagihan::class, 'tagihan_id');
+    }
+
+    public function transaksi()
+    {
+        return $this->belongsTo(TransaksiKeuangan::class, 'transaksi_id');
     }
 
     public function keluarga()

@@ -16,6 +16,7 @@ class TransaksiKeuangan extends Model
         'kode_transaksi',
         'tipe',
         'kategori',
+        'kategori_id',
         'judul',
         'deskripsi',
         'jumlah',
@@ -39,6 +40,11 @@ class TransaksiKeuangan extends Model
     public function rt()
     {
         return $this->belongsTo(MasterRt::class, 'rt_id');
+    }
+
+    public function kategoriMaster()
+    {
+        return $this->belongsTo(KategoriTransaksi::class, 'kategori_id');
     }
 
     public function pencatat()

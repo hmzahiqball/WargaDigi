@@ -67,7 +67,22 @@
     </div>
 </div>
 
-<style>
+<!-- Dialog umum: pengganti confirm() dan alert() bawaan browser -->
+<div class="modal fade" id="modalDialogUmum" tabindex="-1" aria-labelledby="dialogUmumJudul" aria-hidden="true" style="z-index: 1075;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 24px; padding: 2.25rem 2rem 2rem 2rem; background: #ffffff;">
+            <div id="dialogUmumIkon" class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px; border-radius: 50%;">
+                <i class="bi" style="font-size: 2.4rem; line-height: 1;"></i>
+            </div>
+            <h4 class="fw-bold mb-2" id="dialogUmumJudul" style="font-size: 1.35rem; line-height: 1.35; color: #1e293b;">Konfirmasi</h4>
+            <p class="mb-4" id="dialogUmumPesan" style="font-size: 0.95rem; color: #64748b; line-height: 1.5; white-space: pre-line;"></p>
+            <div class="d-flex justify-content-center align-items-center gap-3 w-100">
+                <button type="button" id="dialogUmumBatal" class="btn w-50" data-bs-dismiss="modal" style="border: 1.5px solid #2E7D32; color: #2E7D32; background: transparent; border-radius: 12px; font-weight: 600; padding: 0.65rem 1.25rem;">Batal</button>
+                <button type="button" id="dialogUmumOk" class="btn text-white w-50" style="border: none; border-radius: 12px; font-weight: 600; padding: 0.65rem 1.25rem;">OK</button>
+            </div>
+        </div>
+    </div>
+</div><style>
 .btn-batal-confirm:hover {
     background-color: #E8F8EE !important;
     color: #2E7D32 !important;
@@ -87,6 +102,101 @@ document.addEventListener('DOMContentLoaded', function() {
     let targetDeleteForm = null;
     let targetDeleteCallback = null;
 
+    // ===== Dialog umum (pengganti confirm() dan alert() bawaan browser) =====
+    const VARIAN_DIALOG = {
+        konfirmasi: { ikon: 'bi-question-circle-fill', warna: '#2E7D32', latar: '#E8F8EE', tombol: '#2E7D32' },
+        bahaya:     { ikon: 'bi-exclamation-triangle-fill', warna: '#dc3545', latar: '#FDECEC', tombol: '#dc3545' },
+        info:       { ikon: 'bi-info-circle-fill', warna: '#0d6efd', latar: '#E7F1FF', tombol: '#0d6efd' },
+    };
+    let aksiDialogOk = null;
+
+    function tampilkanDialog(opsi) {
+        const modalEl = document.getElementById('modalDialogUmum');
+        if (!modalEl || !window.bootstrap) { return false; }
+        const v = VARIAN_DIALOG[opsi.jenis] || VARIAN_DIALOG.konfirmasi;
+        const ikon = document.getElementById('dialogUmumIkon');
+        ikon.style.backgroundColor = v.latar;
+        ikon.querySelector('i').className = 'bi ' + v.ikon;
+        ikon.querySelector('i').style.color = v.warna;
+        document.getElementById('dialogUmumJudul').textContent = opsi.judul || 'Konfirmasi';
+        document.getElementById('dialogUmumPesan').textContent = opsi.pesan || '';
+        const ok = document.getElementById('dialogUmumOk');
+        ok.textContent = opsi.tombol || 'OK';
+        ok.style.backgroundColor = v.tombol;
+        const batal = document.getElementById('dialogUmumBatal');
+        batal.style.display = opsi.tampilBatal === false ? 'none' : '';
+        batal.textContent = opsi.tombolBatal || 'Batal';
+        ok.classList.toggle('w-50', opsi.tampilBatal !== false);
+        ok.classList.toggle('w-100', opsi.tampilBatal === false);
+        aksiDialogOk = typeof opsi.onConfirm === 'function' ? opsi.onConfirm : null;
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        return true;
+    }
+
+    /** Konfirmasi: opsi = {judul, pesan, tombol, jenis: konfirmasi|bahaya|info, onConfirm}. */
+    window.tampilkanKonfirmasi = function (opsi) {
+        if (!tampilkanDialog(Object.assign({ jenis: 'konfirmasi', tampilBatal: true }, opsi || {}))) {
+            // Cadangan bila komponen belum siap: tetap jalankan aksi setelah konfirmasi bawaan.
+            if (window.__alertAsli && window.confirm((opsi && opsi.pesan) || 'Lanjutkan?') && opsi && opsi.onConfirm) { opsi.onConfirm(); }
+        }
+    };
+
+    /** Pemberitahuan: satu tombol, tanpa aksi lanjutan. */
+    window.tampilkanPemberitahuan = function (pesan, opsi) {
+        const ok = tampilkanDialog(Object.assign({ jenis: 'info', judul: 'Pemberitahuan', tombol: 'Mengerti', tampilBatal: false, pesan: String(pesan) }, opsi || {}));
+        if (!ok && window.__alertAsli) { window.__alertAsli(String(pesan)); }
+    };
+
+    // alert() bawaan dialihkan ke dialog agar tidak ada popup browser yang tersisa.
+    window.__alertAsli = window.alert.bind(window);
+    window.alert = function (pesan) { window.tampilkanPemberitahuan(pesan); };
+
+    const tombolDialogOk = document.getElementById('dialogUmumOk');
+    if (tombolDialogOk) {
+        tombolDialogOk.addEventListener('click', function () {
+            const aksi = aksiDialogOk;
+            aksiDialogOk = null;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDialogUmum')).hide();
+            if (aksi) { aksi(); }
+        });
+    }
+
+    // Deklaratif: tambahkan data-konfirmasi="pesan" pada <form>, <button>, atau <a>.
+    // Opsional: data-konfirmasi-judul, data-konfirmasi-tombol, data-konfirmasi-jenis (konfirmasi|bahaya|info).
+    function opsiDariAtribut(el, aksi) {
+        return {
+            pesan: el.getAttribute('data-konfirmasi'),
+            judul: el.getAttribute('data-konfirmasi-judul') || 'Konfirmasi',
+            tombol: el.getAttribute('data-konfirmasi-tombol') || 'Ya, lanjutkan',
+            jenis: el.getAttribute('data-konfirmasi-jenis') || 'konfirmasi',
+            onConfirm: aksi,
+        };
+    }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form.hasAttribute || !form.hasAttribute('data-konfirmasi') || form.dataset.konfirmasiLolos === '1') { return; }
+        e.preventDefault();
+        const pengirim = e.submitter || null;
+        window.tampilkanKonfirmasi(opsiDariAtribut(form, function () {
+            form.dataset.konfirmasiLolos = '1';
+            if (form.requestSubmit) { form.requestSubmit(pengirim || undefined); } else { form.submit(); }
+            delete form.dataset.konfirmasiLolos;
+        }));
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        const el = e.target.closest ? e.target.closest('[data-konfirmasi]') : null;
+        if (!el || el.tagName === 'FORM' || el.dataset.konfirmasiLolos === '1') { return; }
+        e.preventDefault();
+        e.stopPropagation();
+        window.tampilkanKonfirmasi(opsiDariAtribut(el, function () {
+            if (el.tagName === 'A' && el.href) { window.location.href = el.href; return; }
+            el.dataset.konfirmasiLolos = '1';
+            el.click();
+            delete el.dataset.konfirmasiLolos;
+        }));
+    }, true);
     // Helper Global: Tampilkan Modal Konfirmasi Hapus
     window.showDeleteModal = function(options = {}) {
         const modalEl = document.getElementById('modalConfirmDelete');
@@ -196,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof window.showAdminToast === 'function') {
                 window.showAdminToast({!! json_encode(session('error')) !!}, 'error');
             } else {
-                alert({!! json_encode(session('error')) !!});
+                window.tampilkanPemberitahuan({!! json_encode(session('error')) !!}, { jenis: 'bahaya', judul: 'Terjadi Kesalahan' });
             }
         }, 150);
     @endif

@@ -89,6 +89,8 @@ class SuratController extends Controller
             'tipe_surat' => 'required|string|max:100',
             'pemohon_id' => 'nullable|string',
             'keperluan' => 'nullable|string|max:1000',
+            'data_tambahan' => 'nullable|array',
+            'data_tambahan.*' => 'nullable|string|max:2000',
             'file_ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'file_kk' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'pernyataan' => 'accepted',
@@ -128,18 +130,48 @@ class SuratController extends Controller
             $pemohon->update(['file_kk' => $fileKk]);
         }
 
+        // Isian tambahan khusus jenis surat: hanya simpan field yang memang
+        // dikenal untuk tipe tersebut, dan buang nilai kosong.
+        $dataTambahan = $this->bersihkanDataTambahan($request->tipe_surat, (array) $request->input('data_tambahan', []));
+
         // Simpan pengajuan ke database (atas nama pemohon terpilih).
-        PengajuanSurat::create([
+        $pengajuan = PengajuanSurat::create([
             'penduduk_id' => $pemohon->id,
             'tipe_surat' => $request->tipe_surat,
             'keterangan_tambahan' => $request->keperluan,
+            'data_tambahan' => $dataTambahan ?: null,
             'file_ktp' => $fileKtp,
             'file_kk' => $fileKk,
             'status' => 'Diajukan',
         ]);
 
+        // Notifikasi: ke Ketua RT di RT pemohon.
+        \App\Services\NotificationService::notifikasiSuratDiajukan($pengajuan);
+
         return redirect()->route('warga.surat.index')
             ->with('success', 'Pengajuan surat berhasil dikirim! Silakan tunggu proses verifikasi oleh pengurus RT.');
+    }
+
+    /**
+     * Menyaring isian tambahan: hanya field yang terdaftar di config untuk
+     * jenis surat tsb, dan hanya nilai yang terisi. Mencegah data liar masuk.
+     */
+    private function bersihkanDataTambahan(string $tipeSurat, array $input): array
+    {
+        $fields = config("surat.jenis.{$tipeSurat}.fields", []);
+        $hasil = [];
+        foreach ($fields as $f) {
+            $key = $f['key'] ?? null;
+            if (! $key) {
+                continue;
+            }
+            $nilai = trim((string) ($input[$key] ?? ''));
+            if ($nilai !== '') {
+                $hasil[$key] = $nilai;
+            }
+        }
+
+        return $hasil;
     }
 
     /**
@@ -166,52 +198,12 @@ class SuratController extends Controller
             abort(403, 'Surat belum selesai diproses.');
         }
 
-        $p = $item->penduduk;
-        $k = $p ? $p->keluarga : null;
-
-        // Ambil kode RT dari keluarga
-        $kodeRt = '01';
-        if ($k && $k->rt_id) {
-            $rt = \App\Models\MasterRt::find($k->rt_id);
-            if ($rt) $kodeRt = $rt->kode_rt;
-        }
-
-        // Nama Ketua RT & RW dari data Pejabat aktif (bukan username akun).
-        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($k->rt_id ?? null) ?? '..........................';
-        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
-
-        // Bulan Romawi
-        $tanggalSelesai = $item->tanggal_selesai ?? $item->updated_at;
-        $bulanRomawi = PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
-
-        $data = (object) [
-            'tipe_surat' => $item->tipe_surat,
-            'kode_rt' => $kodeRt,
-            'bulan_romawi' => $bulanRomawi,
-            'tahun' => $tanggalSelesai->format('y'),
-            'nama_lengkap' => $p->nama_lengkap ?? '-',
-            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
-            'alamat' => $k->alamat ?? '-',
-            'no_kk' => $k->no_kk ?? '-',
-            'nik' => $p->nik ?? '-',
-            'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
-            'agama' => $p->agama ?? '-',
-            'status_perkawinan' => $p->status_perkawinan ?? '-',
-            'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
-            'pekerjaan' => $p->pekerjaan ?? '-',
-            'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
-            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
-            'nama_ketua_rt' => $namaKetuaRt,
-            'nama_ketua_rw' => $namaKetuaRw,
-            'ttd_rt' => $item->ttd_rt,
-            'stempel_rt' => $item->stempel_rt,
-            'ttd_rw' => $item->ttd_rw,
-            'stempel_rw' => $item->stempel_rw,
-        ];
+        $data = app(\App\Services\SuratDataBuilder::class)->build($item, false);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.surat', compact('data'));
         $pdf->setPaper('A4', 'portrait');
         return $pdf->download('Surat_Pengantar_' . str_replace(' ', '_', $data->nama_lengkap) . '.pdf');
     }
 }
+
 

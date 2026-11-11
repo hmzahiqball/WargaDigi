@@ -8,6 +8,7 @@ use App\Models\Keluarga;
 use App\Models\LayananSurat;
 use App\Models\Penduduk;
 use App\Models\UmkmProduk;
+use App\Support\KontenScope;
 use Illuminate\Support\Str;
 
 class HomeController extends Controller
@@ -22,7 +23,7 @@ class HomeController extends Controller
         ];
 
         // Berita terkini (Publish) terbaru.
-        $berita = Berita::where('status', 'Publish')
+        $berita = KontenScope::untukWarga(Berita::query(), auth()->user())->where('status', 'Publish')
             ->orderByDesc('tanggal_publish')
             ->take(3)
             ->get()
@@ -56,7 +57,7 @@ class HomeController extends Controller
             ->all();
 
         // Agenda mendatang (Publish) yang belum lewat.
-        $agenda = Agenda::where('status', 'Publish')
+        $agenda = KontenScope::untukWarga(Agenda::query(), auth()->user())->where('status', 'Publish')
             ->whereDate('tanggal_mulai', '>=', today())
             ->orderBy('tanggal_mulai')
             ->take(3)

@@ -27,9 +27,9 @@ class RwController extends Controller
         $dokumenPendingRt = PengajuanSurat::where('status', 'Diajukan')->count();
         $totalDokumenPending = $dokumenNeedReviewRw + $dokumenPendingRt;
 
-        $pendingBerita = \App\Models\Berita::where('status', 'Review')->count();
-        $pendingAgenda = \App\Models\Agenda::where('status', 'Review')->count();
-        $pendingPengumuman = \App\Models\Pengumuman::where('status', 'Review')->count();
+        $pendingBerita = \App\Models\Berita::whereNull('rt_id')->where('status', 'Review')->count();
+        $pendingAgenda = \App\Models\Agenda::whereNull('rt_id')->where('status', 'Review')->count();
+        $pendingPengumuman = \App\Models\Pengumuman::whereNull('rt_id')->where('status', 'Review')->count();
         $totalKontenReview = $pendingBerita + $pendingAgenda + $pendingPengumuman;
 
         $stats = [
@@ -171,7 +171,7 @@ class RwController extends Controller
         // Dokumen/konten terbaru nyata (berita, pengumuman, agenda)
         $recentDocs = [];
 
-        foreach (\App\Models\Berita::latest()->take(2)->get() as $b) {
+        foreach (\App\Models\Berita::whereNull('rt_id')->latest()->take(2)->get() as $b) {
             $recentDocs[] = [
                 'title' => $b->judul_berita,
                 'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $b->isi_berita), 60),
@@ -182,7 +182,7 @@ class RwController extends Controller
             ];
         }
 
-        foreach (\App\Models\Pengumuman::latest()->take(1)->get() as $p) {
+        foreach (\App\Models\Pengumuman::whereNull('rt_id')->latest()->take(1)->get() as $p) {
             $recentDocs[] = [
                 'title' => $p->judul_pengumuman,
                 'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $p->isi_pengumuman), 60),
@@ -193,7 +193,7 @@ class RwController extends Controller
             ];
         }
 
-        foreach (\App\Models\Agenda::latest()->take(1)->get() as $a) {
+        foreach (\App\Models\Agenda::whereNull('rt_id')->latest()->take(1)->get() as $a) {
             $recentDocs[] = [
                 'title' => $a->judul_agenda,
                 'desc' => \Illuminate\Support\Str::limit(strip_tags((string) $a->detail_pengumuman), 60),
@@ -206,7 +206,10 @@ class RwController extends Controller
 
         $recentDocs = array_slice($recentDocs, 0, 4);
 
-        return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs', 'pendingUmkmCount'));
+        // Data demografi (lingkup seluruh RW + sebaran per RT).
+        $demografi = app(\App\Services\DemografiService::class)->semua(null, true);
+
+        return view('rw.dashboard', compact('stats', 'quickActions', 'activities', 'recentDocs', 'pendingUmkmCount', 'demografi'));
     }
 
     /**
@@ -242,7 +245,7 @@ class RwController extends Controller
             }
         }
 
-        $isPimpinan = in_array(Auth::user()->role ?? '', ['Pimpinan RW', 'Pimpinan']);
+        $isPimpinan = in_array(Auth::user()->role ?? '', ['Ketua RW', 'Pimpinan']);
 
         $pendingUsaha = UmkmUsaha::where('status_verifikasi', 'Pending')
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
@@ -251,7 +254,7 @@ class RwController extends Controller
             ->withQueryString();
         $pendingUsaha->appends(['tab' => 'persetujuan']);
 
-        // Data untuk Pimpinan RW (History pengajuan: Pending, Approved, dan Rejected) - 4 per pagination
+        // Data untuk Ketua RW (History pengajuan: Pending, Approved, dan Rejected) - 4 per pagination
         $historyUsaha = UmkmUsaha::whereIn('status_verifikasi', ['Pending', 'Approved', 'Rejected'])
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
             ->latest()
@@ -259,7 +262,7 @@ class RwController extends Controller
             ->withQueryString();
         $historyUsaha->appends(['tab' => 'persetujuan']);
 
-        // Data Usaha yang Ditolak (Rejected) untuk Admin RW dan Pimpinan RW
+        // Data Usaha yang Ditolak (Rejected) untuk Admin RW dan Ketua RW
         $rejectedUsaha = UmkmUsaha::where('status_verifikasi', 'Rejected')
             ->with(['pemilik.penduduk.keluarga.rt', 'user.penduduk.keluarga.rt', 'kategori_umkm'])
             ->latest()
@@ -478,9 +481,11 @@ class RwController extends Controller
      */
     public function persetujuanDokumen()
     {
-        // Ambil data pengajuan dari database
+        // Tampilkan yang perlu penerbitan RW (Disetujui RT) dan yang masih
+        // Menunggu RT (Diajukan) sebagai perhatian/pantauan. Disetujui RT di atas.
         $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
-            ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Selesai', 'Ditolak RW', 'Ditolak RT'])
+            ->whereIn('status', ['Disetujui RT', 'Diajukan'])
+            ->orderByRaw("CASE WHEN status = 'Disetujui RT' THEN 0 ELSE 1 END")
             ->orderByDesc('created_at')
             ->get();
 
@@ -549,6 +554,27 @@ class RwController extends Controller
     }
 
     /**
+     * Riwayat seluruh pengajuan surat (semua status) untuk RW.
+     */
+    public function riwayatDokumen(Request $request)
+    {
+        $riwayat = PengajuanSurat::with(['penduduk.keluarga.rt'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $cari = trim($request->q);
+                $q->where(function ($sub) use ($cari) {
+                    $sub->where('tipe_surat', 'like', "%{$cari}%")
+                        ->orWhereHas('penduduk', fn ($p) => $p->where('nama_lengkap', 'like', "%{$cari}%")->orWhere('nik', 'like', "%{$cari}%"));
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('rw.riwayat-dokumen', compact('riwayat'));
+    }
+
+    /**
      * Menyetujui dokumen (status -> Selesai).
      */
     public function approveDokumen(Request $request, $id)
@@ -560,33 +586,18 @@ class RwController extends Controller
             'catatan_rw' => $request->input('catatan', null),
             'tanggal_selesai' => now(),
         ];
-
-        // Mendukung kedua nama input: stempel_rw atau stempel
-        $stempelFile = $request->file('stempel_rw') ?? $request->file('stempel');
-        if ($stempelFile) {
-            $dataUpdate['stempel_rw'] = $stempelFile->store('dokumen/stempel', 'public');
+        if ($request->filled('nomor_urut')) {
+            $dataUpdate['nomor_urut'] = trim(mb_substr($request->input('nomor_urut'), 0, 30));
         }
 
-        // Mendukung kedua nama input: signature_rw atau signature
-        $signature = $request->input('signature_rw') ?? $request->input('signature');
-        if ($signature) {
-            if (preg_match('/^data:image\/(\w+);base64,/', $signature, $type)) {
-                $signature = substr($signature, strpos($signature, ',') + 1);
-                $type = strtolower($type[1]);
-
-                if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
-                    $decoded = base64_decode($signature);
-
-                    if ($decoded !== false) {
-                        $fileName = 'dokumen/ttd/' . Str::random(40) . '.' . $type;
-                        Storage::disk('public')->put($fileName, $decoded);
-                        $dataUpdate['ttd_rw'] = $fileName;
-                    }
-                }
-            }
-        }
+        // Proses TTD & stempel RW (mode manual atau default akun).
+        $dataUpdate += \App\Services\TandaTanganPengesahan::proses($request, $request->user(), 'rw');
 
         $pengajuan->update($dataUpdate);
+        \App\Services\SuratDataBuilder::simpanSnapshot($pengajuan);
+
+        // Notifikasi: surat terbit → pemohon.
+        \App\Services\NotificationService::notifikasiSuratSelesai($pengajuan->fresh());
 
         return redirect()->route('rw.persetujuan-dokumen')
             ->with('success', 'Dokumen berhasil disahkan dan dikirim ke pemohon.');
@@ -607,6 +618,9 @@ class RwController extends Controller
             'catatan_rw' => $request->catatan_penolakan,
         ]);
 
+        // Notifikasi: surat ditolak RW → pemohon.
+        \App\Services\NotificationService::notifikasiSuratDitolak($pengajuan->fresh(), 'RW', $request->catatan_penolakan);
+
         return redirect()->route('rw.persetujuan-dokumen')
             ->with('success', 'Catatan penolakan telah dikirim.');
     }
@@ -616,47 +630,10 @@ class RwController extends Controller
      */
     public function previewSurat($id)
     {
-        $item = PengajuanSurat::with('penduduk.keluarga')->findOrFail($id);
-        $p = $item->penduduk;
-        $k = $p ? $p->keluarga : null;
+        $item = \App\Models\PengajuanSurat::with('penduduk.keluarga.rt')->findOrFail($id);
 
-        $kodeRt = '01';
-        if ($k && $k->rt_id) {
-            $rt = \App\Models\MasterRt::find($k->rt_id);
-            if ($rt) $kodeRt = $rt->kode_rt;
-        }
-
-        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($k->rt_id ?? null) ?? '..........................';
-        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
-
-        $tanggalSelesai = $item->tanggal_selesai ?? $item->updated_at;
-        $bulanRomawi = PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
-
-        $data = (object) [
-            'tipe_surat' => $item->tipe_surat,
-            'kode_rt' => $kodeRt,
-            'bulan_romawi' => $bulanRomawi,
-            'tahun' => $tanggalSelesai->format('y'),
-            'nama_lengkap' => $p->nama_lengkap ?? '-',
-            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
-            'alamat' => $k->alamat ?? '-',
-            'no_kk' => $k->no_kk ?? '-',
-            'nik' => $p->nik ?? '-',
-            'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
-            'agama' => $p->agama ?? '-',
-            'status_perkawinan' => $p->status_perkawinan ?? '-',
-            'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
-            'pekerjaan' => $p->pekerjaan ?? '-',
-            'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
-            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
-            'nama_ketua_rt' => $namaKetuaRt,
-            'nama_ketua_rw' => $namaKetuaRw,
-            'ttd_rt' => $item->ttd_rt,
-            'stempel_rt' => $item->stempel_rt,
-            'ttd_rw' => $item->ttd_rw,
-            'stempel_rw' => $item->stempel_rw,
-            'is_preview' => true,
-        ];
+        // Data surat disusun oleh builder bersama (langsung dari DB, sesuai jenis surat).
+        $data = \App\Services\SuratDataBuilder::build($item, true);
 
         return view('pdf.surat', compact('data'));
     }

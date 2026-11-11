@@ -95,30 +95,31 @@
                             @endif
                         </td>
                         <td class="py-3 text-end">
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('laporan-keuangan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger" title="Download PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
-
+                            <div class="aksi-laporan d-flex justify-content-end align-items-center flex-nowrap gap-1">
                                 @if(in_array($lap->status, ['Draft', 'Rejected']))
-                                <form action="{{ route('opkeuangan.laporan.submit', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengajukan laporan ini ke Ketua untuk persetujuan?');">
+                                <form action="{{ route('opkeuangan.laporan.submit', $lap->id) }}" method="POST" class="d-inline" data-konfirmasi="Apakah Anda yakin ingin mengajukan laporan ini ke Ketua untuk persetujuan?" data-konfirmasi-judul="Ajukan Laporan" data-konfirmasi-tombol="Ajukan">
                                     @csrf
                                     @method('PUT')
-                                    <button type="submit" class="btn btn-sm btn-primary" title="Ajukan Laporan"><i class="bi bi-send me-1"></i> Ajukan</button>
+                                    <button type="submit" class="btn btn-sm btn-primary btn-aksi" data-bs-toggle="tooltip" data-bs-title="Ajukan ke Ketua RT" aria-label="Ajukan ke Ketua"><i class="bi bi-send"></i></button>
                                 </form>
                                 @endif
 
                                 @if($lap->status == 'Approved' && !$lap->is_published)
-                                <form action="{{ route('opkeuangan.laporan.publish', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mempublish laporan ini? Laporan yang dipublish dapat dilihat oleh Warga.');">
+                                <form action="{{ route('opkeuangan.laporan.publish', $lap->id) }}" method="POST" class="d-inline" data-konfirmasi="Apakah Anda yakin ingin mempublish laporan ini? Laporan yang dipublish dapat dilihat oleh Warga." data-konfirmasi-judul="Publikasikan Laporan" data-konfirmasi-tombol="Publikasikan">
                                     @csrf
                                     @method('PUT')
-                                    <button type="submit" class="btn btn-sm btn-success" title="Publish Laporan"><i class="bi bi-upload me-1"></i> Publish</button>
+                                    <button type="submit" class="btn btn-sm btn-success btn-aksi" data-bs-toggle="tooltip" data-bs-title="Publikasikan ke warga" aria-label="Publikasikan ke warga"><i class="bi bi-upload"></i></button>
                                 </form>
                                 @endif
 
+                                <a href="{{ route('laporan-keuangan.pdf', $lap->id) }}" class="btn btn-sm btn-light text-danger btn-aksi" data-bs-toggle="tooltip" data-bs-title="Unduh PDF" aria-label="Unduh PDF" target="_blank"><i class="bi bi-file-pdf"></i></a>
+                                <a href="{{ route('laporan-keuangan.excel', $lap->id) }}" class="btn btn-sm btn-light text-success btn-aksi" data-bs-toggle="tooltip" data-bs-title="Unduh Excel" aria-label="Unduh Excel"><i class="bi bi-file-earmark-spreadsheet"></i></a>
+
                                 @if($lap->status !== 'Approved' && !$lap->is_published)
-                                <form action="{{ route('opkeuangan.laporan.destroy', $lap->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan ini?');">
+                                <form action="{{ route('opkeuangan.laporan.destroy', $lap->id) }}" method="POST" class="d-inline" data-konfirmasi="Apakah Anda yakin ingin menghapus laporan ini?" data-konfirmasi-judul="Hapus Laporan" data-konfirmasi-tombol="Hapus" data-konfirmasi-jenis="bahaya">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-light text-danger" title="Hapus"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-light text-danger btn-aksi" data-bs-toggle="tooltip" data-bs-title="Hapus laporan" aria-label="Hapus laporan"><i class="bi bi-trash"></i></button>
                                 </form>
                                 @endif
                             </div>
@@ -193,3 +194,26 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    /* Tombol aksi laporan: satu baris, ikon sejajar teks, tinggi seragam. */
+    .aksi-laporan form { margin: 0; }
+    .aksi-laporan .btn-aksi {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; padding: 0; line-height: 1;
+    }
+    .aksi-laporan .btn i { margin: 0 !important; font-size: 1rem; line-height: 1; }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.bootstrap) return;
+    document.querySelectorAll('.aksi-laporan [data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+    });
+});
+</script>
+@endpush

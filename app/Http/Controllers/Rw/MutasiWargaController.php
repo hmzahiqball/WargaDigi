@@ -23,9 +23,9 @@ class MutasiWargaController extends Controller
     {
         $mutasi = MutasiWarga::where('status', 'menunggu_rw')->where('id', $id)->first();
         if (! $mutasi) {
-            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RW.']);
+            return back()->withErrors(['mutasi' => 'Status pengajuan tidak valid untuk diproses oleh RW.']);
         }
-        
+
         $data = $mutasi->data_pengajuan;
 
         if ($mutasi->jenis_mutasi == 'tambah') {
@@ -37,6 +37,7 @@ class MutasiWargaController extends Controller
                 'keluarga_id' => $mutasi->keluarga_id,
                 'nama_lengkap' => $data['nama_lengkap'],
                 'nik' => $data['nik'],
+                'no_wa' => $data['no_wa'] ?? null,
                 'status_hubungan_keluarga' => $data['status_hubungan_keluarga'],
                 'jenis_kelamin' => $data['jenis_kelamin'],
                 'tempat_lahir' => $data['tempat_lahir'],
@@ -46,9 +47,13 @@ class MutasiWargaController extends Controller
                 'pekerjaan' => $data['pekerjaan'],
                 'status_perkawinan' => $data['status_perkawinan'],
                 'kewarganegaraan' => $data['kewarganegaraan'],
+                'alamat' => $data['alamat'] ?? null,
+                'alamat_domisili' => $data['alamat_domisili'] ?? null,
+                'status_warga' => in_array($data['status_warga'] ?? null, ['tetap', 'tidak_tetap'], true) ? $data['status_warga'] : 'tidak_tetap',
                 'nama_ayah' => $data['nama_ayah'] ?? null,
                 'nama_ibu' => $data['nama_ibu'] ?? null,
                 'file_kk' => $mutasi->file_bukti,
+                'file_ktp' => $data['file_ktp_path'] ?? null,
             ]);
         } else if ($mutasi->jenis_mutasi == 'edit') {
             $penduduk = Penduduk::findOrFail($mutasi->penduduk_id);
@@ -56,11 +61,14 @@ class MutasiWargaController extends Controller
                 return back()->withErrors(['nik' => 'NIK sudah terdaftar pada data penduduk lain.']);
             }
             $updateData = [];
-            
+
             $fieldsToUpdate = [
-                'nama_lengkap', 'nik', 'pendidikan_terakhir', 'pekerjaan', 'status_perkawinan'
+                'nama_lengkap', 'nik', 'no_wa', 'pendidikan_terakhir', 'pekerjaan',
+                'status_perkawinan', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir',
+                'agama', 'kewarganegaraan', 'alamat', 'alamat_domisili', 'status_warga',
+                'nama_ayah', 'nama_ibu',
             ];
-            
+
             foreach ($fieldsToUpdate as $field) {
                 if (isset($data[$field])) {
                     $updateData[$field] = $data[$field];
@@ -72,12 +80,36 @@ class MutasiWargaController extends Controller
             }
 
             $penduduk->update($updateData);
+        } else if ($mutasi->jenis_mutasi == 'edit_kk') {
+            // Pengajuan perubahan identitas KK. Perbarui tabel keluarga dengan
+            // whitelist field; no_kk / nik_kepala_keluarga / rt_id tidak diubah.
+            $keluarga = $mutasi->keluarga;
+            if ($keluarga) {
+                $updateData = [];
+                $fieldsToUpdate = [
+                    'alamat', 'alamat_domisili', 'no_wa', 'pemilik_rumah', 'status_warga',
+                    'kelurahan', 'kecamatan', 'kabupaten', 'provinsi', 'kode_pos', 'rw',
+                ];
+                foreach ($fieldsToUpdate as $field) {
+                    if (isset($data[$field])) {
+                        $updateData[$field] = $data[$field];
+                    }
+                }
+                if (! empty($updateData)) {
+                    $keluarga->update($updateData);
+                }
+            }
         }
 
         $mutasi->status = 'disetujui';
+        $mutasi->diproses_rw_oleh = auth()->id();
+        $mutasi->diproses_rw_at = now();
         $mutasi->save();
 
-        return redirect()->back()->with('success', 'Mutasi warga disetujui dan data penduduk telah diperbarui.');
+        // Notifikasi: disetujui RW → pengaju.
+        \App\Services\NotificationService::notifikasiMutasiHasil($mutasi, 'RW', true);
+
+        return redirect()->back()->with('success', 'Pengajuan data disetujui dan data penduduk telah diperbarui.');
     }
 
     public function reject(Request $request, $id)
@@ -88,12 +120,17 @@ class MutasiWargaController extends Controller
 
         $mutasi = MutasiWarga::where('status', 'menunggu_rw')->where('id', $id)->first();
         if (! $mutasi) {
-            return back()->withErrors(['mutasi' => 'Status mutasi tidak valid untuk diproses oleh RW.']);
+            return back()->withErrors(['mutasi' => 'Status pengajuan tidak valid untuk diproses oleh RW.']);
         }
         $mutasi->status = 'ditolak';
         $mutasi->keterangan_tolak = $request->alasan_penolakan;
+        $mutasi->ditolak_oleh = auth()->id();
+        $mutasi->diproses_rw_at = now();
         $mutasi->save();
 
-        return redirect()->back()->with('success', 'Mutasi warga ditolak.');
+        // Notifikasi: ditolak RW → pengaju.
+        \App\Services\NotificationService::notifikasiMutasiHasil($mutasi, 'RW', false, $request->alasan_penolakan);
+
+        return redirect()->back()->with('success', 'Pengajuan data ditolak.');
     }
 }

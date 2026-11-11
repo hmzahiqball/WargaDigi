@@ -24,7 +24,7 @@
     if ($userRole === 'Admin Aplikasi') {
         $brandRole = 'Administrator';
         $brandIcon = 'bi-globe2';
-    } elseif (in_array($userRole, ['Admin RW', 'Pimpinan RW'])) {
+    } elseif (in_array($userRole, ['Admin RW', 'Ketua RW'])) {
         $brandRole = 'RW 12 TANIMULYA';
     } elseif ($userRole === 'Ketua RT') {
         $kodeRt = optional(Auth::user()->rt)->kode_rt ?? optional(Auth::user()->rt)->nama_rt ?? '01';
@@ -53,15 +53,8 @@
 
     <nav class="sidebar-nav">
         <ul class="sidebar-menu">
-            @foreach($mainMenus as $item)
+            @foreach($mainMenus as $i => $item)
                 @php
-                    $url = '#';
-                    if (!empty($item['route']) && Route::has($item['route'])) {
-                        $url = route($item['route']);
-                    } elseif (!empty($item['url']) && $item['url'] !== '#') {
-                        $url = url($item['url']);
-                    }
-
                     $isActive = false;
                     if (isset($item['active'])) {
                         foreach ((array)$item['active'] as $pattern) {
@@ -72,12 +65,71 @@
                         }
                     }
                 @endphp
-                <li class="sidebar-item">
-                    <a href="{{ $url }}" class="sidebar-link {{ $isActive ? 'active' : '' }}">
-                        <i class="bi {{ $item['icon'] ?? 'bi-circle' }}"></i>
-                        <span>{{ $item['title'] }}</span>
-                    </a>
-                </li>
+
+                @if(!empty($item['children']))
+                    {{-- Menu induk dengan submenu --}}
+                    @php
+                        $children = array_filter($item['children'], function ($c) use ($userRole) {
+                            if (empty($c['roles']) || !$userRole) return true;
+                            return in_array($userRole, $c['roles']);
+                        });
+                        $collapseId = 'submenu-' . $i;
+                    @endphp
+                    @if(count($children) > 0)
+                        <li class="sidebar-item">
+                            <a href="#{{ $collapseId }}" data-bs-toggle="collapse" role="button"
+                               aria-expanded="{{ $isActive ? 'true' : 'false' }}" aria-controls="{{ $collapseId }}"
+                               class="sidebar-link sidebar-parent {{ $isActive ? 'active' : '' }} {{ $isActive ? '' : 'collapsed' }}">
+                                <i class="bi {{ $item['icon'] ?? 'bi-circle' }}"></i>
+                                <span>{{ $item['title'] }}</span>
+                                <i class="bi bi-chevron-down sidebar-caret ms-auto"></i>
+                            </a>
+                            <div class="collapse {{ $isActive ? 'show' : '' }}" id="{{ $collapseId }}">
+                                <ul class="sidebar-submenu">
+                                    @foreach($children as $child)
+                                        @php
+                                            $childUrl = '#';
+                                            if (!empty($child['route']) && Route::has($child['route'])) {
+                                                $childUrl = route($child['route']);
+                                            } elseif (!empty($child['url']) && $child['url'] !== '#') {
+                                                $childUrl = url($child['url']);
+                                            }
+                                            $childActive = false;
+                                            foreach ((array)($child['active'] ?? []) as $pattern) {
+                                                if (request()->routeIs($pattern) || request()->is($pattern)) {
+                                                    $childActive = true;
+                                                    break;
+                                                }
+                                            }
+                                        @endphp
+                                        <li class="sidebar-item">
+                                            <a href="{{ $childUrl }}" class="sidebar-link sidebar-sublink {{ $childActive ? 'active' : '' }}">
+                                                <i class="bi {{ $child['icon'] ?? 'bi-dot' }}"></i>
+                                                <span>{{ $child['title'] }}</span>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                @else
+                    {{-- Menu biasa tanpa submenu --}}
+                    @php
+                        $url = '#';
+                        if (!empty($item['route']) && Route::has($item['route'])) {
+                            $url = route($item['route']);
+                        } elseif (!empty($item['url']) && $item['url'] !== '#') {
+                            $url = url($item['url']);
+                        }
+                    @endphp
+                    <li class="sidebar-item">
+                        <a href="{{ $url }}" class="sidebar-link {{ $isActive ? 'active' : '' }}">
+                            <i class="bi {{ $item['icon'] ?? 'bi-circle' }}"></i>
+                            <span>{{ $item['title'] }}</span>
+                        </a>
+                    </li>
+                @endif
             @endforeach
         </ul>
 

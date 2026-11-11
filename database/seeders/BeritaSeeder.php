@@ -12,7 +12,7 @@ class BeritaSeeder extends Seeder
     public function run(): void
     {
         $operator = User::where('role', 'Op Konten RW')->first() ?? User::where('username', 'opkontenrw21')->first() ?? User::first();
-        $approver = User::where('role', 'Admin RW')->first() ?? User::where('role', 'Pimpinan RW')->first() ?? User::first();
+        $approver = User::where('role', 'Admin RW')->first() ?? User::where('role', 'Ketua RW')->first() ?? User::first();
 
         $operatorId = $operator ? $operator->id : null;
         $approverId = $approver ? $approver->id : null;
@@ -71,7 +71,7 @@ class BeritaSeeder extends Seeder
                 'judul_berita' => 'Rancangan Anggaran Pembangunan Pos Keamanan Terpadu RT 04',
                 'slug' => 'rancangan-anggaran-pembangunan-pos-keamanan-terpadu-rt-04',
                 'kategori' => 'Pengumuman',
-                'isi_berita' => 'Berikut adalah draf rancangan biaya dan spesifikasi teknis renovasi pos kamling RT 04 yang sedang dalam tahap peninjauan oleh Pimpinan RW sebelum dimulai pengerjaan fisiknya pada bulan depan.',
+                'isi_berita' => 'Berikut adalah draf rancangan biaya dan spesifikasi teknis renovasi pos kamling RT 04 yang sedang dalam tahap peninjauan oleh Ketua RW sebelum dimulai pengerjaan fisiknya pada bulan depan.',
                 'featured_image' => null,
                 'status' => 'Review',
                 'operator_id' => $operatorId,

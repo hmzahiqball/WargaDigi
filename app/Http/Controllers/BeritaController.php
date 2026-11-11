@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Berita;
+use App\Support\KontenScope;
 use Illuminate\Support\Str;
 
 class BeritaController extends Controller
 {
     public function index()
     {
-        $publishedQuery = Berita::where('status', 'Publish');
+        $publishedQuery = KontenScope::untukWarga(Berita::query(), auth()->user())->where('status', 'Publish');
 
         // Kategori: 'Semua' + daftar kategori distinct dari berita yang Publish.
         $categories = collect(['Semua'])
@@ -42,7 +43,7 @@ class BeritaController extends Controller
 
     public function show($id)
     {
-        $berita = Berita::where('status', 'Publish')
+        $berita = KontenScope::untukWarga(Berita::query(), auth()->user())->where('status', 'Publish')
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('slug', $id);
             })

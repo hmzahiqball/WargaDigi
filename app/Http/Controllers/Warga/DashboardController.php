@@ -14,6 +14,7 @@ use App\Models\Berita;
 use App\Models\Agenda;
 use App\Models\PengajuanSurat;
 use App\Models\AgendaKehadiran;
+use App\Support\KontenScope;
 
 class DashboardController extends Controller
 {
@@ -47,14 +48,14 @@ class DashboardController extends Controller
             ],
         ];
 
-        $beritaTerkini = Berita::where('status', 'Publish')
+        $beritaTerkini = KontenScope::untukWarga(Berita::query(), $user)->where('status', 'Publish')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
         // Agenda mendatang (Publish, tanggal_mulai >= sekarang). Struktur
         // dipertahankan: title, time, icon. Bila kosong -> array kosong.
-        $agendaList = Agenda::where('status', 'Publish')
+        $agendaList = KontenScope::untukWarga(Agenda::query(), $user)->where('status', 'Publish')
             ->where('tanggal_mulai', '>=', now())
             ->orderBy('tanggal_mulai')
             ->take(5)
@@ -88,7 +89,7 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        $pengumumanPin = Pengumuman::where('status', 'Publish')
+        $pengumumanPin = KontenScope::untukWarga(Pengumuman::query(), $user)->where('status', 'Publish')
             ->orderBy('is_priority', 'desc')
             ->orderBy('updated_at', 'desc')
             ->take(5)
@@ -96,7 +97,7 @@ class DashboardController extends Controller
 
         $userId = $user->id ?? null;
 
-        $semuaAgenda = Agenda::where('status', 'Publish')
+        $semuaAgenda = KontenScope::untukWarga(Agenda::query(), $user)->where('status', 'Publish')
             ->orderBy('tanggal_mulai', 'asc')
             ->get()
             ->map(function ($item) use ($userId) {

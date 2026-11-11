@@ -21,9 +21,11 @@ class MasterSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
+            WilayahSeeder::class,
             MasterRtSeeder::class,
             KategoriUmkmSeeder::class,
             KategoriProdukSeeder::class,
+            KategoriTransaksiSeeder::class,
             SystemSettingSeeder::class,
             SuperAdminSeeder::class,
             FasilitasUmumSeeder::class,

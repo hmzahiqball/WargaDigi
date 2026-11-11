@@ -1332,7 +1332,7 @@
         detailModal.show();
     }
 
-    function editAgendaFromJson(id) { const item = dummyAgendaData.find(a => a.id == id); if(item) { const detailModalEl = document.getElementById('modalDetailAgenda'); const detailModal = bootstrap.Modal.getInstance(detailModalEl); if(detailModal) { detailModal.hide(); } else { detailModalEl.classList.remove('show'); detailModalEl.style.display = 'none'; document.body.classList.remove('modal-open'); const backdrop = document.querySelector('.modal-backdrop'); if(backdrop) backdrop.remove(); } setTimeout(() => { try { editAgenda(item); } catch(e) { console.error("Edit Agenda Error:", e); alert("Gagal membuka form edit: " + e.message); } }, 500); } }
+    function editAgendaFromJson(id) { const item = dummyAgendaData.find(a => a.id == id); if(item) { const detailModalEl = document.getElementById('modalDetailAgenda'); const detailModal = bootstrap.Modal.getInstance(detailModalEl); if(detailModal) { detailModal.hide(); } else { detailModalEl.classList.remove('show'); detailModalEl.style.display = 'none'; document.body.classList.remove('modal-open'); const backdrop = document.querySelector('.modal-backdrop'); if(backdrop) backdrop.remove(); } setTimeout(() => { try { editAgenda(item); } catch(e) { console.error("Edit Agenda Error:", e); window.tampilkanPemberitahuan("Gagal membuka form edit: " + e.message); } }, 500); } }
 
     // Sweet Alerts
     function confirmDelete(id) {

@@ -3,9 +3,14 @@
 @section('title', 'Persetujuan Dokumen')
 
 @section('content')
-<div class="mb-4">
-    <h2 class="fw-bold text-dark mb-1" style="font-size: 1.75rem;">Portal Persetujuan Dokumen</h2>
-    <p class="text-muted mb-0">Verifikasi dan tanda tangani dokumen pengajuan warga.</p>
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-size: 1.75rem;">Portal Persetujuan Dokumen</h2>
+        <p class="text-muted mb-0">Dokumen pengajuan warga yang menunggu persetujuan RT.</p>
+    </div>
+    <a href="{{ route('rt.riwayat-dokumen') }}" class="btn btn-outline-secondary" style="border-radius: 0.5rem;">
+        <i class="bi bi-clock-history me-1"></i> Riwayat Pengajuan
+    </a>
 </div>
 
 @if(session('success'))
@@ -291,21 +296,63 @@
                     <div class="col-lg-5">
                         <p class="text-muted small mb-3">Bubuhkan tanda tangan sebagai Ketua RT untuk menyetujui surat <strong>{{ $item->nama_pemohon }}</strong>.</p>
                         <div class="mb-3">
+                            <label class="form-label fw-bold small" for="nomorUrutRT{{ $item->id }}">Nomor Urut Surat</label>
+                            <input type="text" id="nomorUrutRT{{ $item->id }}" class="form-control" maxlength="30" value="" placeholder="Contoh: 012" oninput="updateNomorSurat('RT', '{{ $item->id }}', this.value)">
+                            <div class="form-text">Hanya bagian urut. Sisanya (SK/RT/RW/bulan/tahun) disusun otomatis.</div>
+                        </div>
+                        @php $akunRt = auth()->user(); @endphp
+                        <div class="mb-3">
                             <label class="form-label fw-bold small">Tanda Tangan RT <span class="text-danger">*</span></label>
-                            <div class="border rounded-3 position-relative" style="height: 180px; background: #fafafa; touch-action: none;">
-                                <canvas id="sigCanvasRt{{ $item->id }}" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
-                                <div id="sigPlaceholderRt{{ $item->id }}" class="position-absolute top-50 start-50 translate-middle text-muted small text-center" style="pointer-events:none;">
-                                    <i class="bi bi-pencil-square fs-3 d-block mb-1"></i>Coretan tanda tangan di sini
+
+                            @if($akunRt && $akunRt->ttd_default)
+                                <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                                    <input type="radio" class="btn-check" name="modeTtdRt{{ $item->id }}" id="modeTtdDefaultRt{{ $item->id }}" checked onchange="setModeTtd('Rt','{{ $item->id }}','default')">
+                                    <label class="btn btn-outline-success" for="modeTtdDefaultRt{{ $item->id }}"><i class="bi bi-bookmark-check me-1"></i>TTD Tersimpan</label>
+                                    <input type="radio" class="btn-check" name="modeTtdRt{{ $item->id }}" id="modeTtdManualRt{{ $item->id }}" onchange="setModeTtd('Rt','{{ $item->id }}','manual')">
+                                    <label class="btn btn-outline-success" for="modeTtdManualRt{{ $item->id }}"><i class="bi bi-pencil me-1"></i>Gambar Manual</label>
+                                </div>
+                                <div id="ttdDefaultBoxRt{{ $item->id }}" class="border rounded-3 p-2 text-center mb-2" style="background:#fafafa;">
+                                    <img src="{{ route('pengaturan.ttd.file', ['jenis' => 'ttd']) }}" alt="TTD Default" style="max-height:120px;" class="img-fluid">
+                                </div>
+                            @endif
+
+                            <div id="ttdManualBoxRt{{ $item->id }}" class="{{ ($akunRt && $akunRt->ttd_default) ? 'd-none' : '' }}">
+                                <div class="border rounded-3 position-relative" style="height: 180px; background: #fafafa; touch-action: none;">
+                                    <canvas id="sigCanvasRt{{ $item->id }}" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
+                                    <div id="sigPlaceholderRt{{ $item->id }}" class="position-absolute top-50 start-50 translate-middle text-muted small text-center" style="pointer-events:none;">
+                                        <i class="bi bi-pencil-square fs-3 d-block mb-1"></i>Coretan tanda tangan di sini
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="clearSig('Rt', '{{ $item->id }}')"><i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi</button>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="simpanTtdRt{{ $item->id }}">
+                                        <label class="form-check-label small text-muted" for="simpanTtdRt{{ $item->id }}">Simpan jadi default</label>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill mt-2" onclick="clearSig('Rt', '{{ $item->id }}')"><i class="bi bi-arrow-counterclockwise me-1"></i>Ulangi</button>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold small">Stempel RT (Opsional)</label>
-                            <div class="border border-2 rounded-3 p-3 text-center" style="border-style: dashed !important; cursor: pointer;" onclick="document.getElementById('stempelRt{{ $item->id }}').click()">
-                                <input type="file" id="stempelRt{{ $item->id }}" class="d-none" accept=".png" onchange="previewStempel(this, 'stempelPreviewRt{{ $item->id }}')">
-                                <div id="stempelPlaceholderRt{{ $item->id }}"><i class="bi bi-file-earmark-image text-success fs-2 d-block mb-1"></i><span class="small">Unggah Stempel (PNG, Max 2MB)</span></div>
-                                <div id="stempelPreviewRt{{ $item->id }}" class="d-none"><img src="" class="img-fluid" style="max-height:70px;" alt="Stempel"><p class="text-success small mt-1 mb-0"><i class="bi bi-check-circle me-1"></i>Siap</p><button type="button" class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="clearStempel('Rt', '{{ $item->id }}')"><i class="bi bi-trash me-1"></i>Hapus Stempel</button></div>
+                            @if($akunRt && $akunRt->stempel_default)
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="pakaiStempelRt{{ $item->id }}" checked onchange="toggleStempelDefault('Rt','{{ $item->id }}')">
+                                    <label class="form-check-label small" for="pakaiStempelRt{{ $item->id }}">Gunakan stempel tersimpan</label>
+                                </div>
+                                <div id="stempelDefaultBoxRt{{ $item->id }}" class="border rounded-3 p-2 text-center mb-2" style="background:#fafafa;">
+                                    <img src="{{ route('pengaturan.ttd.file', ['jenis' => 'stempel']) }}" alt="Stempel Default" style="max-height:70px;" class="img-fluid">
+                                </div>
+                            @endif
+                            <div id="stempelUploadBoxRt{{ $item->id }}" class="{{ ($akunRt && $akunRt->stempel_default) ? 'd-none' : '' }}">
+                                <div class="border border-2 rounded-3 p-3 text-center" style="border-style: dashed !important; cursor: pointer;" onclick="document.getElementById('stempelRt{{ $item->id }}').click()">
+                                    <input type="file" id="stempelRt{{ $item->id }}" class="d-none" accept=".png" onchange="previewStempel(this, 'stempelPreviewRt{{ $item->id }}')">
+                                    <div id="stempelPlaceholderRt{{ $item->id }}"><i class="bi bi-file-earmark-image text-success fs-2 d-block mb-1"></i><span class="small">Unggah Stempel (PNG, Max 2MB)</span></div>
+                                    <div id="stempelPreviewRt{{ $item->id }}" class="d-none"><img src="" class="img-fluid" style="max-height:70px;" alt="Stempel"><p class="text-success small mt-1 mb-0"><i class="bi bi-check-circle me-1"></i>Siap</p><button type="button" class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="clearStempel('Rt', '{{ $item->id }}')"><i class="bi bi-trash me-1"></i>Hapus Stempel</button></div>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="simpanStempelRt{{ $item->id }}">
+                                    <label class="form-check-label small text-muted" for="simpanStempelRt{{ $item->id }}">Simpan jadi default</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -438,9 +485,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
         let drawing = false, lx = 0, ly = 0;
         modal.addEventListener('shown.bs.modal', function() {
-            const r = canvas.parentElement.getBoundingClientRect();
-            canvas.width = r.width; canvas.height = r.height;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (window.resizeSigCanvas) resizeSigCanvas('Rt', id);
+            // Inject TTD/stempel default ke pratinjau bila mode default aktif.
+            const iframe = document.getElementById('previewFrameRt' + id);
+            const terapkan = function() { if (window.syncPreviewTtdStempel) syncPreviewTtdStempel('Rt', id); };
+            if (iframe) { iframe.addEventListener('load', terapkan, { once: true }); setTimeout(terapkan, 600); }
         });
         function gp(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
         canvas.addEventListener('pointerdown', function(e) { drawing = true; const p = gp(e); lx = p.x; ly = p.y; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
@@ -478,8 +527,8 @@ window.clearSig = function(role, id) {
 window.previewStempel = function(input, previewId) {
     if (input.files && input.files[0]) {
         const f = input.files[0];
-        if (f.type !== 'image/png') { alert('Format harus PNG!'); input.value = ''; return; }
-        if (f.size > 2*1024*1024) { alert('Max 2MB!'); input.value = ''; return; }
+        if (f.type !== 'image/png') { window.tampilkanPemberitahuan('Format harus PNG!'); input.value = ''; return; }
+        if (f.size > 2*1024*1024) { window.tampilkanPemberitahuan('Max 2MB!'); input.value = ''; return; }
         const reader = new FileReader();
         reader.onload = function(e) {
             const el = document.getElementById(previewId);
@@ -510,13 +559,115 @@ window.clearStempel = function(role, id) {
     if (iframe) removeImgFromIframe(iframe, colSelector, 'stempel-img');
 };
 
-window.submitApprove = function(role, id) {
-    const form = document.getElementById('formApprove' + role + id);
+// Tambah hidden input ke form approve.
+function tambahHidden(form, name, value) {
+    const h = document.createElement('input'); h.type = 'hidden'; h.name = name; h.value = value; form.appendChild(h);
+}
+
+// Pindah mode TTD (default vs manual) pada modal.
+// URL file TTD/stempel default akun (bila ada). Dipakai untuk inject ke pratinjau.
+const TTD_DEFAULT_URL = @json(auth()->user()?->ttd_default ? route('pengaturan.ttd.file', ['jenis' => 'ttd']) : null);
+const STEMPEL_DEFAULT_URL = @json(auth()->user()?->stempel_default ? route('pengaturan.ttd.file', ['jenis' => 'stempel']) : null);
+
+// Sinkronkan pratinjau surat (iframe) dengan mode TTD & stempel terpilih.
+window.syncPreviewTtdStempel = function(role, id) {
+    const iframe = document.getElementById('previewFrame' + role + id);
+    if (!iframe) return;
+    const col = role === 'Rt' ? '.rt-col .ttd-box' : '.rw-col .ttd-box';
+
+    // TTD
+    const modeDefault = document.getElementById('modeTtdDefault' + role + id);
+    if (modeDefault && modeDefault.checked && TTD_DEFAULT_URL) {
+        injectImgToIframe(iframe, col, TTD_DEFAULT_URL, 'ttd-img');
+    } else {
+        const canvas = document.getElementById('sigCanvas' + role + id);
+        const adaCoretan = canvas && canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data.some(v => v !== 0);
+        if (adaCoretan) injectImgToIframe(iframe, col, canvas.toDataURL('image/png'), 'ttd-img');
+        else removeImgFromIframe(iframe, col, 'ttd-img');
+    }
+
+    // Stempel
+    const pakaiStempel = document.getElementById('pakaiStempel' + role + id);
+    if (pakaiStempel && pakaiStempel.checked && STEMPEL_DEFAULT_URL) {
+        injectImgToIframe(iframe, col, STEMPEL_DEFAULT_URL, 'stempel-img');
+    }
+};
+
+// Ukur ulang canvas agar sesuai lebar kontainer (penting setelah box tampil dari d-none).
+window.resizeSigCanvas = function(role, id) {
     const canvas = document.getElementById('sigCanvas' + role + id);
-    if (canvas) document.getElementById('hiddenSig' + role + id).value = canvas.toDataURL('image/png');
-    const fileInput = document.getElementById('stempel' + role + id);
-    if (fileInput && fileInput.files.length > 0) { fileInput.name = 'stempel_' + role.toLowerCase(); form.appendChild(fileInput); }
+    if (!canvas) return;
+    const r = canvas.parentElement.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+        canvas.width = r.width; canvas.height = r.height;
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    }
+};
+
+window.setModeTtd = function(role, id, mode) {
+    const manual = document.getElementById('ttdManualBox' + role + id);
+    const def = document.getElementById('ttdDefaultBox' + role + id);
+    if (mode === 'manual') {
+        if (manual) manual.classList.remove('d-none'); if (def) def.classList.add('d-none');
+        // Box baru saja tampil: ukur canvas setelah layout siap.
+        setTimeout(function() { resizeSigCanvas(role, id); }, 50);
+    } else {
+        if (manual) manual.classList.add('d-none'); if (def) def.classList.remove('d-none');
+    }
+    syncPreviewTtdStempel(role, id);
+};
+
+// Tampil/sembunyikan kotak unggah stempel saat memakai stempel default.
+window.toggleStempelDefault = function(role, id) {
+    const pakai = document.getElementById('pakaiStempel' + role + id);
+    const upload = document.getElementById('stempelUploadBox' + role + id);
+    const def = document.getElementById('stempelDefaultBox' + role + id);
+    const iframe = document.getElementById('previewFrame' + role + id);
+    const col = role === 'Rt' ? '.rt-col .ttd-box' : '.rw-col .ttd-box';
+    if (pakai && pakai.checked) {
+        if (upload) upload.classList.add('d-none'); if (def) def.classList.remove('d-none');
+        if (iframe && STEMPEL_DEFAULT_URL) injectImgToIframe(iframe, col, STEMPEL_DEFAULT_URL, 'stempel-img');
+    } else {
+        if (upload) upload.classList.remove('d-none'); if (def) def.classList.add('d-none');
+        if (iframe) removeImgFromIframe(iframe, col, 'stempel-img');
+    }
+};
+
+window.submitApprove = function(role, id) {
+    const lc = role.toLowerCase();
+    const form = document.getElementById('formApprove' + role + id);
+
+    // --- Mode TTD ---
+    const modeDefault = document.getElementById('modeTtdDefault' + role + id);
+    const pakaiTtdDefault = modeDefault && modeDefault.checked;
+    if (pakaiTtdDefault) {
+        tambahHidden(form, 'pakai_ttd_default_' + lc, '1');
+    } else {
+        const canvas = document.getElementById('sigCanvas' + role + id);
+        if (canvas) document.getElementById('hiddenSig' + role + id).value = canvas.toDataURL('image/png');
+        const simpan = document.getElementById('simpanTtd' + role + id);
+        if (simpan && simpan.checked) tambahHidden(form, 'simpan_ttd_default_' + lc, '1');
+    }
+
+    // --- Mode stempel ---
+    const pakaiStempel = document.getElementById('pakaiStempel' + role + id);
+    if (pakaiStempel && pakaiStempel.checked) {
+        tambahHidden(form, 'pakai_stempel_default_' + lc, '1');
+    } else {
+        const fileInput = document.getElementById('stempel' + role + id);
+        if (fileInput && fileInput.files.length > 0) { fileInput.name = 'stempel_' + lc; form.appendChild(fileInput); }
+        const simpanS = document.getElementById('simpanStempel' + role + id);
+        if (simpanS && simpanS.checked) tambahHidden(form, 'simpan_stempel_default_' + lc, '1');
+    }
+
+    const nomor = document.getElementById('nomorUrut' + role + id);
+    if (nomor && nomor.value.trim() !== '') tambahHidden(form, 'nomor_urut', nomor.value.trim());
+
     form.submit();
+};
+window.updateNomorSurat = function(role, id, value) {
+    const iframe = document.getElementById('previewFrame' + role + id);
+    if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'update-nomor', value: value }, '*');
 };
 </script>
 @endpush

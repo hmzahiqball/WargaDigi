@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
             [
                 'username' => 'pimpinan',
                 'password' => Hash::make('password'),
-                'role' => 'Pimpinan RW',
+                'role' => 'Ketua RW',
                 'status_akun' => 'Active',
                 'nik_verified_at' => now(),
             ],

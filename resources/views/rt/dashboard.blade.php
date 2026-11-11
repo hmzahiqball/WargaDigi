@@ -99,7 +99,7 @@
 {{-- Middle Section: Chart --}}
 <div class="card card-custom p-4 mb-4 shadow-sm border-0">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0">Tren Populasi Warga (6 Bulan Terakhir)</h5>
+        <h5 class="fw-bold mb-0">Tren Saldo Keuangan RT (6 Bulan Terakhir)</h5>
         <select class="form-select form-select-sm w-auto rounded-pill border-light-subtle shadow-sm bg-light">
             <option>Tahun Ini</option>
             <option>Tahun Lalu</option>
@@ -169,6 +169,8 @@
             </div>
         </div>
     </div>
+
+    @include('partials._demografi')
 </div>
 @endsection
 
@@ -186,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: {!! json_encode($chartData['labels']) !!},
                 datasets: [{
-                    label: 'Jumlah Warga',
+                    label: 'Saldo (Rp)',
                     data: {!! json_encode($chartData['values']) !!},
                     borderColor: '#0d6efd',
                     borderWidth: 3,

@@ -1,5 +1,5 @@
-﻿# Dokumen User Acceptance Testing (UAT)
-# WargaDigi — Platform Digital Manajemen Lingkungan RW/RT
+# Dokumen User Acceptance Testing (UAT)
+# WargaDigi � Platform Digital Manajemen Lingkungan RW/RT
 
 | Item | Keterangan |
 |------|------------|
@@ -51,7 +51,7 @@ Seluruh akun contoh menggunakan password: `password`. Login memerlukan NIK + Nom
 |-------|-----|----------------|----------|
 | Admin Aplikasi | 3217010101010001 | 082123456789 | password |
 | Admin RW | 3217010101010002 | 081234567890 | password |
-| Pimpinan RW | 3217010101010004 | 085712345678 | password |
+| Ketua RW | 3217010101010004 | 085712345678 | password |
 | Ketua RT | 3217010101010008 | 081398765432 | password |
 | Op Konten RW | 3217010101010005 | 087812345678 | password |
 | Op Keuangan RW | 3217010101010006 | 089612345678 | password |
@@ -60,7 +60,7 @@ Seluruh akun contoh menggunakan password: `password`. Login memerlukan NIK + Nom
 Data uji tambahan:
 - **NIK tidak terdaftar**: 9999999999999999
 - **Nomor WhatsApp salah**: 081111111111
-- **Kode RT baru (valid)**: 07 · **Kode RT duplikat**: 01
+- **Kode RT baru (valid)**: 07 � **Kode RT duplikat**: 01
 
 ## 4. Ketentuan Status dan Pengukuran
 
@@ -73,7 +73,7 @@ Data uji tambahan:
 
 ## 5. Skenario Uji (Test Cases)
 
-Format kolom: **ID · Prioritas · Prasyarat · Langkah · Data Uji · Hasil Diharapkan (Terukur) · Hasil Aktual · Status**. Kolom Hasil Aktual & Status diisi saat pelaksanaan.
+Format kolom: **ID � Prioritas � Prasyarat � Langkah � Data Uji � Hasil Diharapkan (Terukur) � Hasil Aktual � Status**. Kolom Hasil Aktual & Status diisi saat pelaksanaan.
 
 ### 5.1 Modul Autentikasi (mengacu AC-01)
 
@@ -146,7 +146,7 @@ Format kolom: **ID · Prioritas · Prasyarat · Langkah · Data Uji · Hasil Dih
 | UAT-SRT-01 | Tinggi | Login Warga, ajukan surat + lampiran KTP/KK, submit | akun Warga | Pengajuan tersimpan dengan status "Diajukan" | | |
 | UAT-SRT-02 | Tinggi | Login Ketua RT, setujui pengajuan dengan catatan | akun Ketua RT | Status berubah menjadi "Disetujui RT"; catatan tersimpan | | |
 | UAT-SRT-03 | Sedang | Login Ketua RT, tolak pengajuan lain dengan alasan | akun Ketua RT | Status "Ditolak RT"; alasan tersimpan dan terlihat pemohon | | |
-| UAT-SRT-04 | Tinggi | Login Admin/Pimpinan RW, sahkan pengajuan "Disetujui RT" | akun RW | Status menjadi "Selesai"; PDF surat resmi dihasilkan | | |
+| UAT-SRT-04 | Tinggi | Login Admin/Ketua RW, sahkan pengajuan "Disetujui RT" | akun RW | Status menjadi "Selesai"; PDF surat resmi dihasilkan | | |
 | UAT-SRT-05 | Sedang | Warga mengunduh PDF surat selesai | akun Warga | Berkas PDF terunduh dan dapat dibuka | | |
 
 ### 5.7 Modul Keuangan & Transparansi (mengacu AC-07)
@@ -216,7 +216,7 @@ Diisi setelah pelaksanaan pengujian.
 | 5.11 Otorisasi Lintas Modul | 4 | | | | |
 | **TOTAL** | **61** | | | | |
 
-**Keputusan UAT:** ☐ Diterima ☐ Diterima dengan Catatan ☐ Ditolak
+**Keputusan UAT:** ? Diterima ? Diterima dengan Catatan ? Ditolak
 
 ## 7. Log Defect
 

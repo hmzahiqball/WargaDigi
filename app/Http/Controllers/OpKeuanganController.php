@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\TransaksiKeuangan;
 use App\Models\LaporanKeuangan;
+use App\Models\KategoriTransaksi;
 use App\Models\MasterRt;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -51,6 +52,41 @@ class OpKeuanganController extends Controller
     }
 
     /**
+     * Daftar kategori yang relevan untuk unit saat ini dan aktif, terurut.
+     */
+    private function kategoriUntukUnit(?string $unit, ?string $rtId)
+    {
+        return KategoriTransaksi::aktif()
+            ->untukUnit($unit, $rtId)
+            ->orderBy('urutan')
+            ->orderBy('nama')
+            ->get();
+    }
+
+    /**
+     * Validasi kategori_id terhadap master: harus ada, dalam lingkup unit,
+     * aktif, dan tipenya cocok dengan tipe transaksi. Mengembalikan model
+     * KategoriTransaksi, atau null (dengan pesan error di session) bila gagal.
+     */
+    private function resolveKategori(Request $request, ?string $unit, ?string $rtId): ?KategoriTransaksi
+    {
+        $id = $request->input('kategori_id');
+        if (! $id) {
+            return null;
+        }
+
+        $kategori = $this->kategoriUntukUnit($unit, $rtId)->firstWhere('id', $id);
+        if (! $kategori) {
+            return null;
+        }
+        if (! $kategori->cocokTipe($request->input('tipe'))) {
+            return null;
+        }
+
+        return $kategori;
+    }
+
+    /**
      * Build a base query for transactions scoped by role.
      * Excludes 'Rejected' transactions — all other statuses are considered valid.
      */
@@ -81,6 +117,28 @@ class OpKeuanganController extends Controller
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];
+
+        // Operator RT memakai dashboard khusus RT (angka dibatasi ketat pada RT-nya).
+        if ($unit === 'RT' && $rt_id) {
+            return view('opKeuangan.dashboard-rt', [
+                'd'  => \App\Services\DashboardKeuanganRtService::data($rt_id),
+                'rt' => MasterRt::find($rt_id),
+            ]);
+        }
+
+        // Operator RW memakai dashboard khusus RW (hanya kas RW + setoran dari RT).
+        if ($unit === 'RW') {
+            return view('opKeuangan.dashboard-rw', [
+                'd' => \App\Services\DashboardKeuanganRwService::data(),
+            ]);
+        }
+
+        // Operator DKM memakai dashboard khusus DKM (hanya kas DKM).
+        if ($unit === 'DKM') {
+            return view('opKeuangan.dashboard-dkm', [
+                'd' => \App\Services\DashboardKeuanganDkmService::data(),
+            ]);
+        }
 
         // ──────────────────────────────
         // Stat Cards — calculated dynamically
@@ -289,9 +347,12 @@ class OpKeuanganController extends Controller
             'kematian' => $chartKematian,
         ];
 
+        // Setoran RT yang menunggu konfirmasi (relevan untuk Op Keuangan RW).
+        $setoranMenunggu = $unit === 'RW' ? \App\Models\SetoranRt::where('status', 'menunggu')->count() : 0;
+
         return view('opKeuangan.dashboard', compact(
             'stats', 'sheetSaldo', 'transaksiTerbaru', 'statusLaporan',
-            'chartData', 'unit', 'laporanTitle'
+            'chartData', 'unit', 'laporanTitle', 'setoranMenunggu'
         ));
     }
 
@@ -454,11 +515,17 @@ class OpKeuanganController extends Controller
             $query->where('unit_sumber', 'RW');
         }
 
-        if ($request->filled('tahun')) {
-            $query->whereYear('tanggal', $request->tahun);
+        // Default periode: bulan berjalan bila belum ada filter apa pun yang
+        // dipilih (agar halaman tidak menampilkan seluruh riwayat sekaligus).
+        $adaFilter = $request->anyFilled(['tahun', 'bulan', 'tipe', 'kategori']);
+        $tahunAktif = $request->input('tahun', $adaFilter ? null : now()->format('Y'));
+        $bulanAktif = $request->input('bulan', $adaFilter ? null : now()->format('m'));
+
+        if ($tahunAktif) {
+            $query->whereYear('tanggal', $tahunAktif);
         }
-        if ($request->filled('bulan')) {
-            $query->whereMonth('tanggal', $request->bulan);
+        if ($bulanAktif) {
+            $query->whereMonth('tanggal', $bulanAktif);
         }
         if ($request->filled('tipe')) {
             $query->where('tipe', $request->tipe);
@@ -467,7 +534,7 @@ class OpKeuanganController extends Controller
             $query->where('kategori', $request->kategori);
         }
 
-        $transaksi = $query->paginate(10);
+        $transaksi = $query->paginate(10)->withQueryString();
 
         // EV-009: Ambil semua periode terkunci (Submitted, Approved, Published) untuk unit ini
         $lockedPeriodsQuery = LaporanKeuangan::where('unit', $unit)
@@ -490,14 +557,76 @@ class OpKeuanganController extends Controller
             return sprintf('%04d-%02d', $lap->periode_tahun, $lap->periode_bulan);
         })->unique()->toArray();
 
-        // Tandai is_locked pada setiap transaksi di halaman aktif
-        $transaksi->getCollection()->transform(function ($tx) use ($lockedPeriods) {
+        // Transaksi yang berasal dari iuran (bulanan maupun lainnya) tidak boleh
+        // diedit/dihapus langsung dari buku kas; kelola lewat menu Iuran Warga.
+        $idHalaman = $transaksi->getCollection()->pluck('id')->all();
+        $txIuran = \App\Models\IuranPembayaran::whereIn('transaksi_id', $idHalaman)
+            ->pluck('transaksi_id')
+            ->merge(\App\Models\PembayaranTagihan::whereIn('transaksi_id', $idHalaman)->pluck('transaksi_id'))
+            ->merge(\App\Models\SetoranRt::whereIn('transaksi_rt_id', $idHalaman)->pluck('transaksi_rt_id'))
+            ->merge(\App\Models\SetoranRt::whereIn('transaksi_rw_id', $idHalaman)->pluck('transaksi_rw_id'))
+            ->unique()->all();
+
+        // Tandai is_locked & dari_iuran pada setiap transaksi di halaman aktif
+        $transaksi->getCollection()->transform(function ($tx) use ($lockedPeriods, $txIuran) {
             $txPeriod = $tx->tanggal->format('Y-m');
             $tx->is_locked = in_array($txPeriod, $lockedPeriods);
+            $tx->dari_iuran = in_array($tx->id, $txIuran, true);
             return $tx;
         });
 
-        return view('opKeuangan.transaksi', compact('transaksi', 'unit'));
+        // ── Buku Kas: saldo berjalan & ringkasan periode ──
+        // Saldo berjalan dihitung kumulatif sejak awal pencatatan (seluruh
+        // transaksi sah unit, kronologis), lalu dipetakan ke baris di halaman.
+        $semua = $this->scopedTransaksiQuery($unit, $rt_id)
+            ->orderBy('tanggal')->orderBy('created_at')
+            ->get(['id', 'tipe', 'jumlah']);
+        $saldoBerjalan = [];
+        $saldo = 0;
+        foreach ($semua as $row) {
+            $saldo += $row->tipe === 'pemasukan' ? (float) $row->jumlah : -(float) $row->jumlah;
+            $saldoBerjalan[$row->id] = $saldo;
+        }
+        $transaksi->getCollection()->transform(function ($tx) use ($saldoBerjalan) {
+            $tx->saldo_berjalan = $saldoBerjalan[$tx->id] ?? null;
+            return $tx;
+        });
+
+        // Ringkasan sesuai filter periode aktif (menghormati tahun/bulan/tipe/kategori).
+        $ringkasanQuery = clone $query;
+        $ringkasanDebet = (float) (clone $ringkasanQuery)->where('tipe', 'pemasukan')->sum('jumlah');
+        $ringkasanKredit = (float) (clone $ringkasanQuery)->where('tipe', 'pengeluaran')->sum('jumlah');
+
+        // Saldo awal periode = akumulasi (debet - kredit) seluruh transaksi unit
+        // SEBELUM awal periode terfilter. Tanpa filter periode, saldo awal = 0.
+        $saldoAwal = 0.0;
+        if ($tahunAktif || $bulanAktif) {
+            $thn = (int) ($tahunAktif ?: now()->format('Y'));
+            $bln = $bulanAktif ? (int) $bulanAktif : 1;
+            $awalPeriode = \Illuminate\Support\Carbon::create($thn, $bln, 1)->startOfDay();
+
+            $sebelum = $this->scopedTransaksiQuery($unit, $rt_id)
+                ->where('tanggal', '<', $awalPeriode);
+            $saldoAwal = (float) ((clone $sebelum)->where('tipe', 'pemasukan')->sum('jumlah'))
+                       - (float) ((clone $sebelum)->where('tipe', 'pengeluaran')->sum('jumlah'));
+        }
+
+        $saldoAkhir = $saldoAwal + $ringkasanDebet - $ringkasanKredit;
+
+        $ringkasan = [
+            'saldo_awal'  => $saldoAwal,
+            'debet'       => $ringkasanDebet,
+            'kredit'      => $ringkasanKredit,
+            'saldo_akhir' => $saldoAkhir,
+            // True bila saldo akhir periode = saldo kas terkini (periode mencakup transaksi terbaru).
+            'sama_terkini' => abs($saldoAkhir - $saldo) < 0.001,
+            'saldo_terkini' => $saldo,
+        ];
+
+        // Kategori untuk dropdown form & filter (lingkup unit + umum, aktif).
+        $kategoriList = $this->kategoriUntukUnit($unit, $rt_id);
+
+        return view('opKeuangan.transaksi', compact('transaksi', 'unit', 'kategoriList', 'ringkasan', 'tahunAktif', 'bulanAktif'));
     }
 
     public function laporanIndex(Request $request)
@@ -552,8 +681,8 @@ class OpKeuanganController extends Controller
         $request->validate([
             'tipe' => 'required|in:pemasukan,pengeluaran',
             'judul' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'tanggal' => 'required|date',
+            'kategori_id' => 'required|uuid',
+            'tanggal' => 'required|date|before_or_equal:today',
             'jumlah' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
         ]);
@@ -565,6 +694,12 @@ class OpKeuanganController extends Controller
         // IR27: tolak bila unit tidak terpetakan (hindari default 'RW' yang membocorkan data)
         if (!$unit) {
             abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
+
+        // Kategori wajib valid: ada di master, dalam lingkup unit, dan cocok tipe.
+        $kategori = $this->resolveKategori($request, $unit, $rt_id);
+        if (! $kategori) {
+            return back()->withErrors(['kategori_id' => 'Kategori tidak valid atau tidak sesuai dengan tipe transaksi.'])->withInput();
         }
 
         // EV-009: Cegah penambahan transaksi pada periode yang laporannya sudah terkunci
@@ -600,7 +735,8 @@ class OpKeuanganController extends Controller
         TransaksiKeuangan::create([
             'kode_transaksi' => $kode,
             'tipe' => $request->tipe,
-            'kategori' => $request->kategori,
+            'kategori' => $kategori->nama,
+            'kategori_id' => $kategori->id,
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi ?? '',
             'jumlah' => $request->jumlah,
@@ -617,14 +753,21 @@ class OpKeuanganController extends Controller
 
     public function transaksiUpdate(Request $request, $id)
     {
+        // Transaksi yang berasal dari iuran (wajib/lainnya) dikelola lewat menu Iuran Warga.
+        if (\App\Models\IuranPembayaran::where('transaksi_id', $id)->exists()
+            || \App\Models\PembayaranTagihan::where('transaksi_id', $id)->exists()
+            || \App\Models\SetoranRt::where('transaksi_rt_id', $id)->orWhere('transaksi_rw_id', $id)->exists()) {
+            return back()->with('error', 'Transaksi ini berasal dari Iuran Warga atau Setoran RT. Ubah atau batalkan melalui menu Iuran Warga / Setoran.');
+        }
+
         // Normalisasi nominal dari number formatter sebelum validasi.
         $request->merge(['jumlah' => $this->normalizeMoney($request->input('jumlah'))]);
 
         $request->validate([
             'tipe' => 'required|in:pemasukan,pengeluaran',
             'judul' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'tanggal' => 'required|date',
+            'kategori_id' => 'required|uuid',
+            'tanggal' => 'required|date|before_or_equal:today',
             'jumlah' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
         ]);
@@ -635,6 +778,11 @@ class OpKeuanganController extends Controller
 
         if (!$unit) {
             abort(403, 'Unit keuangan tidak terdefinisi untuk akun ini.');
+        }
+
+        $kategori = $this->resolveKategori($request, $unit, $rt_id);
+        if (! $kategori) {
+            return back()->withErrors(['kategori_id' => 'Kategori tidak valid atau tidak sesuai dengan tipe transaksi.'])->withInput();
         }
 
         $transaksi = TransaksiKeuangan::findOrFail($id);
@@ -673,7 +821,8 @@ class OpKeuanganController extends Controller
 
         $data = [
             'tipe' => $request->tipe,
-            'kategori' => $request->kategori,
+            'kategori' => $kategori->nama,
+            'kategori_id' => $kategori->id,
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi ?? '',
             'jumlah' => $request->jumlah,
@@ -797,8 +946,9 @@ class OpKeuanganController extends Controller
             'rt_id' => $rt_id,
             'total_pemasukan' => $pemasukan,
             'total_pengeluaran' => $pengeluaran,
-            'saldo_awal' => max(0, $saldoAwal),
-            'saldo_akhir' => max(0, $saldoAkhir),
+            // Saldo ditampilkan apa adanya (boleh negatif) agar defisit tampak jujur.
+            'saldo_awal' => $saldoAwal,
+            'saldo_akhir' => $saldoAkhir,
             'status' => 'Draft', // EV-007: Menggunakan status awal Draft untuk review mandiri
             'dibuat_oleh' => Auth::id(),
         ]);
@@ -836,6 +986,9 @@ class OpKeuanganController extends Controller
             'status' => 'Submitted',
             'catatan' => null, // Reset catatan jika sebelumnya ada revisi penolakan
         ]);
+
+        // Notifikasi: laporan menunggu persetujuan → approver sesuai unit.
+        \App\Services\NotificationService::notifikasiLaporanDisubmit($laporan->fresh());
 
         return back()->with('success', 'Laporan berhasil diajukan ke Ketua untuk peninjauan dan persetujuan.');
     }
@@ -907,13 +1060,21 @@ class OpKeuanganController extends Controller
         $laporan->update([
             'total_pemasukan' => $pemasukan,
             'total_pengeluaran' => $pengeluaran,
-            'saldo_awal' => max(0, $saldoAwal),
-            'saldo_akhir' => max(0, $saldoAkhir),
+            // Saldo ditampilkan apa adanya (boleh negatif) agar defisit tampak jujur.
+            'saldo_awal' => $saldoAwal,
+            'saldo_akhir' => $saldoAkhir,
         ]);
     }
 
     public function transaksiDestroy($id)
     {
+        // Transaksi iuran (wajib/lainnya) hanya boleh dibatalkan dari menu Iuran Warga.
+        if (\App\Models\IuranPembayaran::where('transaksi_id', $id)->exists()
+            || \App\Models\PembayaranTagihan::where('transaksi_id', $id)->exists()
+            || \App\Models\SetoranRt::where('transaksi_rt_id', $id)->orWhere('transaksi_rw_id', $id)->exists()) {
+            return back()->with('error', 'Transaksi ini berasal dari Iuran Warga atau Setoran RT. Batalkan melalui menu Iuran Warga / Setoran.');
+        }
+
         $roleData = $this->getRoleFilterData();
         $unit = $roleData['unit'];
         $rt_id = $roleData['rt_id'];

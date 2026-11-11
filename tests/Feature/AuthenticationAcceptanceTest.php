@@ -42,27 +42,35 @@ class AuthenticationAcceptanceTest extends TestCase
         return $keluarga;
     }
 
-    public function test_activation_rejects_a_mismatched_whatsapp_number(): void
+    public function test_activation_token_invalid_ditolak(): void
     {
         $this->createResident();
 
-        $this->from('/register')
-            ->post(route('aktivasi.verifikasi'), ['nik' => $this->nik, 'no_wa' => '081111111111'])
-            ->assertRedirect('/register')
-            ->assertSessionHasErrors('nik');
+        $this->get(route('aktivasi.token', ['token' => 'token-tidak-ada']))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('username');
     }
 
-    public function test_activation_with_mock_otp_creates_an_active_resident_account(): void
+    public function test_activation_via_token_creates_an_active_resident_account(): void
     {
         $keluarga = $this->createResident();
+        $token = \Illuminate\Support\Str::random(40);
+        User::create([
+            'nik' => $this->nik,
+            'username' => 'warga_uat',
+            'role' => 'Warga',
+            'password' => \Illuminate\Support\Str::random(16),
+            'status_akun' => 'Unverified',
+            'activation_token' => $token,
+            'activation_token_created_at' => now(),
+        ]);
 
-        $this->post(route('aktivasi.verifikasi'), ['nik' => $this->nik, 'no_wa' => '6281234567890'])
-            ->assertRedirect(route('aktivasi.otp'));
+        // Buka form aktivasi via token → tampil OK.
+        $this->get(route('aktivasi.token', ['token' => $token]))->assertOk();
 
-        $this->post(route('aktivasi.otp.verify'), ['otp' => '123456'])
-            ->assertRedirect(route('aktivasi.password'));
-
-        $this->post(route('aktivasi.password.complete'), [
+        // Set username + password → akun aktif, token terhapus.
+        $this->post(route('aktivasi.token.proses', ['token' => $token]), [
+            'username' => 'warga_uat_final',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect(route('login'));
@@ -71,6 +79,7 @@ class AuthenticationAcceptanceTest extends TestCase
             'nik' => $this->nik,
             'role' => 'Warga',
             'status_akun' => 'Active',
+            'activation_token' => null,
         ]);
         $this->assertDatabaseHas('keluarga', [
             'id' => $keluarga->id,

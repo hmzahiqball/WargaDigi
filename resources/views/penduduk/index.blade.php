@@ -31,7 +31,7 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-secondary w-100">
+                <button type="submit" class="btn btn-secondary flex-grow-1">
                     <i class="bi bi-funnel me-1"></i> Filter
                 </button>
                 @if($search !== '' || $rtId)
@@ -39,6 +39,9 @@
                     <i class="bi bi-x-lg"></i>
                 </a>
                 @endif
+                <button type="button" class="btn btn-success" title="Export ke Excel" data-bs-toggle="modal" data-bs-target="#modalExportPenduduk">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Export
+                </button>
             </div>
         </form>
 
@@ -47,7 +50,8 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th class="text-muted small fw-semibold py-3">NAMA / NIK</th>
+                        <th class="text-muted small fw-semibold py-3">NAMA</th>
+                        <th class="text-muted small fw-semibold py-3">NIK</th>
                         <th class="text-muted small fw-semibold py-3">L/P</th>
                         <th class="text-muted small fw-semibold py-3">HUBUNGAN KELUARGA</th>
                         <th class="text-muted small fw-semibold py-3">NO. KK</th>
@@ -60,8 +64,8 @@
                     <tr>
                         <td class="py-3">
                             <div class="fw-semibold text-dark">{{ $p->nama_lengkap }}</div>
-                            <div class="text-muted small">{{ $p->nik }}</div>
                         </td>
+                        <td class="py-3"><span style="font-family: monospace;">{{ $p->nik }}</span></td>
                         <td class="py-3">{{ $p->jenis_kelamin }}</td>
                         <td class="py-3">{{ $p->status_hubungan_keluarga }}</td>
                         <td class="py-3">{{ $p->keluarga?->no_kk ?? '-' }}</td>
@@ -95,4 +99,76 @@
         </div>
     </div>
 </div>
+
+{{-- ===================== MODAL: Export Penduduk ke Excel ===================== --}}
+<div class="modal fade" id="modalExportPenduduk" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 0.75rem;">
+            <form method="GET" action="{{ route('rw.penduduk.export') }}" id="formExportPenduduk">
+                {{-- Ikut filter aktif --}}
+                <input type="hidden" name="q" value="{{ $search }}">
+                <input type="hidden" name="rt_id" value="{{ $rtId }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-excel me-2 text-success"></i>Export Data Penduduk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Pilih kolom data yang ingin diekspor ke Excel. Export mengikuti filter pencarian &amp; RT yang sedang aktif.</p>
+                    <div class="d-flex gap-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportSelectAll">Pilih Semua</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportSelectNone">Kosongkan</button>
+                    </div>
+                    <div class="row g-2">
+                        @foreach(\App\Exports\PendudukExport::KOLOM as $key => $label)
+                            <div class="col-md-4 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input export-kolom" type="checkbox" name="kolom[]" value="{{ $key }}" id="kolom_{{ $key }}" checked>
+                                    <label class="form-check-label small" for="kolom_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="invalid-feedback d-block mt-2" id="exportKolomError" style="display:none !important;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success" id="btnExportPenduduk"><i class="bi bi-download me-1"></i>Export Excel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('formExportPenduduk');
+    if (!form) return;
+
+    var checks = form.querySelectorAll('.export-kolom');
+    var err = document.getElementById('exportKolomError');
+
+    document.getElementById('exportSelectAll')?.addEventListener('click', function () {
+        checks.forEach(function (c) { c.checked = true; });
+    });
+    document.getElementById('exportSelectNone')?.addEventListener('click', function () {
+        checks.forEach(function (c) { c.checked = false; });
+    });
+
+    form.addEventListener('submit', function (e) {
+        var adaDipilih = Array.prototype.some.call(checks, function (c) { return c.checked; });
+        if (!adaDipilih) {
+            e.preventDefault();
+            if (err) { err.textContent = 'Pilih minimal satu kolom untuk diekspor.'; err.style.display = 'block'; }
+            return;
+        }
+        if (err) err.style.display = 'none';
+        // Tutup modal setelah submit (download berjalan di background).
+        var modalEl = document.getElementById('modalExportPenduduk');
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) setTimeout(function () { modal.hide(); }, 300);
+    });
+});
+</script>
+@endpush

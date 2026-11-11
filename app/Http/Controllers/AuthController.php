@@ -54,8 +54,14 @@ class AuthController extends Controller
             if ($activeCandidates->isEmpty()) {
                 event(new \Illuminate\Auth\Events\Failed('web', $candidates->first(), ['login' => $identifier]));
 
+                // Bedakan akun nonaktif (mis. setelah pemindahan pemegang akun)
+                // dari akun yang memang belum diaktivasi.
+                $pesan = $candidates->contains(fn ($c) => $c->status_akun === 'Nonaktif')
+                    ? 'Akun ini telah dinonaktifkan dan tidak dapat digunakan untuk masuk.'
+                    : 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.';
+
                 return back()->withErrors([
-                    'login' => 'Akun belum diaktivasi. Silakan lakukan aktivasi terlebih dahulu.',
+                    'login' => $pesan,
                 ])->withInput($oldInput);
             }
 

@@ -46,9 +46,25 @@ class User extends Authenticatable
         'role',
         'password',
         'status_akun',
+        'activation_token',
+        'activation_token_created_at',
         'last_login',
         'rt_id',
+        'ttd_default',
+        'stempel_default',
     ];
+
+    /** URL TTD default (privat) bila tersimpan, atau null. */
+    public function ttdDefaultUrl(): ?string
+    {
+        return $this->ttd_default ? route('pengaturan.ttd.file', ['jenis' => 'ttd']) : null;
+    }
+
+    /** URL stempel default (privat) bila tersimpan, atau null. */
+    public function stempelDefaultUrl(): ?string
+    {
+        return $this->stempel_default ? route('pengaturan.ttd.file', ['jenis' => 'stempel']) : null;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -199,6 +215,7 @@ class User extends Authenticatable
         return [
             'nik_verified_at' => 'datetime',
             'last_login' => 'datetime',
+            'activation_token_created_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -216,6 +233,11 @@ class User extends Authenticatable
     public function rt()
     {
         return $this->belongsTo(MasterRt::class, 'rt_id');
+    }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class, 'user_id');
     }
 
     /**

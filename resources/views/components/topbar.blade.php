@@ -17,132 +17,51 @@
 
     $notifications = $config['notifications'] ?? [];
 
-    // Dynamic Notifications for UMKM status
+    // Notifikasi dari Database Notifications (berlaku untuk SEMUA peran).
     $dynamicNotifs = [];
     if (Auth::check()) {
-        if (in_array($userRole, ['Admin RW', 'Pimpinan RW'])) {
-            try {
-                $pendingUsahaRw = \App\Models\UmkmUsaha::with('pemilik.penduduk')
-                    ->where('status_verifikasi', 'Pending')
-                    ->orderBy('created_at', 'desc')
-                    ->limit(5)
-                    ->get();
+        try {
+            $dbNotifs = Auth::user()->notifications()->take(15)->get();
+            foreach ($dbNotifs as $dbN) {
+                $judul = $dbN->data['judul'] ?? '';
+                $pesan = $dbN->data['pesan'] ?? '';
+                $fullText = $judul ? "{$judul}: {$pesan}" : $pesan;
 
-                foreach ($pendingUsahaRw as $pUsaha) {
-                    $namaPemilik = $pUsaha->pemilik->penduduk->nama_lengkap ?? $pUsaha->pemilik->username ?? 'Warga';
-                    $dynamicNotifs[] = [
-                        'type'   => 'warning',
-                        'icon'   => 'bi-shop',
-                        'text'   => "UMKM Baru: {$pUsaha->nama_usaha} ({$namaPemilik}) menunggu verifikasi RW.",
-                        'time'   => $pUsaha->created_at ? $pUsaha->created_at->diffForHumans() : 'Baru saja',
-                        'unread' => true,
-                        'url'    => Route::has('rw.umkm.index') ? route('rw.umkm.index') : '#',
-                    ];
-                }
-            } catch (\Throwable $e) {}
-        } elseif ($userRole === 'Warga') {
-            try {
-                // 1. Notifikasi resmi dari Database Notifications
-                $dbNotifs = Auth::user()->notifications()->take(10)->get();
-                $existingUmkmNotifKeys = [];
-                $existingPembayaranNotifIds = [];
-                foreach ($dbNotifs as $dbN) {
-                    $type = $dbN->data['type'] ?? 'info';
-                    $icon = $dbN->data['icon'] ?? 'bi-bell-fill';
-                    $judul = $dbN->data['judul'] ?? '';
-                    $pesan = $dbN->data['pesan'] ?? '';
-                    $fullText = $judul ? "{$judul}: {$pesan}" : $pesan;
+                $dynamicNotifs[] = [
+                    'type'   => $dbN->data['type'] ?? 'info',
+                    'icon'   => $dbN->data['icon'] ?? 'bi-bell-fill',
+                    'text'   => $fullText,
+                    'time'   => $dbN->created_at ? $dbN->created_at->diffForHumans() : 'Baru saja',
+                    'unread' => is_null($dbN->read_at),
+                    'url'    => route('notifications.read.generic', $dbN->id),
+                ];
+            }
 
-                    if (!empty($dbN->data['umkm_usaha_id'])) {
-                        $existingUmkmNotifKeys[] = $dbN->data['umkm_usaha_id'] . '_' . ($dbN->data['status'] ?? '');
-                    }
-
-                    if (!empty($dbN->data['pembayaran_id'])) {
-                        $existingPembayaranNotifIds[] = $dbN->data['pembayaran_id'];
-                    }
-
-                    $dynamicNotifs[] = [
-                        'type'   => $type,
-                        'icon'   => $icon,
-                        'text'   => $fullText,
-                        'time'   => $dbN->created_at ? $dbN->created_at->diffForHumans() : 'Baru saja',
-                        'unread' => is_null($dbN->read_at),
-                        'url'    => route('warga.notifications.read', $dbN->id),
-                    ];
-                }
-
-                // 2. Sinkronisasi Realtime Tagihan Belum Dibayar Warga (EV-018)
-                if (Auth::user()->nik) {
-                    $pendudukWarga = \App\Models\Penduduk::with('keluarga')->where('nik', Auth::user()->nik)->first();
-                    if ($pendudukWarga && $pendudukWarga->keluarga) {
-                        $unpaidPembayaran = \App\Models\PembayaranTagihan::with('tagihan')
-                            ->where('keluarga_id', $pendudukWarga->keluarga->id)
-                            ->where('status', 'Unpaid')
-                            ->orderBy('created_at', 'desc')
-                            ->get();
-
-                        foreach ($unpaidPembayaran as $up) {
-                            if ($up->tagihan && !in_array($up->id, $existingPembayaranNotifIds)) {
-                                $dynamicNotifs[] = [
-                                    'type'   => 'warning',
-                                    'icon'   => 'bi-receipt-cutoff',
-                                    'text'   => "Tagihan Belum Lunas: {$up->tagihan->judul} ({$up->tagihan->formatted_nominal})",
-                                    'time'   => $up->created_at ? $up->created_at->diffForHumans() : 'Belum Dibayar',
-                                    'unread' => true,
-                                    'url'    => route('warga.tagihan.index'),
-                                ];
-                            }
-                        }
-                    }
-                }
-
-                // 3. Query status usaha warga (Approved, Rejected, Pending)
-                if (Auth::user()->nik) {
-                    $usahaWarga = \App\Models\UmkmUsaha::where('nik', Auth::user()->nik)
-                        ->whereIn('status_verifikasi', ['Pending', 'Approved', 'Rejected'])
-                        ->orderBy('updated_at', 'desc')
-                        ->limit(5)
+            // Pelengkap khusus Warga: tagihan belum lunas (status realtime, bukan event).
+            if ($userRole === 'Warga' && Auth::user()->nik) {
+                $pendudukWarga = \App\Models\Penduduk::with('keluarga')->where('nik', Auth::user()->nik)->first();
+                if ($pendudukWarga && $pendudukWarga->keluarga) {
+                    $unpaidPembayaran = \App\Models\PembayaranTagihan::with('tagihan')
+                        ->where('keluarga_id', $pendudukWarga->keluarga->id)
+                        ->where('status', 'Unpaid')
+                        ->orderBy('created_at', 'desc')
                         ->get();
 
-                    foreach ($usahaWarga as $u) {
-                        $key = $u->id . '_' . $u->status_verifikasi;
-                        if (in_array($key, $existingUmkmNotifKeys)) {
-                            continue;
-                        }
-
-                        if ($u->status_verifikasi === 'Approved') {
-                            $dynamicNotifs[] = [
-                                'type'   => 'success',
-                                'icon'   => 'bi-check-circle-fill',
-                                'text'   => "Pendaftaran UMKM Disetujui: Selamat! Usaha '{$u->nama_usaha}' telah disetujui RW.",
-                                'time'   => $u->updated_at ? $u->updated_at->diffForHumans() : 'Baru saja',
-                                'unread' => true,
-                                'url'    => Route::has('warga.umkm.kelola') ? route('warga.umkm.kelola', ['usaha_id' => $u->id]) : '#',
-                            ];
-                        } elseif ($u->status_verifikasi === 'Rejected') {
-                            $alasan = !empty($u->catatan_verifikasi) ? " Alasan: " . \Illuminate\Support\Str::limit($u->catatan_verifikasi, 50) : "";
-                            $dynamicNotifs[] = [
-                                'type'   => 'danger',
-                                'icon'   => 'bi-x-circle-fill',
-                                'text'   => "Pendaftaran UMKM Ditolak: Pengajuan usaha '{$u->nama_usaha}' ditolak oleh RW.{$alasan}",
-                                'time'   => $u->updated_at ? $u->updated_at->diffForHumans() : 'Baru saja',
-                                'unread' => true,
-                                'url'    => Route::has('warga.umkm.galeri') ? route('warga.umkm.galeri') : '#',
-                            ];
-                        } elseif ($u->status_verifikasi === 'Pending') {
+                    foreach ($unpaidPembayaran as $up) {
+                        if ($up->tagihan) {
                             $dynamicNotifs[] = [
                                 'type'   => 'warning',
-                                'icon'   => 'bi-hourglass-split',
-                                'text'   => "Pendaftaran UMKM: Usaha '{$u->nama_usaha}' berstatus Pending (menunggu peninjauan RW).",
-                                'time'   => $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja',
+                                'icon'   => 'bi-receipt-cutoff',
+                                'text'   => "Tagihan Belum Lunas: {$up->tagihan->judul} ({$up->tagihan->formatted_nominal})",
+                                'time'   => $up->created_at ? $up->created_at->diffForHumans() : 'Belum Dibayar',
                                 'unread' => true,
-                                'url'    => Route::has('warga.umkm.kelola') ? route('warga.umkm.kelola', ['usaha_id' => $u->id]) : '#',
+                                'url'    => route('warga.tagihan.index'),
                             ];
                         }
                     }
                 }
-            } catch (\Throwable $e) {}
-        }
+            }
+        } catch (\Throwable $e) {}
     }
 
     if (!empty($dynamicNotifs)) {
@@ -150,13 +69,17 @@
     }
 
     $notifTitle = $config['notif_title'] ?? 'Notifikasi';
-    $unreadCount = 0;
-    foreach ($notifications as $n) {
-        if (!empty($n['unread'])) {
-            $unreadCount++;
+    // Badge = jumlah notifikasi DB yang belum dibaca (sumber kebenaran, berkurang
+    // saat notifikasi diklik/di-markAsRead). Item realtime (mis. tagihan) tidak
+    // menambah badge agar angka tidak "nyangkut".
+    $notifBadge = 0;
+    if (Auth::check()) {
+        try {
+            $notifBadge = Auth::user()->unreadNotifications()->count();
+        } catch (\Throwable $e) {
+            $notifBadge = 0;
         }
     }
-    $notifBadge = $unreadCount;
 @endphp
 
 <header class="admin-topbar">

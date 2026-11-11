@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Warga;
 use App\Http\Controllers\Controller;
 use App\Models\Agenda;
 use App\Models\AgendaKehadiran;
+use App\Support\KontenScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class AgendaController extends Controller
     {
         $userId = Auth::id();
 
-        $agendas = Agenda::with('operator')->where('status', 'Publish')
+        $agendas = KontenScope::untukWarga(Agenda::with('operator'), Auth::user())->where('status', 'Publish')
             ->orderBy('tanggal_mulai', 'asc')
             ->get()
             ->map(function ($item) use ($userId) {
@@ -90,7 +91,7 @@ class AgendaController extends Controller
     public function show($id)
     {
         $userId = Auth::id();
-        $agenda = Agenda::with('operator')->where('status', 'Publish')->findOrFail($id);
+        $agenda = KontenScope::untukWarga(Agenda::with('operator'), Auth::user())->where('status', 'Publish')->findOrFail($id);
 
         $start = Carbon::parse($agenda->tanggal_mulai)->setTimezone('Asia/Jakarta');
         $end = $agenda->tanggal_selesai
@@ -127,7 +128,7 @@ class AgendaController extends Controller
             'status_kehadiran' => 'required|in:Hadir,Tidak Hadir,Ragu-ragu',
         ]);
 
-        $agenda = Agenda::findOrFail($request->agenda_id);
+        $agenda = KontenScope::untukWarga(Agenda::query(), Auth::user())->findOrFail($request->agenda_id);
 
         if (!$agenda->is_rsvp_enabled) {
             return response()->json(['success' => false, 'message' => 'RSVP tidak aktif untuk agenda ini.'], 422);

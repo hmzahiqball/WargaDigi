@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nik')->unique();
             $table->string('username');
             $table->timestamp('nik_verified_at')->nullable();
-            $table->enum('role', ['Admin Aplikasi', 'Admin RW','Pimpinan RW', 'Op Konten RW', 'Op Keuangan RW','Ketua RT', 'Op Konten RT', 'Op Keuangan RT', 'DKM', 'Warga']);
+            $table->enum('role', ['Admin Aplikasi', 'Admin RW','Ketua RW', 'Op Konten RW', 'Op Keuangan RW','Ketua RT', 'Op Konten RT', 'Op Keuangan RT', 'DKM', 'Warga']);
             $table->string('password');
             $table->enum('status_akun', ['Unverified', 'Active'])->default('Unverified');
             $table->timestamp('last_login')->nullable();

@@ -6,6 +6,14 @@
     <meta name="description" content="@yield('meta_description', 'WargaDigi 21 — Digitalisasi Gotong Royong')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ \App\Models\SystemSetting::getLogoUrl() }}">
+    {{-- PWA --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#2E7D32">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WargaDigi">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <meta name="webpush-public-key" content="{{ config('webpush.public_key') }}">
     <title>@yield('title', 'Dashboard') — WargaDigi 21</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @stack('styles')

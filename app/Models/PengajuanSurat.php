@@ -14,7 +14,10 @@ class PengajuanSurat extends Model
     protected $fillable = [
         'penduduk_id',
         'tipe_surat',
+        'nomor_urut',
+        'snapshot_surat',
         'keterangan_tambahan',
+        'data_tambahan',
         'file_ktp',
         'file_kk',
         'status',
@@ -34,6 +37,8 @@ class PengajuanSurat extends Model
         return [
             'tanggal_disetujui_rt' => 'datetime',
             'tanggal_selesai' => 'datetime',
+            'snapshot_surat' => 'array',
+            'data_tambahan' => 'array',
         ];
     }
 

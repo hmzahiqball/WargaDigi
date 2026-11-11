@@ -119,7 +119,7 @@ class PendudukSeeder extends Seeder
                 'file_ktp' => null,
             ],
 
-            // 4. Dedi Mulyadi (Pimpinan RW)
+            // 4. Dedi Mulyadi (Ketua RW)
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000007',
                 'keluarga_id' => $kkDedi ? $kkDedi->id : null,

@@ -32,6 +32,27 @@ use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\Warga\TagihanController as WargaTagihanController;
 use App\Http\Controllers\PendudukController;
 use App\Http\Controllers\MutasiDocumentController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushSubscriptionController;
+
+// Notifikasi in-app & Web Push — untuk semua user yang login (lintas peran).
+Route::middleware('auth')->group(function () {
+    Route::get('/notifikasi/{id}/baca', [NotificationController::class, 'read'])->name('notifications.read.generic');
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+
+    // OCR baca dokumen (KK/KTP) untuk form Tambah Keluarga.
+    Route::post('/ocr/baca-kk', [\App\Http\Controllers\OcrController::class, 'bacaKk'])->name('ocr.baca-kk');
+    Route::post('/ocr/baca-ktp', [\App\Http\Controllers\OcrController::class, 'bacaKtp'])->name('ocr.baca-ktp');
+    Route::post('/ocr/simpan-ktp', [\App\Http\Controllers\OcrController::class, 'simpanKtp'])->name('ocr.simpan-ktp');
+    Route::post('/ocr/parse-ktp', [\App\Http\Controllers\OcrController::class, 'parseKtp'])->name('ocr.parse-ktp');
+    Route::post('/ocr/simpan-kk', [\App\Http\Controllers\OcrController::class, 'simpanKk'])->name('ocr.simpan-kk');
+    Route::post('/ocr/parse-kk', [\App\Http\Controllers\OcrController::class, 'parseKk'])->name('ocr.parse-kk');
+
+    // Dropdown wilayah bertingkat (provinsi → kelurahan).
+    Route::get('/wilayah/anak', [\App\Http\Controllers\WilayahController::class, 'anak'])->name('wilayah.anak');
+});
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -89,12 +110,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
-Route::get('/aktivasi', [RegisterController::class, 'aktivasi'])->name('aktivasi');
-Route::post('/aktivasi/verifikasi', [RegisterController::class, 'prosesAktivasi'])->name('aktivasi.verifikasi');
-Route::get('/aktivasi/otp', [RegisterController::class, 'showOtp'])->name('aktivasi.otp');
-Route::post('/aktivasi/otp', [RegisterController::class, 'verifyOtp'])->name('aktivasi.otp.verify');
-Route::get('/aktivasi/password', [RegisterController::class, 'showPassword'])->name('aktivasi.password');
-Route::post('/aktivasi/password', [RegisterController::class, 'complete'])->name('aktivasi.password.complete');
+// Aktivasi via token/link dari RT (Opsi B, tanpa OTP).
+Route::get('/aktivasi/t/{token}', [RegisterController::class, 'aktivasiToken'])->name('aktivasi.token');
+Route::post('/aktivasi/t/{token}', [RegisterController::class, 'prosesAktivasiToken'])->name('aktivasi.token.proses');
 
 // Admin Routes (Role: Admin Aplikasi)
 Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(function () {
@@ -105,15 +123,24 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
     Route::post('/manajemen-hak-akses/pengurus', [AdminController::class, 'storePengurus'])->name('admin.manajemen-hak-akses.pengurus.store');
     Route::put('/manajemen-hak-akses/{id}', [AdminController::class, 'updateHakAkses'])->name('admin.manajemen-hak-akses.update');
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('admin.log-aktivitas');
+    Route::delete('/log-aktivitas', [AdminController::class, 'hapusLogAktivitas'])->name('admin.log-aktivitas.hapus');
+    // Master kategori transaksi (umum) untuk Admin.
+    Route::get('/kategori-transaksi', [\App\Http\Controllers\KategoriTransaksiController::class, 'index'])->name('admin.kategori-transaksi.index');
+    Route::post('/kategori-transaksi', [\App\Http\Controllers\KategoriTransaksiController::class, 'store'])->name('admin.kategori-transaksi.store');
+    Route::put('/kategori-transaksi/{id}', [\App\Http\Controllers\KategoriTransaksiController::class, 'update'])->name('admin.kategori-transaksi.update');
+    Route::delete('/kategori-transaksi/{id}', [\App\Http\Controllers\KategoriTransaksiController::class, 'destroy'])->name('admin.kategori-transaksi.destroy');
     Route::get('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'index'])->name('admin.pejabat.index');
     Route::post('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'store'])->name('admin.pejabat.store');
+    Route::get('/pejabat/riwayat', [\App\Http\Controllers\Admin\PejabatController::class, 'riwayat'])->name('admin.pejabat.riwayat');
+    Route::post('/pejabat/{id}/aktifkan', [\App\Http\Controllers\Admin\PejabatController::class, 'aktifkan'])->name('admin.pejabat.aktifkan');
     Route::get('/arsip-data-warga', [AdminController::class, 'arsipDataWarga'])->name('admin.arsip-data-warga');
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
 });
 
-// RW (Role: Admin RW, Pimpinan RW)
-Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')->name('rw.')->group(function () {
+// RW (Role: Admin RW, Ketua RW)
+Route::middleware(['auth', 'role:Admin RW,Ketua RW,Pimpinan'])->prefix('rw')->name('rw.')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('dashboard');
+    Route::get('/rekap-iuran', [\App\Http\Controllers\SetoranRtController::class, 'rekapRw'])->name('rekap-iuran');
     Route::get('/', [RwController::class, 'dashboard']);
 
     // Pusat Informasi (Berita & Agenda Approval)
@@ -133,6 +160,7 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
 
     // Persetujuan Dokumen
     Route::get('/persetujuan-dokumen', [RwController::class, 'persetujuanDokumen'])->name('persetujuan-dokumen');
+    Route::get('/riwayat-dokumen', [RwController::class, 'riwayatDokumen'])->name('riwayat-dokumen');
     Route::post('/surat/{id}/approve', [RwController::class, 'approveDokumen'])->name('surat.approve');
     Route::post('/surat/{id}/reject', [RwController::class, 'rejectDokumen'])->name('surat.reject');
     Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('surat.preview');
@@ -156,6 +184,7 @@ Route::middleware(['auth', 'role:Admin RW,Pimpinan RW,Pimpinan'])->prefix('rw')-
 
     // Manajemen Penduduk
     Route::get('/penduduk', [PendudukController::class, 'index'])->name('penduduk.index');
+    Route::get('/penduduk/export', [PendudukController::class, 'export'])->name('penduduk.export');
     Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('penduduk.show');
 });
 
@@ -164,6 +193,7 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::get('/dashboard', [RtController::class, 'dashboard'])->name('rt.dashboard');
     Route::get('/', [RtController::class, 'dashboard']);
     Route::get('/persetujuan-dokumen', [RtController::class, 'persetujuanDokumen'])->name('rt.persetujuan-dokumen');
+    Route::get('/riwayat-dokumen', [RtController::class, 'riwayatDokumen'])->name('rt.riwayat-dokumen');
     Route::post('/surat/{id}/approve', [RtController::class, 'approveDokumen'])->name('rt.surat.approve');
     Route::post('/surat/{id}/reject', [RtController::class, 'rejectDokumen'])->name('rt.surat.reject');
     Route::get('/surat/{id}/preview', [RtController::class, 'previewSurat'])->name('rt.surat.preview');
@@ -173,16 +203,31 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('rt.persetujuan-keuangan.approve');
     Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('rt.persetujuan-keuangan.reject');
 
+    // Pusat Informasi: Ketua RT menyetujui konten RT-nya sendiri
+    Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('rt.pusat-informasi.index');
+    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('rt.pusat-informasi.berita.approve');
+    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('rt.pusat-informasi.berita.reject');
+    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('rt.pusat-informasi.agenda.approve');
+    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('rt.pusat-informasi.agenda.reject');
+    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('rt.pusat-informasi.pengumuman.approve');
+    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('rt.pusat-informasi.pengumuman.reject');
     // Mutasi Warga
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'index'])->name('rt.mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'approve'])->name('rt.mutasi.approve');
     Route::post('/mutasi-warga/{id}/reject', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'reject'])->name('rt.mutasi.reject');
     Route::get('/mutasi-warga/{id}/dokumen', [MutasiDocumentController::class, 'show'])->name('rt.mutasi.dokumen');
+
+    Route::get('/penduduk', [PendudukController::class, 'indexRt'])->name('rt.penduduk.index');
+    Route::get('/penduduk/export', [PendudukController::class, 'exportRt'])->name('rt.penduduk.export');
     Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('rt.penduduk.show');
 
     // Pendataan Keluarga & Kepala Keluarga oleh RT.
     Route::get('/keluarga/create', [\App\Http\Controllers\Rt\KeluargaController::class, 'create'])->name('rt.keluarga.create');
     Route::post('/keluarga', [\App\Http\Controllers\Rt\KeluargaController::class, 'store'])->name('rt.keluarga.store');
+    // Detail satu keluarga (KK) + daftar anggota.
+    Route::get('/keluarga/{keluarga}', [\App\Http\Controllers\Rt\KeluargaController::class, 'show'])->name('rt.keluarga.show');
+    // Buat ulang link aktivasi akun pemegang keluarga.
+    Route::post('/keluarga/{keluarga}/aktivasi-ulang', [\App\Http\Controllers\Rt\KeluargaController::class, 'regenerateActivation'])->name('rt.keluarga.aktivasi-ulang');
     // Tambah anggota keluarga (tanpa akun) ke sebuah keluarga.
     Route::post('/keluarga/{keluarga}/anggota', [\App\Http\Controllers\Rt\KeluargaController::class, 'storeAnggota'])->name('rt.keluarga.anggota.store');
 });
@@ -235,12 +280,36 @@ Route::middleware(['auth', 'role:Op Keuangan RW,Op Keuangan RT,DKM,Op. Keuangan 
         Route::put('/laporan/{id}/publish', [OpKeuanganController::class, 'publishLaporan'])->name('opkeuangan.laporan.publish');
         Route::put('/laporan/{id}/submit', [OpKeuanganController::class, 'submitLaporan'])->name('opkeuangan.laporan.submit');
 
+        // Iuran Bulanan Warga (dikelola Bendahara RT): grid tahunan + verifikasi.
+        Route::get('/iuran-bulanan', [\App\Http\Controllers\IuranController::class, 'index'])->name('opkeuangan.iuran-bulanan.index');
+        Route::post('/iuran-bulanan/master', [\App\Http\Controllers\IuranController::class, 'simpanMaster'])->name('opkeuangan.iuran-bulanan.master');
+        Route::post('/iuran-bulanan/lunas', [\App\Http\Controllers\IuranController::class, 'tandaiLunas'])->name('opkeuangan.iuran-bulanan.lunas');
+        Route::delete('/iuran-bulanan/{id}/batal', [\App\Http\Controllers\IuranController::class, 'batalkan'])->name('opkeuangan.iuran-bulanan.batal');
+        Route::post('/iuran-bulanan/ingatkan', [\App\Http\Controllers\IuranController::class, 'ingatkan'])->name('opkeuangan.iuran-bulanan.ingatkan');
+        Route::put('/iuran-bulanan/{id}/setujui', [\App\Http\Controllers\IuranController::class, 'setujui'])->name('opkeuangan.iuran-bulanan.setujui');
+        Route::put('/iuran-bulanan/{id}/tolak', [\App\Http\Controllers\IuranController::class, 'tolak'])->name('opkeuangan.iuran-bulanan.tolak');
+
+        // Setoran kolektif RT ke RW (RT mencatat, RW mengonfirmasi).
+        Route::get('/setoran', [\App\Http\Controllers\SetoranRtController::class, 'index'])->name('opkeuangan.setoran.index');
+        Route::post('/setoran', [\App\Http\Controllers\SetoranRtController::class, 'store'])->name('opkeuangan.setoran.store');
+        Route::post('/setoran/pengaturan', [\App\Http\Controllers\SetoranRtController::class, 'simpanPengaturan'])->name('opkeuangan.setoran.pengaturan');
+        Route::delete('/setoran/{id}', [\App\Http\Controllers\SetoranRtController::class, 'destroy'])->name('opkeuangan.setoran.destroy');
+        Route::put('/setoran/{id}/konfirmasi', [\App\Http\Controllers\SetoranRtController::class, 'konfirmasi'])->name('opkeuangan.setoran.konfirmasi');
+        Route::put('/setoran/{id}/tolak', [\App\Http\Controllers\SetoranRtController::class, 'tolak'])->name('opkeuangan.setoran.tolak');
+        Route::put('/setoran/{id}/batalkan', [\App\Http\Controllers\SetoranRtController::class, 'batalkan'])->name('opkeuangan.setoran.batalkan');
+        // Master kategori transaksi (khusus unit) untuk Operator Keuangan.
+        Route::get('/kategori-transaksi', [\App\Http\Controllers\KategoriTransaksiController::class, 'index'])->name('opkeuangan.kategori-transaksi.index');
+        Route::post('/kategori-transaksi', [\App\Http\Controllers\KategoriTransaksiController::class, 'store'])->name('opkeuangan.kategori-transaksi.store');
+        Route::put('/kategori-transaksi/{id}', [\App\Http\Controllers\KategoriTransaksiController::class, 'update'])->name('opkeuangan.kategori-transaksi.update');
+        Route::delete('/kategori-transaksi/{id}', [\App\Http\Controllers\KategoriTransaksiController::class, 'destroy'])->name('opkeuangan.kategori-transaksi.destroy');
+
         // Tagihan / Iuran
         Route::get('/rekening', [TagihanController::class, 'rekeningIndex'])->name('opkeuangan.rekening.index');
         Route::post('/rekening', [TagihanController::class, 'rekeningSave'])->name('opkeuangan.rekening.save');
         Route::get('/iuran', [TagihanController::class, 'iuranIndex'])->name('opkeuangan.iuran.index');
         Route::get('/iuran/{id}', [TagihanController::class, 'iuranDetail'])->name('opkeuangan.iuran.detail');
         Route::post('/tagihan', [TagihanController::class, 'tagihanStore'])->name('opkeuangan.tagihan.store');
+        Route::put('/pembayaran/{id}/ceklis', [TagihanController::class, 'ceklisBayar'])->name('opkeuangan.pembayaran.ceklis');
         Route::put('/pembayaran/{id}/approve', [TagihanController::class, 'approvePembayaran'])->name('opkeuangan.pembayaran.approve');
         Route::put('/pembayaran/{id}/reject', [TagihanController::class, 'rejectPembayaran'])->name('opkeuangan.pembayaran.reject');
         Route::post('/pembayaran/{id}/broadcast', [TagihanController::class, 'broadcastReminder'])->name('opkeuangan.pembayaran.broadcast');
@@ -267,16 +336,28 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
     Route::get('/agenda/{agenda}', [AgendaController::class, 'show'])->name('agenda.show');
     Route::post('/agenda/rsvp', [AgendaController::class, 'rsvp'])->name('agenda.rsvp');
     Route::get('/keluarga', [KeluargaController::class, 'index'])->name('keluarga.index');
+    Route::get('/keluarga/riwayat', [KeluargaController::class, 'riwayat'])->name('keluarga.riwayat');
     Route::get('/keluarga/edit', [KeluargaController::class, 'edit'])->name('keluarga.edit');
     Route::put('/keluarga/update', [KeluargaController::class, 'update'])->name('keluarga.update');
+    // Pemindahan pemegang akun keluarga ke anggota lain (pengajuan → ACC RT).
+    Route::get('/keluarga/pindah-akun', [KeluargaController::class, 'pindahAkunForm'])->name('keluarga.pindah-akun');
+    Route::post('/keluarga/pindah-akun', [KeluargaController::class, 'pindahAkunStore'])->name('keluarga.pindah-akun.store');
+    // Pengelolaan anggota keluarga (pola RT: halaman penuh + pengajuan mutasi).
+    Route::get('/keluarga/anggota/create', [KeluargaController::class, 'createAnggota'])->name('keluarga.anggota.create');
     Route::post('/keluarga/anggota', [KeluargaController::class, 'storeAnggota'])->name('keluarga.anggota.store');
+    Route::get('/keluarga/anggota/{id}', [KeluargaController::class, 'showAnggota'])->name('keluarga.anggota.show');
+    Route::get('/keluarga/anggota/{id}/edit', [KeluargaController::class, 'editAnggota'])->name('keluarga.anggota.edit');
     Route::put('/keluarga/anggota/{id}', [KeluargaController::class, 'updateAnggota'])->name('keluarga.anggota.update');
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
     Route::get('/surat/{id}/pdf', [SuratController::class, 'downloadPdf'])->name('surat.download-pdf');
     Route::get('/surat/{id}/download', [SuratController::class, 'downloadPdf'])->name('surat.download');
 
-    // Tagihan Warga
+    // Iuran bulanan warga (kartu 12 bulan + ajukan bayar)
+    Route::get('/iuran', [WargaTagihanController::class, 'iuranIndex'])->name('iuran.index');
+    Route::post('/iuran/ajukan', [WargaTagihanController::class, 'iuranAjukan'])->name('iuran.ajukan');
+
+    // Tagihan Warga (insidental)
     Route::get('/tagihan', [WargaTagihanController::class, 'index'])->name('tagihan.index');
     Route::post('/tagihan/{id}/bayar', [WargaTagihanController::class, 'bayar'])->name('tagihan.bayar');
     Route::get('/tagihan/{id}/resi', [WargaTagihanController::class, 'downloadResi'])->name('tagihan.resi');
@@ -300,6 +381,14 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
 Route::middleware(['auth'])->group(function () {
     Route::get('/laporan-keuangan', [LaporanKeuanganPublicController::class, 'index'])->name('laporan-keuangan.publik');
     Route::get('/laporan-keuangan/{id}/pdf', [LaporanKeuanganPublicController::class, 'downloadPdf'])->name('laporan-keuangan.pdf');
+    Route::get('/laporan-keuangan/{id}/excel', [LaporanKeuanganPublicController::class, 'downloadExcel'])->name('laporan-keuangan.excel');
+});
+
+// Pengaturan Tanda Tangan & Stempel default (Ketua RT & Ketua RW).
+Route::middleware(['auth', 'role:Ketua RT,Ketua RW'])->group(function () {
+    Route::get('/pengaturan/tanda-tangan', [\App\Http\Controllers\TandaTanganController::class, 'edit'])->name('pengaturan.ttd.edit');
+    Route::post('/pengaturan/tanda-tangan', [\App\Http\Controllers\TandaTanganController::class, 'update'])->name('pengaturan.ttd.update');
+    Route::get('/pengaturan/tanda-tangan/file/{jenis}', [\App\Http\Controllers\TandaTanganController::class, 'file'])->name('pengaturan.ttd.file');
 });
 
 // Storage File Serving Fallback (Windows Dev Server compatibility)

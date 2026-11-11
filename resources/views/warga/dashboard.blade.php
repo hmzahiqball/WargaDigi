@@ -104,43 +104,43 @@
     @endif
 @endif
 
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">
-            <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
-                <i class="bi bi-file-earmark-plus mb-2 fs-3 text-success"></i>
-                <span class="fw-semibold small">Ajukan Surat<br>Keterangan</span>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">
-            <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
-                <i class="bi bi-search mb-2 fs-3 text-success"></i>
-                <span class="fw-semibold small">Cek Status Surat<br>Keterangan</span>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="{{ route('warga.tagihan.index') }}" class="text-decoration-none text-dark">
-            <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
-                <i class="bi bi-cash-coin mb-2 fs-3 text-success"></i>
-                <span class="fw-semibold small">Tagihan &<br>Iuran</span>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="{{ route('warga.umkm.kelola') }}" class="text-decoration-none text-dark">
-            <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
-                <i class="bi bi-shop mb-2 fs-3 text-success"></i>
-                <span class="fw-semibold small">Kelola Produk<br>Saya (UMKM)</span>
-            </div>
-        </a>
-    </div>
-</div>
-
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+            <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">
+                <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
+                    <i class="bi bi-file-earmark-plus mb-2 fs-3 text-success"></i>
+                    <span class="fw-semibold small">Ajukan Surat<br>Keterangan</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+            <a href="{{ route('warga.surat.index') }}" class="text-decoration-none text-dark">
+                <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
+                    <i class="bi bi-search mb-2 fs-3 text-success"></i>
+                    <span class="fw-semibold small">Cek Status Surat<br>Keterangan</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+            <a href="{{ route('warga.tagihan.index') }}" class="text-decoration-none text-dark">
+                <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
+                    <i class="bi bi-cash-coin mb-2 fs-3 text-success"></i>
+                    <span class="fw-semibold small">Tagihan &<br>Iuran</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3 col-lg-6 col-xl-3">
+            <a href="{{ route('warga.umkm.kelola') }}" class="text-decoration-none text-dark">
+                <div class="card card-custom action-card text-center p-3 h-100 shadow-sm border-0">
+                    <i class="bi bi-shop mb-2 fs-3 text-success"></i>
+                    <span class="fw-semibold small">Kelola Produk<br>Saya (UMKM)</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="fw-bold mb-0">Data Anggota Keluarga</h5>
             <a href="{{ route('warga.keluarga.index') }}" class="btn btn-success btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 flex-shrink-0">
@@ -172,6 +172,9 @@
             </div>
         </div>
 
+        {{-- Disembunyikan sementara: bagian "Transparansi Keuangan RW 21" (kartu statis
+             Dana Kematian / Kas RT & RW / Laporan). Aktifkan kembali dengan menghapus
+             pembungkus komentar ini bila sudah diisi data nyata.
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h5 class="fw-bold mb-0">Transparansi Keuangan RW 21</h5>
             <a href="{{ route('transparansi') }}" class="btn btn-outline-success btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 flex-shrink-0">
@@ -198,8 +201,9 @@
                 </div>
             </div>
         </div>
+        --}}
 
-        <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3 mb-3 mt-4">
             <h5 class="fw-bold mb-0">Update Berita Terkini</h5>
             <div class="d-flex gap-2 ms-auto">
                 <a href="{{ route('warga.berita.index') }}" class="badge bg-success rounded-pill px-3 py-2 text-decoration-none text-white">Semua Berita</a>
@@ -795,13 +799,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 buttons.forEach(b => b.disabled = false);
-                alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
+                window.tampilkanPemberitahuan('Gagal: ' + (data.message || 'Terjadi kesalahan'));
             }
         })
         .catch(err => {
             console.error('RSVP error:', err);
             buttons.forEach(b => b.disabled = false);
-            alert('Gagal menyimpan respons kehadiran.');
+            window.tampilkanPemberitahuan('Gagal menyimpan respons kehadiran.');
         })
         .finally(() => {
             if (btnEl.innerHTML.includes('spinner')) btnEl.innerHTML = originalHtml;

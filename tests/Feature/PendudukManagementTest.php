@@ -92,6 +92,35 @@ class PendudukManagementTest extends TestCase
             ->assertDontSee('Warga RT Dua');
     }
 
+    public function test_export_excel_mengunduh_file_xlsx(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '01', 'nama_rt' => 'RT 01']);
+        $this->buatPenduduk($rt, '3217010101011001', 'Ahmad Dahlan');
+
+        $response = $this->actingAs($this->adminRw())
+            ->get(route('rw.penduduk.export', ['kolom' => ['nik', 'nama_lengkap', 'no_kk', 'rt']]));
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'spreadsheetml.sheet',
+            (string) $response->headers->get('content-type')
+        );
+        $this->assertStringContainsString(
+            '.xlsx',
+            (string) $response->headers->get('content-disposition')
+        );
+    }
+
+    public function test_export_tanpa_kolom_ditolak(): void
+    {
+        $rt = MasterRt::create(['kode_rt' => '01', 'nama_rt' => 'RT 01']);
+        $this->buatPenduduk($rt, '3217010101011001', 'Ahmad Dahlan');
+
+        $this->actingAs($this->adminRw())
+            ->get(route('rw.penduduk.export'))
+            ->assertSessionHasErrors('kolom');
+    }
+
     public function test_warga_biasa_tidak_dapat_mengakses_manajemen_penduduk(): void
     {
         $warga = User::create([

@@ -48,7 +48,7 @@ class KeluargaSeeder extends Seeder
                 'no_wa' => '081398765432',
                 'status_aktivasi' => 'Active',
             ],
-            // Keluarga Dedi Mulyadi (Pimpinan RW) - RT 02
+            // Keluarga Dedi Mulyadi (Ketua RW) - RT 02
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000004',
                 'no_kk' => '3217010101000004',

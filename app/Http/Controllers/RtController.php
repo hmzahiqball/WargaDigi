@@ -173,13 +173,18 @@ class RtController extends Controller
             ];
         }
 
-        return view('rt.dashboard', compact('stats', 'chartData', 'aktivitasKeuangan', 'aktivitasDokumen'));
+        // Data demografi (lingkup RT ini).
+        $demografi = app(\App\Services\DemografiService::class)->semua($rtId, false);
+        $demografiScope = $rtId ? (\App\Models\MasterRt::find($rtId)->nama_rt ?? null) : null;
+
+        return view('rt.dashboard', compact('stats', 'chartData', 'aktivitasKeuangan', 'aktivitasDokumen', 'demografi', 'demografiScope'));
     }
 
     public function persetujuanDokumen()
     {
+        // Hanya tampilkan yang perlu persetujuan RT (status Diajukan).
         $pengajuanDb = PengajuanSurat::with(['penduduk.keluarga'])
-            ->whereIn('status', ['Diajukan', 'Disetujui RT', 'Selesai', 'Ditolak RT', 'Ditolak RW'])
+            ->where('status', 'Diajukan')
             ->orderByDesc('created_at')
             ->get();
 
@@ -223,6 +228,27 @@ class RtController extends Controller
         return view('rt.persetujuan-dokumen', compact('pengajuan'));
     }
 
+    /**
+     * Riwayat seluruh pengajuan surat (semua status) untuk RT.
+     */
+    public function riwayatDokumen(Request $request)
+    {
+        $riwayat = PengajuanSurat::with(['penduduk.keluarga.rt'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $cari = trim($request->q);
+                $q->where(function ($sub) use ($cari) {
+                    $sub->where('tipe_surat', 'like', "%{$cari}%")
+                        ->orWhereHas('penduduk', fn ($p) => $p->where('nama_lengkap', 'like', "%{$cari}%")->orWhere('nik', 'like', "%{$cari}%"));
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('rt.riwayat-dokumen', compact('riwayat'));
+    }
+
     public function approveDokumen(Request $request, $id)
     {
         $pengajuan = PengajuanSurat::findOrFail($id);
@@ -232,30 +258,17 @@ class RtController extends Controller
             'catatan_rt' => $request->input('catatan', null),
             'tanggal_disetujui_rt' => now(),
         ];
-
-        // Proses stempel RT (file upload, opsional)
-        if ($request->hasFile('stempel_rt')) {
-            $dataUpdate['stempel_rt'] = $request->file('stempel_rt')->store('dokumen/stempel', 'public');
+        if ($request->filled('nomor_urut')) {
+            $dataUpdate['nomor_urut'] = trim(mb_substr($request->input('nomor_urut'), 0, 30));
         }
 
-        // Proses tanda tangan RT (base64 dari signature pad)
-        if ($request->filled('signature_rt')) {
-            $signature = $request->input('signature_rt');
-            if (preg_match('/^data:image\/(\w+);base64,/', $signature, $type)) {
-                $signature = substr($signature, strpos($signature, ',') + 1);
-                $type = strtolower($type[1]);
-                if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
-                    $decoded = base64_decode($signature);
-                    if ($decoded !== false) {
-                        $fileName = 'dokumen/ttd/' . Str::random(40) . '.' . $type;
-                        Storage::disk('public')->put($fileName, $decoded);
-                        $dataUpdate['ttd_rt'] = $fileName;
-                    }
-                }
-            }
-        }
+        // Proses TTD & stempel RT (mode manual atau default akun).
+        $dataUpdate += \App\Services\TandaTanganPengesahan::proses($request, $request->user(), 'rt');
 
         $pengajuan->update($dataUpdate);
+
+        // Notifikasi: ke pemohon (disetujui RT) dan ke RW (menunggu penerbitan).
+        \App\Services\NotificationService::notifikasiSuratDisetujuiRt($pengajuan->fresh());
 
         return redirect()->route('rt.persetujuan-dokumen')
             ->with('success', 'Dokumen berhasil disetujui dan diteruskan ke RW.');
@@ -269,6 +282,10 @@ class RtController extends Controller
             'status' => 'Ditolak RT',
             'catatan_rt' => $request->catatan_penolakan,
         ]);
+
+        // Notifikasi: ke pemohon (ditolak RT).
+        \App\Services\NotificationService::notifikasiSuratDitolak($pengajuan->fresh(), 'RT', $request->catatan_penolakan);
+
         return redirect()->route('rt.persetujuan-dokumen')
             ->with('success', 'Catatan penolakan telah dikirim ke pemohon.');
     }
@@ -285,56 +302,10 @@ class RtController extends Controller
 
     public function previewSurat($id)
     {
-        $item = \App\Models\PengajuanSurat::with('penduduk.keluarga')->findOrFail($id);
-        $p = $item->penduduk;
-        $k = $p ? $p->keluarga : null;
+        $item = \App\Models\PengajuanSurat::with('penduduk.keluarga.rt')->findOrFail($id);
 
-        $kodeRt = '01';
-        if ($k && $k->rt_id) {
-            $rt = \App\Models\MasterRt::find($k->rt_id);
-            if ($rt) $kodeRt = $rt->kode_rt;
-        }
-
-        // Kode RT mengikuti RT pemohon; bila kosong pakai RT petugas yang login.
-        $loggedInRt = auth()->user();
-        $rtIdSurat = $k->rt_id ?? ($loggedInRt->rt_id ?? null);
-        if ($rtIdSurat) {
-            $rtSurat = \App\Models\MasterRt::find($rtIdSurat);
-            if ($rtSurat) $kodeRt = $rtSurat->kode_rt;
-        }
-
-        // Nama pejabat diambil dari data Pejabat aktif (bukan username akun).
-        $namaKetuaRt = \App\Models\Pejabat::namaKetuaRt($rtIdSurat) ?? '..........................';
-        $namaKetuaRw = \App\Models\Pejabat::namaKetuaRw() ?? '..........................';
-
-        $tanggalSelesai = $item->updated_at;
-        $bulanRomawi = \App\Models\PengajuanSurat::BULAN_ROMAWI[$tanggalSelesai->format('n')] ?? 'IX';
-
-        $data = (object) [
-            'tipe_surat' => $item->tipe_surat,
-            'kode_rt' => $kodeRt,
-            'bulan_romawi' => $bulanRomawi,
-            'tahun' => $tanggalSelesai->format('y'),
-            'nama_lengkap' => $p->nama_lengkap ?? '-',
-            'tempat_tgl_lahir' => $p ? ($p->tempat_lahir . ', ' . $p->tanggal_lahir->locale('id')->translatedFormat('j F Y')) : '-',
-            'alamat' => $k->alamat ?? '-',
-            'no_kk' => $k->no_kk ?? '-',
-            'nik' => $p->nik ?? '-',
-            'jenis_kelamin' => $p ? ($p->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan') : '-',
-            'agama' => $p->agama ?? '-',
-            'status_perkawinan' => $p->status_perkawinan ?? '-',
-            'status_hubungan_keluarga' => $p->status_hubungan_keluarga ?? '-',
-            'pekerjaan' => $p->pekerjaan ?? '-',
-            'keterangan_tambahan' => $item->keterangan_tambahan ?? '',
-            'tanggal_surat' => $tanggalSelesai->locale('id')->translatedFormat('j F Y'),
-            'nama_ketua_rt' => $namaKetuaRt,
-            'nama_ketua_rw' => $namaKetuaRw,
-            'ttd_rt' => $item->ttd_rt,
-            'stempel_rt' => $item->stempel_rt,
-            'ttd_rw' => $item->ttd_rw,
-            'stempel_rw' => $item->stempel_rw,
-            'is_preview' => true,
-        ];
+        // Data surat disusun oleh builder bersama (langsung dari DB, sesuai jenis surat).
+        $data = \App\Services\SuratDataBuilder::build($item, true);
 
         return view('pdf.surat', compact('data'));
     }

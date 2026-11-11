@@ -583,7 +583,7 @@
                 <div class="col-md-6">
                     <div class="content-card cursor-pointer" onclick="openDetail('${item.id}', '${item.type}')">
                         <div class="content-card-img-wrapper">
-                            <span class="card-badge">${item.kategori || item.type}</span>
+                            <span class="card-badge">${item.kategori || item.type}${item.asal && item.asal !== 'RW' ? ' &middot; ' + item.asal : ''}</span>
                             ${imgHtml}
                         </div>
                         <div class="content-card-body">

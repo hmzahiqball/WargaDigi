@@ -5,7 +5,7 @@
 @section('content')
 <div class="admin-page-header">
     <h1>Pengaturan Sistem</h1>
-    <p class="text-muted">Konfigurasi instance, notifikasi, keamanan, dan mode pemeliharaan.</p>
+    <p class="text-muted">Konfigurasi informasi instance aplikasi.</p>
 </div>
 
 @if (session('success'))
@@ -64,6 +64,8 @@
     </div>
 </div>
 
+{{-- Bagian Notifikasi, Keamanan, dan Mode Pemeliharaan disembunyikan sementara (@if(false)). --}}
+@if(false)
 {{-- Pengaturan Notifikasi --}}
 <div class="admin-card mb-4 animate-in delay-2">
     <div class="admin-card-header-inline">
@@ -184,6 +186,7 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- Simpan Semua --}}
 <div class="d-flex justify-content-end mb-5">
@@ -219,6 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const maintenanceWarning = document.getElementById('maintenanceWarning');
 
     function updateMaintenanceWarning() {
+        if (!maintenanceToggle || !maintenanceWarning) return;
         if (maintenanceToggle.checked) {
             maintenanceWarning.classList.remove('d-none');
         } else {

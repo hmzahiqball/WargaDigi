@@ -5,13 +5,20 @@ namespace App\Http\Controllers\OpKonten;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Agenda;
+use App\Support\KontenScope;
 use Illuminate\Support\Str;
 
 class AgendaController extends Controller
 {
+    /** Agenda milik operator ini, sebatas cakupannya (RT-nya, atau RW). */
+    private function milikSaya()
+    {
+        return KontenScope::untukKelola(Agenda::where('operator_id', auth()->id()), auth()->user());
+    }
+
     public function index(Request $request)
     {
-        $query = Agenda::with('operator')->where('operator_id', auth()->id());
+        $query = $this->milikSaya()->with('operator');
 
         if ($request->filled('kategori')) {
             $query->where('kategori', $request->kategori);
@@ -29,10 +36,10 @@ class AgendaController extends Controller
         $agenda = $query->latest()->paginate(10)->withQueryString();
 
         $stats = [
-            'draft' => Agenda::where('operator_id', auth()->id())->where('status', 'Draft')->count(),
-            'pending_rw' => Agenda::where('operator_id', auth()->id())->where('status', 'Review')->count(),
-            'revisi' => Agenda::where('operator_id', auth()->id())->where('status', 'Revisi')->count(),
-            'published' => Agenda::where('operator_id', auth()->id())->where('status', 'Publish')->count(),
+            'draft' => $this->milikSaya()->where('status', 'Draft')->count(),
+            'pending_rw' => $this->milikSaya()->where('status', 'Review')->count(),
+            'revisi' => $this->milikSaya()->where('status', 'Revisi')->count(),
+            'published' => $this->milikSaya()->where('status', 'Publish')->count(),
         ];
 
         return view('opKonten.agenda.index', compact('stats', 'agenda'));
@@ -71,6 +78,7 @@ class AgendaController extends Controller
         }
         $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
         $data['operator_id'] = auth()->id();
+        $data['rt_id'] = KontenScope::cakupanKelola(auth()->user());
 
         if ($request->hasFile('banner_flyer')) {
             $file = $request->file('banner_flyer');
@@ -127,7 +135,7 @@ class AgendaController extends Controller
         
         if ($agenda->status === 'Revisi') {
             $data['status'] = 'Review';
-            $msg = 'Agenda revisi berhasil diperbarui dan otomatis diajukan kembali untuk ditinjau oleh Ketua RW.';
+            $msg = 'Agenda revisi berhasil diperbarui dan otomatis diajukan kembali untuk ditinjau oleh Ketua RT/RW.';
         } else {
             $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
             $msg = $data['status'] === 'Review' ? 'Agenda berhasil diperbarui dan diajukan untuk ditinjau.' : 'Agenda berhasil diperbarui sebagai draf.';

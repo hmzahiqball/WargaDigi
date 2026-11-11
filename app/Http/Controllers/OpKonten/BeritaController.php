@@ -7,9 +7,15 @@ use Illuminate\Http\Request;
 
 class BeritaController extends Controller
 {
+    /** Berita milik operator ini, sebatas cakupannya (RT-nya, atau RW). */
+    private function milikSaya()
+    {
+        return \App\Support\KontenScope::untukKelola(\App\Models\Berita::where('operator_id', auth()->id()), auth()->user());
+    }
+
     public function index(Request $request)
     {
-        $query = \App\Models\Berita::with('operator')->where('operator_id', auth()->id());
+        $query = $this->milikSaya()->with('operator');
 
         if ($request->filled('kategori')) {
             $query->where('kategori', $request->kategori);
@@ -24,11 +30,11 @@ class BeritaController extends Controller
         $berita = $query->latest()->paginate(10)->withQueryString();
 
         $stats = [
-            'draft' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Draft')->count(),
-            'pending_rw' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Review')->count(),
-            'revisi' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Revisi')->count(),
-            'published' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Publish')->count(),
-            'archive' => \App\Models\Berita::where('operator_id', auth()->id())->where('status', 'Archive')->count(),
+            'draft' => $this->milikSaya()->where('status', 'Draft')->count(),
+            'pending_rw' => $this->milikSaya()->where('status', 'Review')->count(),
+            'revisi' => $this->milikSaya()->where('status', 'Revisi')->count(),
+            'published' => $this->milikSaya()->where('status', 'Publish')->count(),
+            'archive' => $this->milikSaya()->where('status', 'Archive')->count(),
         ];
 
         return view('opKonten.berita.index', compact('berita', 'stats'));
@@ -54,6 +60,7 @@ class BeritaController extends Controller
         $data['slug'] = \Illuminate\Support\Str::slug($request->judul_berita) . '-' . uniqid();
         $data['status'] = $request->action === 'review' ? 'Review' : 'Draft';
         $data['operator_id'] = auth()->id();
+        $data['rt_id'] = \App\Support\KontenScope::cakupanKelola(auth()->user());
 
         if ($request->hasFile('foto_utama')) {
             $path = $request->file('foto_utama')->store('berita', 'public');

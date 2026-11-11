@@ -9,6 +9,7 @@ use App\Models\Agenda;
 use App\Models\Pengumuman;
 use App\Models\UmkmProduk;
 use App\Models\GaleriDokumentasi;
+use App\Support\KontenScope;
 use Carbon\Carbon;
 
 class BeritaController extends Controller
@@ -16,7 +17,7 @@ class BeritaController extends Controller
     public function index()
     {
         // Get Berita
-        $berita = Berita::with('operator')
+        $berita = KontenScope::untukWarga(Berita::with(['operator', 'rt']), auth()->user())
             ->where('status', 'Publish')
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -24,6 +25,7 @@ class BeritaController extends Controller
                 return [
                     'id' => $item->id,
                     'type' => 'Berita',
+                    'asal' => $item->asal_label,
                     'title' => $item->judul_berita,
                     'description' => strip_tags($item->isi_berita),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -37,7 +39,7 @@ class BeritaController extends Controller
             });
 
         // Get Agenda
-        $agenda = Agenda::with('operator')
+        $agenda = KontenScope::untukWarga(Agenda::with(['operator', 'rt']), auth()->user())
             ->where('status', 'Publish')
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -45,6 +47,7 @@ class BeritaController extends Controller
                 return [
                     'id' => $item->id,
                     'type' => 'Agenda',
+                    'asal' => $item->asal_label,
                     'title' => $item->judul_agenda,
                     'description' => strip_tags($item->detail_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -63,7 +66,7 @@ class BeritaController extends Controller
             });
 
         // Get Pengumuman
-        $pengumuman = Pengumuman::with('operator')
+        $pengumuman = KontenScope::untukWarga(Pengumuman::with(['operator', 'rt']), auth()->user())
             ->where('status', 'Publish')
             ->orderBy('updated_at', 'desc')
             ->get()
@@ -71,6 +74,7 @@ class BeritaController extends Controller
                 return [
                     'id' => $item->id,
                     'type' => 'Pengumuman',
+                    'asal' => $item->asal_label,
                     'title' => $item->judul_pengumuman,
                     'description' => strip_tags($item->isi_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -118,6 +122,7 @@ class BeritaController extends Controller
         // Get Galeri Dokumentasi (AC-06.8)
         $galeriDokumentasi = GaleriDokumentasi::with(['agenda', 'operator'])
             ->whereHas('agenda', function ($q) {
+                KontenScope::untukWarga($q, auth()->user());
                 $q->where('status', 'Publish');
             })
             ->orderBy('created_at', 'desc')
@@ -146,6 +151,7 @@ class BeritaController extends Controller
                 return [
                     'id' => $item->id,
                     'type' => 'Galeri Dokumentasi',
+                    'asal' => $agenda?->asal_label,
                     'title' => 'Dokumentasi: ' . ($agenda->judul_agenda ?? 'Kegiatan'),
                     'description' => 'Dokumentasi kegiatan ' . ($agenda->judul_agenda ?? '') . ' yang telah selesai dilaksanakan.' . ($item->jumlah_peserta ? ' Dihadiri oleh ' . $item->jumlah_peserta . ' peserta.' : ''),
                     'author' => $item->operator->username ?? 'Operator Konten',

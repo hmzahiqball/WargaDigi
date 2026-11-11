@@ -12,6 +12,13 @@
     <p class="text-muted mb-0">Status keuangan dan alur kerja tertunda secara real-time.</p>
 </div>
 
+@if($setoranMenunggu > 0)
+    <a href="{{ route('opkeuangan.setoran.index') }}" class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center text-decoration-none small" data-testid="setoran-menunggu">
+        <span><i class="bi bi-box-arrow-in-down me-2"></i>{{ $setoranMenunggu }} setoran RT menunggu konfirmasi</span>
+        <i class="bi bi-chevron-right"></i>
+    </a>
+@endif
+
 {{-- Top 3 Stat Cards --}}
 <div class="row g-3 mb-4 dash-stats">
     {{-- Card 1: TOTAL KAS RW --}}

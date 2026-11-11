@@ -12,9 +12,6 @@
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCatatTransaksi">
             <i class="bi bi-plus-lg me-1"></i> Catat Transaksi Baru
         </button>
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalBroadcast">
-            <i class="bi bi-megaphone me-1"></i> Buat Tagihan Baru
-        </button>
     </div>
 </div>
 
@@ -51,6 +48,11 @@
 
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
+        {{-- Hint istilah buku kas --}}
+        <div class="alert alert-light border small text-muted d-flex align-items-start gap-2 mb-3" role="note">
+            <i class="bi bi-info-circle mt-1"></i>
+            <span><strong>Debet</strong> = uang masuk, <strong>Kredit</strong> = uang keluar. Kolom <strong>Saldo</strong> berjalan sejak awal pencatatan. Saat difilter per bulan, baris total menampilkan <strong>saldo awal</strong> (akumulasi bulan sebelumnya) dan <strong>saldo akhir</strong> periode. Transaksi diurutkan dari yang terbaru.</span>
+        </div>
         <!-- Filter Bar -->
         <form method="GET" action="{{ route('opkeuangan.transaksi.index') }}" class="row g-3 mb-4">
             <div class="col-md-2">
@@ -58,7 +60,7 @@
                 <select name="tahun" class="form-select bg-light border-0">
                     <option value="">Semua</option>
                     @for($y = date('Y'); $y >= 2023; $y--)
-                        <option value="{{ $y }}" {{ request('tahun') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        <option value="{{ $y }}" {{ (string)($tahunAktif ?? '') === (string)$y ? 'selected' : '' }}>{{ $y }}</option>
                     @endfor
                 </select>
             </div>
@@ -67,7 +69,7 @@
                 <select name="bulan" class="form-select bg-light border-0">
                     <option value="">Semua</option>
                     @for($m = 1; $m <= 12; $m++)
-                        <option value="{{ sprintf('%02d', $m) }}" {{ request('bulan') == sprintf('%02d', $m) ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 10)) }}</option>
+                        <option value="{{ sprintf('%02d', $m) }}" {{ (string)($bulanAktif ?? '') === sprintf('%02d', $m) ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 10)) }}</option>
                     @endfor
                 </select>
             </div>
@@ -83,11 +85,9 @@
                 <label class="form-label text-muted small">Kategori</label>
                 <select name="kategori" class="form-select bg-light border-0">
                     <option value="">Semua Kategori</option>
-                    <option value="Iuran Warga" {{ request('kategori') == 'Iuran Warga' ? 'selected' : '' }}>Iuran Warga</option>
-                    <option value="Operasional" {{ request('kategori') == 'Operasional' ? 'selected' : '' }}>Operasional</option>
-                    <option value="Dana Kematian" {{ request('kategori') == 'Dana Kematian' ? 'selected' : '' }}>Dana Kematian</option>
-                    <option value="Donasi" {{ request('kategori') == 'Donasi' ? 'selected' : '' }}>Donasi</option>
-                    <option value="Lainnya" {{ request('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                    @foreach($kategoriList as $kat)
+                        <option value="{{ $kat->nama }}" {{ request('kategori') == $kat->nama ? 'selected' : '' }}>{{ $kat->nama }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end gap-2">
@@ -102,26 +102,44 @@
             </div>
         </form>
 
-        <!-- Table -->
-        <div class="table-responsive">
+        {{-- ===== Tabel Buku Kas (desktop) ===== --}}
+        <div class="table-responsive d-none d-md-block">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
                         <th class="text-muted small fw-semibold py-3">TANGGAL</th>
-                        <th class="text-muted small fw-semibold py-3">PERIHAL</th>
-                        <th class="text-muted small fw-semibold py-3">KATEGORI</th>
-                        <th class="text-muted small fw-semibold py-3">JUMLAH (IDR)</th>
+                        <th class="text-muted small fw-semibold py-3">KETERANGAN</th>
+                        <th class="text-muted small fw-semibold py-3 text-end">DEBET</th>
+                        <th class="text-muted small fw-semibold py-3 text-end">KREDIT</th>
+                        <th class="text-muted small fw-semibold py-3 text-end">SALDO</th>
                         <th class="text-muted small fw-semibold py-3 text-end">AKSI</th>
+                    </tr>
+                    {{-- Baris total periode, tepat di atas kolomnya --}}
+                    <tr class="table-light">
+                        <th class="py-2 text-muted small fw-normal" colspan="2">
+                            Total periode terpilih
+                            <span class="d-block text-muted" style="font-size:11px;">Saldo awal periode: Rp {{ number_format($ringkasan['saldo_awal'], 0, ',', '.') }}</span>
+                        </th>
+                        <th class="py-2 text-end text-success">Rp {{ number_format($ringkasan['debet'], 0, ',', '.') }}</th>
+                        <th class="py-2 text-end text-danger">Rp {{ number_format($ringkasan['kredit'], 0, ',', '.') }}</th>
+                        <th class="py-2 text-end {{ $ringkasan['saldo_akhir'] < 0 ? 'text-danger' : 'text-dark' }}">
+                            <span class="d-block text-muted fw-normal" style="font-size:11px;">Saldo akhir</span>
+                            Rp {{ number_format($ringkasan['saldo_akhir'], 0, ',', '.') }}
+                        </th>
+                        <th class="py-2"></th>
                     </tr>
                 </thead>
                 <tbody class="border-top-0">
                     @forelse($transaksi as $tx)
                     <tr>
-                        <td class="py-3 text-dark">{{ $tx->tanggal->format('d M Y') }}</td>
+                        <td class="py-3 text-dark text-nowrap">{{ $tx->tanggal->format('d M Y') }}</td>
                         <td class="py-3">
                             <div class="fw-semibold text-dark">{{ $tx->judul }}</div>
-                            <div class="text-muted small text-truncate" style="max-width: 200px;">{{ $tx->deskripsi }}</div>
+                            @if($tx->deskripsi)
+                                <div class="text-muted small text-truncate" style="max-width: 260px;">{{ $tx->deskripsi }}</div>
+                            @endif
                             <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                <span class="badge bg-light text-dark border px-2 py-1">{{ $tx->kategori }}</span>
                                 @if($tx->bukti_file)
                                     <a href="{{ asset('storage/' . $tx->bukti_file) }}" target="_blank" class="badge bg-primary bg-opacity-10 text-primary text-decoration-none px-2 py-1 border border-primary border-opacity-25 rounded-pill">
                                         <i class="bi bi-paperclip me-1"></i> Lampiran Bukti
@@ -134,65 +152,64 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="py-3">
-                            <span class="badge bg-light text-dark border px-2 py-1">{{ $tx->kategori }}</span>
-                        </td>
-                        <td class="py-3 fw-bold {{ $tx->tipe == 'pemasukan' ? 'text-success' : 'text-danger' }}">
-                            {{ $tx->tipe == 'pemasukan' ? '+' : '-' }} {{ $tx->formatted_jumlah }}
+                        <td class="py-3 text-end fw-semibold text-success">{{ $tx->tipe == 'pemasukan' ? $tx->formatted_jumlah : '-' }}</td>
+                        <td class="py-3 text-end fw-semibold text-danger">{{ $tx->tipe == 'pengeluaran' ? $tx->formatted_jumlah : '-' }}</td>
+                        <td class="py-3 text-end fw-bold {{ ($tx->saldo_berjalan ?? 0) < 0 ? 'text-danger' : 'text-dark' }}">
+                            {{ $tx->saldo_berjalan !== null ? 'Rp ' . number_format($tx->saldo_berjalan, 0, ',', '.') : '-' }}
                         </td>
                         <td class="py-3 text-end">
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
-                                    <i class="bi bi-three-dots-vertical text-muted"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
-                                    @if($tx->bukti_file)
-                                    <li>
-                                        <a class="dropdown-item text-secondary py-2" href="{{ asset('storage/' . $tx->bukti_file) }}" target="_blank">
-                                            <i class="bi bi-file-earmark-arrow-down me-2 text-primary"></i> Lihat Bukti
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider my-1"></li>
-                                    @endif
-
-                                    @if(!empty($tx->is_locked))
-                                    <li>
-                                        <button class="dropdown-item py-2 text-muted disabled" disabled title="Terkunci: Laporan periode ini sudah diajukan/disetujui">
-                                            <i class="bi bi-lock-fill me-2 text-muted"></i> Edit <span class="badge bg-light text-muted border ms-1">Terkunci</span>
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item py-2 text-muted disabled" disabled title="Terkunci: Laporan periode ini sudah diajukan/disetujui">
-                                            <i class="bi bi-lock-fill me-2 text-muted"></i> Hapus <span class="badge bg-light text-muted border ms-1">Terkunci</span>
-                                        </button>
-                                    </li>
-                                    @else
-                                    <li>
-                                        <button class="dropdown-item py-2" onclick="openEditModal('{{ $tx->id }}', '{{ $tx->tipe }}', '{{ addslashes($tx->judul) }}', '{{ $tx->kategori }}', '{{ $tx->tanggal->format('Y-m-d') }}', '{{ $tx->jumlah }}', '{{ addslashes($tx->deskripsi ?? '') }}', '{{ $tx->bukti_file ? asset('storage/' . $tx->bukti_file) : '' }}')">
-                                            <i class="bi bi-pencil me-2 text-warning"></i> Edit
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <form action="{{ route('opkeuangan.transaksi.destroy', $tx->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger py-2">
-                                                <i class="bi bi-trash me-2"></i> Hapus
-                                            </button>
-                                        </form>
-                                    </li>
-                                    @endif
-                                </ul>
-                            </div>
+                            @include('opKeuangan.partials._aksi-transaksi', ['tx' => $tx])
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Belum ada transaksi ditemukan.</td>
+                        <td colspan="6" class="text-center py-5 text-muted">Belum ada transaksi ditemukan.</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- Ringkasan total untuk tampilan mobile --}}
+        <div class="d-md-none border rounded-3 p-3 mb-2 bg-light small">
+            <div class="d-flex justify-content-between"><span class="text-muted">Saldo Awal</span><span class="fw-semibold">Rp {{ number_format($ringkasan['saldo_awal'], 0, ',', '.') }}</span></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Total Debet</span><span class="fw-semibold text-success">Rp {{ number_format($ringkasan['debet'], 0, ',', '.') }}</span></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Total Kredit</span><span class="fw-semibold text-danger">Rp {{ number_format($ringkasan['kredit'], 0, ',', '.') }}</span></div>
+            <div class="d-flex justify-content-between border-top pt-1 mt-1"><span class="text-muted">Saldo Akhir</span><span class="fw-bold {{ $ringkasan['saldo_akhir'] < 0 ? 'text-danger' : 'text-dark' }}">Rp {{ number_format($ringkasan['saldo_akhir'], 0, ',', '.') }}</span></div>
+        </div>
+
+        {{-- ===== Daftar Buku Kas (mobile) ===== --}}
+        <div class="d-md-none">
+            @forelse($transaksi as $tx)
+            <div class="border rounded-3 p-3 mb-2" style="background:#fafafa;">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="text-truncate">
+                        <div class="fw-semibold text-dark text-truncate">{{ $tx->judul }}</div>
+                        <div class="text-muted" style="font-size:11px;"><i class="bi bi-calendar3 me-1"></i>{{ $tx->tanggal->format('d M Y') }}</div>
+                        <span class="badge bg-light text-dark border px-2 py-1 mt-1">{{ $tx->kategori }}</span>
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <div class="fw-bold {{ $tx->tipe == 'pemasukan' ? 'text-success' : 'text-danger' }}">
+                            {{ $tx->tipe == 'pemasukan' ? '+' : '-' }} {{ $tx->formatted_jumlah }}
+                        </div>
+                        <div class="text-muted" style="font-size:11px;">Saldo: Rp {{ number_format($tx->saldo_berjalan ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="d-flex gap-1 flex-wrap">
+                        @if($tx->bukti_file)
+                            <a href="{{ asset('storage/' . $tx->bukti_file) }}" target="_blank" class="badge bg-primary bg-opacity-10 text-primary text-decoration-none px-2 py-1 border border-primary border-opacity-25 rounded-pill"><i class="bi bi-paperclip me-1"></i>Bukti</a>
+                        @endif
+                        @if(!empty($tx->is_locked))
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-1 rounded-pill"><i class="bi bi-lock-fill me-1"></i>Terkunci</span>
+                        @endif
+                    </div>
+                    @include('opKeuangan.partials._aksi-transaksi', ['tx' => $tx])
+                </div>
+            </div>
+            @empty
+            <div class="text-center py-5 text-muted">Belum ada transaksi ditemukan.</div>
+            @endforelse
         </div>
 
         <div class="d-flex justify-content-between align-items-center mt-3">
@@ -218,11 +235,11 @@
                         <label class="form-label fw-semibold">Tipe Transaksi</label>
                         <div class="d-flex gap-3">
                             <div class="form-check form-check-inline form-radio-custom">
-                                <input class="form-check-input" type="radio" name="tipe" id="tipePemasukan" value="pemasukan" checked>
+                                <input class="form-check-input" type="radio" name="tipe" id="tipePemasukan" value="pemasukan" checked onchange="filterKategori('tambah','pemasukan')">
                                 <label class="form-check-label" for="tipePemasukan">Pemasukan (+)</label>
                             </div>
                             <div class="form-check form-check-inline form-radio-custom">
-                                <input class="form-check-input" type="radio" name="tipe" id="tipePengeluaran" value="pengeluaran">
+                                <input class="form-check-input" type="radio" name="tipe" id="tipePengeluaran" value="pengeluaran" onchange="filterKategori('tambah','pengeluaran')">
                                 <label class="form-check-label" for="tipePengeluaran">Pengeluaran (-)</label>
                             </div>
                         </div>
@@ -236,16 +253,13 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Kategori</label>
-                            <select class="form-select bg-light border-0 py-2" name="kategori" required>
-                                <option value="Iuran Warga" {{ old('kategori') == 'Iuran Warga' ? 'selected' : '' }}>Iuran Warga</option>
-                                <option value="Operasional" {{ old('kategori') == 'Operasional' ? 'selected' : '' }}>Operasional</option>
-                                <option value="Donasi" {{ old('kategori') == 'Donasi' ? 'selected' : '' }}>Donasi</option>
-                                <option value="Lainnya" {{ old('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                            <select class="form-select bg-light border-0 py-2" name="kategori_id" id="kategoriTambah" required>
+                                <option value="">-- Pilih kategori --</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tanggal</label>
-                            <input type="date" class="form-control bg-light border-0 py-2" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
+                            <input type="date" class="form-control bg-light border-0 py-2" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" max="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
 
@@ -279,6 +293,9 @@
                             <input type="file" name="bukti_file" id="inputFileTambah" class="d-none" accept=".jpg,.jpeg,.png,.pdf">
                             <input type="hidden" name="bukti_base64" id="buktiBase64Tambah">
                         </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="bukaKameraBukti('Tambah')"><i class="bi bi-camera me-1"></i>Ambil Foto</button>
+                        </div>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -308,11 +325,11 @@
                         <label class="form-label fw-semibold">Tipe Transaksi</label>
                         <div class="d-flex gap-3">
                             <div class="form-check form-check-inline form-radio-custom">
-                                <input class="form-check-input" type="radio" name="tipe" id="editTipePemasukan" value="pemasukan">
+                                <input class="form-check-input" type="radio" name="tipe" id="editTipePemasukan" value="pemasukan" onchange="filterKategori('edit','pemasukan')">
                                 <label class="form-check-label" for="editTipePemasukan">Pemasukan (+)</label>
                             </div>
                             <div class="form-check form-check-inline form-radio-custom">
-                                <input class="form-check-input" type="radio" name="tipe" id="editTipePengeluaran" value="pengeluaran">
+                                <input class="form-check-input" type="radio" name="tipe" id="editTipePengeluaran" value="pengeluaran" onchange="filterKategori('edit','pengeluaran')">
                                 <label class="form-check-label" for="editTipePengeluaran">Pengeluaran (-)</label>
                             </div>
                         </div>
@@ -326,18 +343,13 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Kategori</label>
-                            <select class="form-select bg-light border-0 py-2" name="kategori" id="editKategori" required>
-                                <option value="Iuran Warga">Iuran Warga</option>
-                                <option value="Operasional">Operasional</option>
-                                <option value="Donasi">Donasi</option>
-                                <option value="Setoran ke RW">Setoran ke RW</option>
-                                <option value="Dana Kematian">Dana Kematian</option>
-                                <option value="Lainnya">Lainnya</option>
+                            <select class="form-select bg-light border-0 py-2" name="kategori_id" id="editKategori" required>
+                                <option value="">-- Pilih kategori --</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tanggal</label>
-                            <input type="date" class="form-control bg-light border-0 py-2" name="tanggal" id="editTanggal" required>
+                            <input type="date" class="form-control bg-light border-0 py-2" name="tanggal" id="editTanggal" max="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
 
@@ -385,50 +397,14 @@
                             <input type="file" name="bukti_file" id="inputFileEdit" class="d-none" accept=".jpg,.jpeg,.png,.pdf">
                             <input type="hidden" name="bukti_base64" id="buktiBase64Edit">
                         </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="bukaKameraBukti('Edit')"><i class="bi bi-camera me-1"></i>Ambil Foto</button>
+                        </div>
                     </div>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3"><i class="bi bi-check-lg me-1"></i> Simpan Perubahan</button>
                         <button type="button" class="btn btn-light py-2 fw-semibold rounded-3 text-muted" data-bs-dismiss="modal">Batal</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Broadcast Tagihan -->
-<div class="modal fade" id="modalBroadcast" tabindex="-1" aria-labelledby="modalBroadcastLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow">
-            <div class="modal-header border-bottom-0 pb-0 mt-2 mx-2">
-                <h5 class="modal-title fw-bold" id="modalBroadcastLabel">Broadcast Notifikasi Tagihan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form action="#" method="POST">
-                    @csrf
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Target Penerima</label>
-                        <select class="form-select bg-light border-0 py-2">
-                            <option>Semua Warga RT 01</option>
-                            <option>Warga yang belum membayar</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Judul Notifikasi</label>
-                        <input type="text" class="form-control bg-light border-0 py-2" value="Tagihan Iuran Bulanan Oktober 2026">
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Pesan</label>
-                        <textarea class="form-control bg-light border-0 py-2" rows="4">Yth. Bapak/Ibu Warga RT 01, mohon untuk segera melakukan pembayaran iuran bulanan sebesar Rp 250.000 untuk periode bulan Oktober 2026. Terima kasih.</textarea>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3"><i class="bi bi-send me-2"></i> Kirim Broadcast</button>
                     </div>
                 </form>
             </div>
@@ -459,7 +435,31 @@
 
 @push('scripts')
 <script>
-function openEditModal(id, tipe, judul, kategori, tanggal, jumlah, deskripsi, buktiUrl) {
+// Master kategori (lingkup unit + umum, aktif). Dipakai untuk mengisi dropdown
+// kategori sesuai tipe transaksi yang dipilih.
+const KATEGORI_MASTER = @json($kategoriList->map(fn ($k) => ['id' => $k->id, 'nama' => $k->nama, 'tipe' => $k->tipe])->values());
+
+// Isi dropdown kategori untuk form 'tambah'/'edit' sesuai tipe (termasuk 'keduanya').
+window.filterKategori = function(form, tipe, selectedId) {
+    const sel = document.getElementById(form === 'tambah' ? 'kategoriTambah' : 'editKategori');
+    if (!sel) return;
+    const terpilih = selectedId ?? sel.value;
+    sel.innerHTML = '<option value="">-- Pilih kategori --</option>';
+    KATEGORI_MASTER.filter(k => k.tipe === tipe || k.tipe === 'keduanya').forEach(function (k) {
+        const o = document.createElement('option');
+        o.value = k.id; o.textContent = k.nama;
+        if (String(k.id) === String(terpilih)) o.selected = true;
+        sel.appendChild(o);
+    });
+};
+
+// Inisialisasi dropdown kategori form tambah (default tipe: pemasukan).
+document.addEventListener('DOMContentLoaded', function () {
+    const awal = document.querySelector('input[name="tipe"]:checked')?.value || 'pemasukan';
+    if (window.filterKategori) filterKategori('tambah', awal);
+});
+
+function openEditModal(id, tipe, judul, kategoriId, tanggal, jumlah, deskripsi, buktiUrl) {
     const form = document.getElementById('formEditTransaksi');
     form.action = '/op-keuangan/transaksi/' + id;
 
@@ -471,7 +471,7 @@ function openEditModal(id, tipe, judul, kategori, tanggal, jumlah, deskripsi, bu
     }
 
     document.getElementById('editJudul').value = judul;
-    document.getElementById('editKategori').value = kategori;
+    filterKategori('edit', tipe, kategoriId);
     document.getElementById('editTanggal').value = tanggal;
     document.getElementById('editJumlah').value = jumlah;
     document.getElementById('editDeskripsi').value = deskripsi;
@@ -537,7 +537,7 @@ function setupUpload(prefix) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
             if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file bukti transaksi maksimal 5 MB.');
+                window.tampilkanPemberitahuan('Ukuran file bukti transaksi maksimal 5 MB.');
                 resetUploadState(prefix);
                 return;
             }
@@ -572,6 +572,27 @@ function setupUpload(prefix) {
         e.stopPropagation();
         resetUploadState(prefix);
     });
+
+}
+
+// Tampilkan hasil jepret kamera sebagai bukti (mengisi preview + base64),
+// menyamai alur input file agar submit tetap memakai base64.
+function terapkanFotoBukti(prefix, dataUrl) {
+    const base64Input = document.getElementById('buktiBase64' + prefix);
+    const input = document.getElementById('inputFile' + prefix);
+    const def = document.getElementById('uploadDefault' + prefix);
+    const prev = document.getElementById('uploadPreview' + prefix);
+    const img = document.getElementById('previewImg' + prefix);
+    const pdfBox = document.getElementById('previewPdf' + prefix);
+    const fileName = document.getElementById('previewFileName' + prefix);
+
+    if (input) { input.value = ''; input.removeAttribute('name'); } // pakai base64, bukan file
+    if (base64Input) base64Input.value = dataUrl;
+    if (def) def.classList.add('d-none');
+    if (prev) prev.classList.remove('d-none');
+    if (pdfBox) pdfBox.classList.add('d-none');
+    if (img) { img.src = dataUrl; img.classList.remove('d-none'); }
+    if (fileName) fileName.textContent = 'Foto dari kamera';
 }
 
 function resetUploadState(prefix) {
@@ -624,6 +645,77 @@ document.addEventListener('DOMContentLoaded', function() {
     modalTambah.show();
     @endif
 });
+
+// ---- Kamera bukti transaksi (webcam desktop / kamera mobile) ----
+let streamBukti = null;
+let prefixKameraBukti = null;
+
+window.bukaKameraBukti = function(prefix) {
+    prefixKameraBukti = prefix;
+    const modalEl = document.getElementById('modalKameraBukti');
+    const modal = new bootstrap.Modal(modalEl);
+    const video = document.getElementById('videoKameraBukti');
+    const status = document.getElementById('statusKameraBukti');
+    status.textContent = 'Memulai kamera...';
+    modal.show();
+
+    navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(s) {
+            streamBukti = s;
+            video.srcObject = s;
+            status.textContent = '';
+        })
+        .catch(function() {
+            status.textContent = 'Tidak dapat mengakses kamera. Pastikan izin diberikan dan memakai HTTPS/localhost.';
+        });
+
+    modalEl.addEventListener('hidden.bs.modal', hentikanKameraBukti, { once: true });
+};
+
+function hentikanKameraBukti() {
+    if (streamBukti) { streamBukti.getTracks().forEach(t => t.stop()); streamBukti = null; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnJepret = document.getElementById('btnJepretBukti');
+    if (btnJepret) {
+        btnJepret.addEventListener('click', function() {
+            const video = document.getElementById('videoKameraBukti');
+            if (!video || !video.videoWidth) return;
+            const canvas = document.getElementById('canvasKameraBukti');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            if (prefixKameraBukti) terapkanFotoBukti(prefixKameraBukti, dataUrl);
+            bootstrap.Modal.getInstance(document.getElementById('modalKameraBukti'))?.hide();
+        });
+    }
+});
 </script>
 @endpush
+
+{{-- Modal Kamera Bukti Transaksi --}}
+<div class="modal fade" id="modalKameraBukti" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:0.75rem;">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera me-2 text-success"></i>Ambil Foto Bukti</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="text-muted small">Arahkan kamera ke bukti transaksi lalu tekan Jepret.</p>
+                <div class="position-relative d-inline-block w-100" style="background:#000;border-radius:0.5rem;overflow:hidden;">
+                    <video id="videoKameraBukti" autoplay playsinline muted style="width:100%;max-height:60vh;object-fit:contain;background:#000;"></video>
+                </div>
+                <canvas id="canvasKameraBukti" class="d-none"></canvas>
+                <div class="mt-2"><span class="small text-muted" id="statusKameraBukti"></span></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success" id="btnJepretBukti"><i class="bi bi-camera-fill me-1"></i>Jepret</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

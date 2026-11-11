@@ -12,7 +12,7 @@ class PersetujuanKeuanganController extends Controller
     /**
      * Determine the current user's approval scope.
      * Ketua RT  → approves RT reports for their own RT
-     * Pimpinan RW / Admin RW → approves RW & DKM reports
+     * Ketua RW / Admin RW → approves RW & DKM reports
      */
     private function getApprovalScope()
     {
@@ -39,11 +39,11 @@ class PersetujuanKeuanganController extends Controller
             ];
         }
 
-        // Pimpinan RW or Admin RW
+        // Ketua RW or Admin RW
         return [
             'type' => 'RW',
             'rt_id' => null,
-            'label' => 'Pimpinan RW',
+            'label' => 'Ketua RW',
         ];
     }
 
@@ -70,7 +70,7 @@ class PersetujuanKeuanganController extends Controller
                 });
             }
         } else {
-            // Pimpinan RW: see Submitted for RW & DKM
+            // Ketua RW: see Submitted for RW & DKM
             $pendingQuery->whereIn('unit', ['RW', 'DKM'])->where('status', 'Submitted');
         }
 
@@ -134,6 +134,9 @@ class PersetujuanKeuanganController extends Controller
 
         $laporan->update($updateData);
 
+        // Notifikasi: laporan disetujui → pembuat.
+        \App\Services\NotificationService::notifikasiLaporanHasil($laporan->fresh(), true);
+
         return back()->with('success', 'Laporan berhasil disetujui.');
     }
 
@@ -170,6 +173,9 @@ class PersetujuanKeuanganController extends Controller
         }
 
         $laporan->update($updateData);
+
+        // Notifikasi: laporan ditolak → pembuat.
+        \App\Services\NotificationService::notifikasiLaporanHasil($laporan->fresh(), false, $request->input('catatan'));
 
         return back()->with('success', 'Laporan berhasil ditolak.');
     }

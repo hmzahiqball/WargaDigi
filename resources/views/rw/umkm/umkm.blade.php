@@ -57,7 +57,7 @@
                             <i class="bi bi-info-circle text-success fs-5"></i>
                         </div>
                         <div>
-                            <h6 class="fw-bold mb-0 text-dark">Mode Monitoring Pimpinan RW</h6>
+                            <h6 class="fw-bold mb-0 text-dark">Mode Monitoring Ketua RW</h6>
                             <p class="text-muted small mb-0">Menampilkan seluruh history pengajuan UMKM (Pending, Approved, & Rejected). Klik kartu untuk melihat rincian pemohon.</p>
                         </div>
                     </div>

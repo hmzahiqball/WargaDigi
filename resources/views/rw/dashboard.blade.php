@@ -11,11 +11,6 @@
     <span class="dash-header-status badge rounded-pill bg-success bg-opacity-10 text-success px-3 py-2 fw-semibold">
         <i class="bi bi-check-circle me-1"></i> STATUS: AKTIF
     </span>
-    <div class="dash-header-actions d-flex align-items-center gap-2">
-        <button class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold">
-            <i class="bi bi-download me-1"></i> Export Data
-        </button>
-    </div>
 </div>
 
 @if($pendingUmkmCount > 0)
@@ -145,5 +140,7 @@
             </div>
         </div>
     </div>
+
+    @include('partials._demografi', ['demografiScope' => 'seluruh RW'])
 </div>
 @endsection

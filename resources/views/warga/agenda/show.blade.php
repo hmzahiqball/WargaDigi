@@ -242,7 +242,7 @@ window.sendShowRsvp = function(btnEl) {
     .catch(err => {
         console.error('RSVP error:', err);
         buttons.forEach(b => b.disabled = false);
-        alert('Gagal menyimpan respons kehadiran.');
+        window.tampilkanPemberitahuan('Gagal menyimpan respons kehadiran.');
     })
     .finally(() => {
         if (btnEl.innerHTML.includes('spinner')) btnEl.innerHTML = originalHtml;

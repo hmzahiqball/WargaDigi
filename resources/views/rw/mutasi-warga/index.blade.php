@@ -1,6 +1,6 @@
 @extends('layouts.global')
 
-@section('title', 'Persetujuan Mutasi Warga')
+@section('title', 'Persetujuan Pengajuan Data')
 
 @section('content')
 <div class="container-fluid px-0">
@@ -10,7 +10,7 @@
                 <i class="bi bi-people-fill fs-3"></i>
             </div>
             <div>
-                <h3 class="fw-bold mb-1" style="color: #1e293b;">Verifikasi Mutasi Warga</h3>
+                <h3 class="fw-bold mb-1" style="color: #1e293b;">Verifikasi Pengajuan Data</h3>
                 <p class="text-muted mb-0" style="font-size: 0.9rem;">Daftar pengajuan penambahan/perubahan data anggota keluarga.</p>
             </div>
         </div>
@@ -31,7 +31,7 @@
                         <tr>
                             <th class="ps-4 py-3 text-muted fw-semibold" style="font-size: 0.85rem;">WAKTU PENGAJUAN</th>
                             <th class="py-3 text-muted fw-semibold" style="font-size: 0.85rem;">KEPALA KELUARGA</th>
-                            <th class="py-3 text-muted fw-semibold" style="font-size: 0.85rem;">JENIS MUTASI</th>
+                            <th class="py-3 text-muted fw-semibold" style="font-size: 0.85rem;">JENIS PENGAJUAN</th>
                             <th class="py-3 text-muted fw-semibold" style="font-size: 0.85rem;">DETAIL AJUAN</th>
                             <th class="pe-4 py-3 text-muted fw-semibold text-end" style="font-size: 0.85rem;">AKSI</th>
                         </tr>
@@ -50,6 +50,10 @@
                             <td class="py-3">
                                 @if($item->jenis_mutasi == 'tambah')
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill">Tambah Anggota Baru</span>
+                                @elseif($item->jenis_mutasi == 'edit_kk')
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-3 py-2 rounded-pill">Perubahan Data KK</span>
+                                @elseif($item->jenis_mutasi == 'pindah_akun')
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill">Pindah Pemegang Akun</span>
                                 @else
                                     <span class="badge bg-info bg-opacity-10 text-info border border-info px-3 py-2 rounded-pill">Edit Data Anggota</span>
                                 @endif
@@ -64,46 +68,6 @@
                                 </button>
                             </td>
                         </tr>
-
-                        <!-- Modal Detail -->
-                        <div class="modal fade" id="modalDetail-{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content border-0 rounded-4 shadow">
-                                    <div class="modal-header border-bottom-0 pb-0">
-                                        <h5 class="modal-title fw-bold">Detail Pengajuan Mutasi</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <div class="row g-3">
-                                            @foreach($item->data_pengajuan as $key => $value)
-                                                <div class="col-md-6">
-                                                    <p class="text-muted mb-1" style="font-size: 0.8rem;">{{ ucwords(str_replace('_', ' ', $key)) }}</p>
-                                                    <p class="fw-medium text-dark mb-0">{{ $value ?: '-' }}</p>
-                                                </div>
-                                            @endforeach
-                                            @if($item->file_bukti)
-                                                <div class="col-12 mt-3">
-                                                    <p class="text-muted mb-1" style="font-size: 0.8rem;">File Bukti (Scan KK)</p>
-                                                    <a href="{{ route('rw.mutasi.dokumen', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Lihat Dokumen</a>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                                            <form action="{{ route('rw.mutasi.reject', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="alasan_penolakan" value="Ditolak oleh RW">
-                                                <button type="submit" class="btn btn-outline-danger px-4 py-2 rounded-3">Tolak</button>
-                                            </form>
-                                            <form action="{{ route('rw.mutasi.approve', $item->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-success px-4 py-2 rounded-3" style="background-color: #559e66; border: none;">Setujui Final (Simpan ke Data Penduduk)</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         @empty
                         <tr>
                             <td colspan="5" class="text-center py-5 text-muted">
@@ -118,4 +82,66 @@
         </div>
     </div>
 </div>
+
+{{-- Modal dipindah keluar dari tabel agar HTML valid (browser tidak mengeluarkan modal dari dalam <tbody>). --}}
+@foreach($mutasi as $item)
+    <!-- Modal Detail -->
+    <div class="modal fade" id="modalDetail-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Detail Pengajuan Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    {{-- Perbandingan data lama vs baru --}}
+                    <h6 class="fw-bold mb-2"><i class="bi bi-table me-2 text-success"></i>Perubahan Data</h6>
+                    @include('partials._mutasi-diff', ['mutasi' => $item])
+
+                    {{-- Timeline tahap pengajuan --}}
+                    <h6 class="fw-bold mt-4 mb-3"><i class="bi bi-clock-history me-2 text-success"></i>Riwayat Proses</h6>
+                    @include('partials._mutasi-timeline', ['mutasi' => $item])
+
+                    @if($item->file_bukti)
+                        <div class="mt-3 pt-3 border-top">
+                            <p class="text-muted mb-1" style="font-size: 0.8rem;">File Bukti (Scan KK)</p>
+                            <a href="{{ route('rw.mutasi.dokumen', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Lihat Dokumen</a>
+                        </div>
+                    @endif
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-danger px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalTolak-{{ $item->id }}">Tolak</button>
+                        <form action="{{ route('rw.mutasi.approve', $item->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-success px-4 py-2 rounded-3" style="background-color: #559e66; border: none;">Setujui Final (Simpan ke Data Penduduk)</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tolak -->
+    <div class="modal fade" id="modalTolak-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <form action="{{ route('rw.mutasi.reject', $item->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold">Tolak Pengajuan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <label for="alasanTolakRw-{{ $item->id }}" class="form-label fw-semibold">Alasan penolakan</label>
+                        <textarea id="alasanTolakRw-{{ $item->id }}" name="alasan_penolakan" class="form-control" rows="3" required placeholder="Tuliskan alasan penolakan agar warga dapat memperbaiki pengajuan."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 p-4 pt-0">
+                        <button type="button" class="btn btn-light border px-4 rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger px-4 rounded-3">Tolak Pengajuan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endforeach
 @endsection

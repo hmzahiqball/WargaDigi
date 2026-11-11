@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Agenda extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt;
 
     protected $table = 'agenda';
 
@@ -28,6 +28,7 @@ class Agenda extends Model
         'status',
         'catatan_revisi',
         'operator_id',
+        'rt_id',
         'approval_id',
     ];
 

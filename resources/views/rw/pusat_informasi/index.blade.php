@@ -209,8 +209,8 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-end mb-4">
     <div>
-        <h2 class="fw-bold text-dark mb-1">Pusat Informasi</h2>
-        <p class="text-muted mb-0">Meninjau dan mengelola pengajuan Agenda, Berita, & Pengumuman.</p>
+        <h2 class="fw-bold text-dark mb-1">Pusat Informasi{{ ($tingkat ?? 'RW') === 'RT' ? ' RT' : '' }}</h2>
+        <p class="text-muted mb-0">Meninjau dan mengelola pengajuan Agenda, Berita, & Pengumuman.{{ ($tingkat ?? 'RW') === 'RT' ? ' Hanya konten RT Anda yang tampil di sini.' : ' Hanya konten tingkat RW yang tampil di sini.' }}</p>
     </div>
 </div>
 
@@ -799,7 +799,7 @@
 
     function submitAction(actionType, catatan = null) {
         const typePath = selectedItem.type.toLowerCase();
-        const url = `/rw/pusat-informasi/${typePath}/${selectedItem.id}/${actionType}`;
+        const url = `{{ $basePath }}/${typePath}/${selectedItem.id}/${actionType}`;
         
         const payload = {
             _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

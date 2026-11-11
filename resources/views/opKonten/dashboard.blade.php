@@ -207,7 +207,7 @@
 {{-- Page Header --}}
 <div class="d-flex justify-content-between align-items-end mb-4">
     <div>
-        <h2 class="fw-bold text-dark mb-1">Dasbor</h2>
+        <h2 class="fw-bold text-dark mb-1">Dasbor <span class="badge bg-success bg-opacity-10 text-success fs-6 align-middle" data-testid="asal-konten">{{ $asalKonten ?? 'RW' }}</span></h2>
         <p class="text-muted mb-0">Gambaran umum status konten dan aktivitas terkini.</p>
     </div>
 </div>

@@ -26,7 +26,7 @@ class LaporanKeuanganDemoSeeder extends Seeder
             ?? User::first();
 
         $penyetuju = User::where('username', 'pimpinan')->first()
-            ?? User::where('role', 'Pimpinan RW')->first()
+            ?? User::where('role', 'Ketua RW')->first()
             ?? User::where('role', 'Admin RW')->first()
             ?? User::first();
 
