@@ -1,0 +1,252 @@
+#!/usr/bin/env bash
+#
+# deploy-update.sh — Update WargaDigi di server Docker + Caddy yang SUDAH berjalan.
+#
+# Yang dilakukan otomatis:
+#   1. Cek prasyarat (folder repo, .env.docker, Docker, container berjalan, git bersih).
+#   2. Backup database (mysqldump) + foto agenda/galeri (public/assets/images).
+#   3. git pull branch main (fast-forward saja).
+#   4. Build image baru (container lama tetap melayani selama build).
+#   5. Jalankan container baru (migrasi otomatis lewat entrypoint), tunggu sampai sehat.
+#   6. Pulihkan foto agenda/galeri (tidak tersimpan di volume Docker).
+#   7. (Opsional --reset-demo) hapus semua data lalu isi data demo terbaru.
+#   8. Cek halaman utama. Bila gagal: rollback otomatis (kode + database + foto).
+#
+# Seeder TIDAK dijalankan pada update biasa. Caddy tidak diubah.
+#
+# Pemakaian (dari root project, mis. /opt/wargadigi):
+#   sudo bash scripts/deploy-update.sh                 # update biasa, data dipertahankan
+#   sudo bash scripts/deploy-update.sh --reset-demo    # update + reset ke data demo (HAPUS SEMUA DATA)
+#   Opsi lain: --yes (tanpa konfirmasi), --branch <nama> (default main)
+#
+# Pertama kali (server masih kode lama yang belum punya skrip ini):
+#   git fetch origin main && git show origin/main:scripts/deploy-update.sh > /tmp/deploy-update.sh
+#   sudo bash /tmp/deploy-update.sh
+#
+set -euo pipefail
+
+# Jalankan dari salinan di /tmp agar `git pull` yang mengganti file ini tidak mengacaukan eksekusi.
+if [ "${WARGADIGI_DEPLOY_COPY:-}" != "1" ]; then
+    SALINAN="$(mktemp /tmp/wargadigi-deploy.XXXXXX.sh)"
+    cp "$0" "$SALINAN"
+    export WARGADIGI_DEPLOY_COPY=1 WARGADIGI_DEPLOY_DIR="$(pwd)"
+    exec bash "$SALINAN" "$@"
+fi
+cd "${WARGADIGI_DEPLOY_DIR:-$(pwd)}"
+trap 'rm -f "$0"' EXIT
+
+ENV_FILE=".env.docker"
+COMPOSE_FILE="docker-compose.prod.yml"
+BRANCH="main"
+RESET_DEMO=0
+ASSUME_YES=0
+BACKUP_DIR="${BACKUP_DIR:-$HOME/wargadigi-backup}"
+SIMPAN_BACKUP=10   # jumlah set backup terakhir yang disimpan
+
+info() { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
+warn() { printf "\033[1;33m[!]\033[0m %s\n" "$1"; }
+ok()   { printf "\033[1;32m[OK]\033[0m %s\n" "$1"; }
+die()  { printf "\033[1;31m[ERROR]\033[0m %s\n" "$1"; exit 1; }
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --reset-demo) RESET_DEMO=1 ;;
+        --yes|-y)     ASSUME_YES=1 ;;
+        --branch)     shift; BRANCH="${1:?--branch butuh nama branch}" ;;
+        -h|--help)    sed -n '2,25p' "$0"; exit 0 ;;
+        *)            die "Opsi tidak dikenal: $1 (lihat --help)" ;;
+    esac
+    shift
+done
+
+DC=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+# safe.directory: hindari error 'dubious ownership' saat dijalankan dengan sudo (tanpa mengubah git config).
+G=(git -c safe.directory="$(pwd)")
+
+# ------------------------------------------------------------------ 1. Prasyarat
+info "Memeriksa prasyarat..."
+[ -f "$COMPOSE_FILE" ] || die "Jalankan dari root project ($COMPOSE_FILE tidak ditemukan)."
+[ -f "$ENV_FILE" ]     || die "$ENV_FILE tidak ditemukan. Server ini belum pernah di-setup (pakai scripts/server-setup.sh)."
+command -v docker >/dev/null 2>&1          || die "Docker tidak ditemukan."
+docker compose version >/dev/null 2>&1     || die "Docker Compose v2 tidak ditemukan."
+command -v curl >/dev/null 2>&1            || die "curl tidak ditemukan."
+"${G[@]}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "Folder ini bukan repository git."
+
+if [ -n "$("${G[@]}" status --porcelain --untracked-files=no)" ]; then
+    "${G[@]}" status --short --untracked-files=no
+    die "Ada perubahan lokal pada file ter-track. Rapikan dulu agar git pull aman."
+fi
+
+"${DC[@]}" ps --status running --services 2>/dev/null | grep -qx db  || die "Container db tidak berjalan. Jalankan: ${DC[*]} up -d"
+"${DC[@]}" ps --status running --services 2>/dev/null | grep -qx app || warn "Container app tidak berjalan; backup foto agenda/galeri akan dilewati."
+
+APP_PORT="$(grep -E '^APP_HOST_PORT=' "$ENV_FILE" | cut -d= -f2 | tr -d '\r"' || true)"
+APP_PORT="${APP_PORT:-8080}"
+BASE_URL="http://127.0.0.1:${APP_PORT}"
+
+COMMIT_LAMA="$("${G[@]}" rev-parse HEAD)"
+info "Mengambil info branch ${BRANCH}..."
+"${G[@]}" fetch --quiet origin "$BRANCH"
+COMMIT_BARU="$("${G[@]}" rev-parse "origin/${BRANCH}")"
+
+echo "    Commit berjalan : $("${G[@]}" log -1 --format='%h %s' "$COMMIT_LAMA")"
+echo "    Commit tujuan   : $("${G[@]}" log -1 --format='%h %s' "$COMMIT_BARU")"
+if [ "$COMMIT_LAMA" = "$COMMIT_BARU" ]; then
+    warn "Kode sudah versi terbaru; image tetap dibangun ulang dan container dijalankan ulang."
+fi
+
+if [ "$RESET_DEMO" = "1" ]; then
+    warn "MODE --reset-demo: SEMUA DATA di database akan DIHAPUS lalu diganti data demo (password akun: 'password')."
+    if [ "$ASSUME_YES" != "1" ]; then
+        read -r -p "Ketik RESET untuk melanjutkan: " JAWAB
+        [ "$JAWAB" = "RESET" ] || die "Dibatalkan."
+    fi
+elif [ "$ASSUME_YES" != "1" ]; then
+    read -r -p "Lanjutkan update (data dipertahankan)? [y/N] " JAWAB
+    case "$JAWAB" in y|Y|ya|Ya) ;; *) die "Dibatalkan." ;; esac
+fi
+
+# ------------------------------------------------------------------ 2. Backup
+TGL="$(date +%F-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+DB_BACKUP="$BACKUP_DIR/db-$TGL.sql.gz"
+IMG_BACKUP="$BACKUP_DIR/images-$TGL.tar.gz"
+
+info "Backup database -> $DB_BACKUP"
+if ! "${DC[@]}" exec -T db sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines --triggers "$MYSQL_DATABASE" 2>/dev/null' | gzip > "$DB_BACKUP"; then
+    die "mysqldump gagal. Deploy dihentikan, tidak ada yang diubah."
+fi
+JUMLAH_TABEL="$(gzip -dc "$DB_BACKUP" | grep -c '^CREATE TABLE' || true)"
+[ "${JUMLAH_TABEL:-0}" -gt 0 ] || die "Backup database kosong. Deploy dihentikan, tidak ada yang diubah."
+ok "Backup database selesai ($JUMLAH_TABEL tabel, $(du -h "$DB_BACKUP" | cut -f1))."
+
+if "${DC[@]}" ps --status running --services 2>/dev/null | grep -qx app; then
+    info "Backup foto agenda/galeri -> $IMG_BACKUP"
+    "${DC[@]}" exec -T app tar -czf - public/assets/images > "$IMG_BACKUP"
+    ok "Backup foto selesai ($(du -h "$IMG_BACKUP" | cut -f1))."
+else
+    IMG_BACKUP=""
+fi
+echo "$COMMIT_LAMA" > "$BACKUP_DIR/commit-$TGL.txt"
+
+# Simpan hanya beberapa set backup terakhir.
+ls -1t "$BACKUP_DIR"/db-*.sql.gz 2>/dev/null | tail -n +$((SIMPAN_BACKUP + 1)) | while read -r f; do
+    t="${f##*/db-}"; t="${t%.sql.gz}"
+    rm -f "$f" "$BACKUP_DIR/images-$t.tar.gz" "$BACKUP_DIR/commit-$t.txt"
+done
+
+# ------------------------------------------------------------------ Fungsi bantu
+tunggu_sehat() {
+    # Entrypoint menjalankan migrasi dulu, baru web server; tunggu sampai /login merespons 200.
+    local i kode
+    for i in $(seq 1 60); do
+        kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/login" || true)"
+        [ "$kode" = "200" ] && return 0
+        sleep 3
+    done
+    return 1
+}
+
+pulihkan_foto() {
+    [ -n "$IMG_BACKUP" ] && [ -s "$IMG_BACKUP" ] || return 0
+    "${DC[@]}" exec -T app tar -xzf - < "$IMG_BACKUP"
+    "${DC[@]}" exec -T app chown -R www-data:www-data public/assets/images
+}
+
+cek_halaman() {
+    local gagal=0 url kode
+    for url in / /login /berita /agenda /pojok-umkm /layanan-mandiri; do
+        kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$url" || true)"
+        if [ "$kode" = "200" ]; then echo "    $url -> $kode"; else echo "    $url -> $kode  (GAGAL)"; gagal=1; fi
+    done
+    return $gagal
+}
+
+rollback() {
+    set +e   # rollback harus berjalan sampai akhir walau ada langkah yang gagal
+    warn "ROLLBACK: mengembalikan kode, database, dan foto ke kondisi sebelum deploy..."
+    "${G[@]}" reset --quiet --keep "$COMMIT_LAMA"
+
+    info "Menghentikan app lalu memulihkan database dari $DB_BACKUP"
+    "${DC[@]}" stop app >/dev/null 2>&1
+    "${DC[@]}" exec -T db sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS \`$MYSQL_DATABASE\`; CREATE DATABASE \`$MYSQL_DATABASE\`;" 2>/dev/null'
+    gzip -dc "$DB_BACKUP" | "${DC[@]}" exec -T db sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" 2>/dev/null' \
+        || warn "Restore database gagal. Pulihkan manual dari $DB_BACKUP"
+
+    info "Build dan jalankan kode lama..."
+    "${DC[@]}" build app && "${DC[@]}" up -d app
+    if tunggu_sehat; then
+        pulihkan_foto
+        ok "Aplikasi lama kembali berjalan."
+    else
+        warn "Aplikasi lama belum merespons; cek manual."
+    fi
+    die "Deploy GAGAL dan sudah di-rollback ke $("${G[@]}" rev-parse --short "$COMMIT_LAMA"). Lihat log: ${DC[*]} logs --tail=200 app"
+}
+
+# ------------------------------------------------------------------ 3. Ambil kode
+info "Mengambil kode terbaru (git pull --ff-only origin $BRANCH)..."
+"${G[@]}" checkout --quiet "$BRANCH"
+"${G[@]}" pull --ff-only --quiet origin "$BRANCH" || die "git pull gagal (riwayat bercabang?). Tidak ada yang diubah pada container."
+ok "Kode sekarang: $("${G[@]}" log -1 --format='%h %s')"
+
+# ------------------------------------------------------------------ 4. Build
+info "Build image aplikasi (container lama tetap melayani)..."
+if ! "${DC[@]}" build app; then
+    "${G[@]}" reset --quiet --keep "$COMMIT_LAMA" || true
+    die "Build image GAGAL. Container lama tetap berjalan, kode dikembalikan ke $("${G[@]}" rev-parse --short "$COMMIT_LAMA")."
+fi
+ok "Build selesai."
+
+# ------------------------------------------------------------------ 5. Jalankan
+info "Menjalankan container baru (migrasi berjalan otomatis)..."
+"${DC[@]}" up -d app
+info "Menunggu aplikasi siap di $BASE_URL ..."
+if ! tunggu_sehat; then
+    "${DC[@]}" logs --tail=60 app || true
+    rollback
+fi
+ok "Aplikasi merespons."
+
+# ------------------------------------------------------------------ 6. Foto agenda/galeri
+if [ -n "$IMG_BACKUP" ]; then
+    info "Memulihkan foto agenda/galeri..."
+    pulihkan_foto && ok "Foto dipulihkan."
+fi
+
+# ------------------------------------------------------------------ 7. Reset demo (opsional)
+if [ "$RESET_DEMO" = "1" ]; then
+    info "Reset database dan isi data demo terbaru..."
+    "${DC[@]}" exec -T app php artisan migrate:fresh --force
+    "${DC[@]}" exec -T app php artisan db:seed --class=DemoSeeder --force
+    "${DC[@]}" exec -T app php artisan optimize:clear >/dev/null
+    "${DC[@]}" exec -T app php artisan optimize >/dev/null
+    "${DC[@]}" exec -T app chown -R www-data:www-data storage/app public/assets/images
+    ok "Data demo terpasang."
+    # Foto demo (agenda/galeri) juga hilang saat rebuild berikutnya; backup sekarang.
+    "${DC[@]}" exec -T app tar -czf - public/assets/images > "$BACKUP_DIR/images-demo-$TGL.tar.gz"
+fi
+
+# ------------------------------------------------------------------ 8. Cek akhir
+info "Cek halaman utama..."
+if ! cek_halaman; then
+    if [ "$RESET_DEMO" = "1" ]; then
+        die "Ada halaman gagal setelah reset demo. Cek log: ${DC[*]} logs --tail=200 app"
+    fi
+    "${DC[@]}" logs --tail=60 app || true
+    rollback
+fi
+
+docker image prune -f >/dev/null 2>&1 || true
+
+echo
+ok "DEPLOY SELESAI: $("${G[@]}" log -1 --format='%h %s')"
+echo "    Backup   : $BACKUP_DIR (db-$TGL.sql.gz${IMG_BACKUP:+, images-$TGL.tar.gz})"
+echo "    Log app  : ${DC[*]} logs -f app"
+if [ "$RESET_DEMO" = "1" ]; then
+    echo "    Akun demo: superadmin, adminrw21, pimpinan, opkontenrw21, opkeuanganrw21, dkm, ketuart01rw21,"
+    echo "               opkontenrt01rw21, opkeuanganrt01rw21, opkonten_3, operator_rt3, budisampurno, budisantoso"
+    echo "               (password semua: 'password')"
+else
+    echo "    Catatan  : atur Pengaturan Halaman Utama lewat menu Admin Aplikasi bila belum."
+fi

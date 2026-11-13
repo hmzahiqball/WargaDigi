@@ -48,7 +48,28 @@ docker compose --env-file .env.docker -f docker-compose.prod.yml exec app php ar
 
 ```
 
-## Update versi baru
+## Update versi baru (otomatis)
+
+Cukup jalankan satu skrip dari root project. Skrip melakukan backup DB + foto agenda/galeri,
+`git pull`, build, menjalankan container baru (migrasi otomatis), memulihkan foto, mengecek halaman,
+dan rollback otomatis (kode + database + foto) bila gagal. Backup tersimpan di `~/wargadigi-backup`
+(10 set terakhir).
+
+```bash
+cd /opt/wargadigi
+sudo bash scripts/deploy-update.sh                # update biasa, data dipertahankan
+sudo bash scripts/deploy-update.sh --reset-demo   # update + HAPUS SEMUA DATA, isi data demo terbaru
+```
+
+Pertama kali, bila server masih memakai kode lama yang belum punya skrip ini:
+
+```bash
+cd /opt/wargadigi
+git fetch origin main && git show origin/main:scripts/deploy-update.sh > /tmp/deploy-update.sh
+sudo bash /tmp/deploy-update.sh
+```
+
+## Update versi baru (manual)
 
 Migrasi berjalan otomatis saat container start (`docker/scripts/entrypoint.sh`); seeder TIDAK
 dijalankan otomatis. Jangan menjalankan ulang `scripts/server-setup.sh` atau `db:seed` di server yang
