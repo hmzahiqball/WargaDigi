@@ -129,17 +129,23 @@ MAIL_FROM_ADDRESS="no-reply@domain-anda.id"
 # Buat struktur tabel
 php artisan migrate --force
 
-# (Opsional) Isi data awal peran/master. Untuk produksi, sebaiknya
-# jalankan hanya seeder yang perlu, mis. peran & RT. HINDARI seeder akun demo
-# di produksi karena berisi password contoh.
-php artisan db:seed --class=RoleSeeder --force
-php artisan db:seed --class=MasterRtSeeder --force
+# Instalasi baru produksi: hanya data master (role, wilayah, RT, kategori UMKM/produk/
+# transaksi/konten, pengaturan sistem + teks Halaman Utama, fasilitas umum, 1 akun superadmin).
+php artisan db:seed --class=MasterSeeder --force
+
+# Server demo saja (data contoh lengkap, 14 akun demo berpassword "password"):
+# php artisan db:seed --class=DemoSeeder --force
 
 # Symlink storage (agar logo, bukti bayar, foto UMKM tampil)
 php artisan storage:link
 ```
 
-> Peringatan keamanan: `UserSeeder` berisi akun contoh dengan password `password`. JANGAN jalankan di produksi. Buat akun pengurus asli secara manual atau lewat proses aktivasi.
+> Peringatan keamanan:
+> - `MasterSeeder` membuat akun `superadmin` dengan password `password`. Segera login dan ganti password.
+> - Seeder hanya untuk instalasi baru. Di server yang sudah berisi data, JANGAN menjalankan `db:seed`,
+>   `MasterSeeder`, `DemoSeeder`, atau `migrate:fresh`: seeder menimpa Pengaturan Sistem/Halaman Utama
+>   dan mengembalikan password `superadmin`, sedangkan `migrate:fresh` menghapus semua data.
+> - `DemoSeeder` berisi akun contoh dengan password `password`. Jangan dipakai di produksi.
 
 ---
 
@@ -221,9 +227,9 @@ Certbot akan memperbarui sertifikat otomatis.
 
 ---
 
-## 11. Scheduler (Cron) — Wajib untuk Tagihan Rutin
+## 11. Scheduler (Cron) — Wajib
 
-Aplikasi memiliki perintah terjadwal `tagihan:generate-rutin` (membuat iuran bulanan RT & Dana Kematian DKM). Daftarkan Laravel scheduler ke cron:
+Perintah terjadwal di `routes/console.php`: pengingat iuran (`iuran:reminder`, `iuran:reminder-lainnya`) dan pembersihan dokumen sementara (`dokumen:bersihkan-sementara`). Scheduler `tagihan:generate-rutin` lama sudah dinonaktifkan (iuran wajib memakai Master Iuran). Daftarkan Laravel scheduler ke cron:
 
 ```bash
 sudo crontab -e -u www-data
@@ -233,7 +239,7 @@ Tambahkan baris:
 * * * * * cd /var/www/wargadigi && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-> Pastikan perintah dijadwalkan di dalam `routes/console.php` atau scheduler aplikasi. Bila belum, jalankan manual/terjadwal langsung: `php artisan tagihan:generate-rutin` pada awal bulan.
+> Cek daftar jadwal dengan `php artisan schedule:list`.
 
 ---
 
@@ -260,3 +266,33 @@ sudo supervisorctl reread
 sudo supervisorctl update
 sudo supervisorctl start wargadigi-worker:*
 ```
+
+---
+
+## 13. Update Rilis (server manual yang sudah berjalan)
+
+Data unggahan yang wajib dipertahankan dan ikut di-backup: `storage/app/` (berita, Halaman Utama,
+logo, UMKM, QRIS, bukti bayar, dokumen, tanda tangan) dan `public/assets/images/agenda`,
+`public/assets/images/galeri` (flyer agenda dan foto galeri), serta `.env`.
+
+```bash
+cd /var/www/wargadigi
+mkdir -p ~/backup
+mysqldump -u <db_user> -p --single-transaction <db_name> > ~/backup/wargadigi-$(date +%F-%H%M).sql
+tar -czf ~/backup/uploads-$(date +%F-%H%M).tar.gz storage/app public/assets/images
+git rev-parse HEAD > ~/backup/commit-sebelum-deploy.txt
+
+php artisan down --retry=60
+git pull --ff-only origin main
+composer install --no-dev --optimize-autoloader --no-interaction
+npm ci && npm run build
+php artisan migrate --force          # TANPA seeder
+php artisan storage:link
+php artisan optimize:clear && php artisan optimize
+php artisan queue:restart
+php artisan up
+```
+
+Rollback: `php artisan down`, `git checkout $(cat ~/backup/commit-sebelum-deploy.txt)`, ulangi
+`composer install` dan `npm run build`, pulihkan database dari backup bila migrasi sudah berjalan,
+lalu `php artisan optimize` dan `php artisan up`.

@@ -46,23 +46,60 @@ docker compose --env-file .env.docker -f docker-compose.prod.yml logs -f app
 # Buat akun admin awal (contoh via tinker)
 docker compose --env-file .env.docker -f docker-compose.prod.yml exec app php artisan tinker
 
-# Update versi baru
-git pull
-docker compose --env-file .env.docker -f docker-compose.prod.yml build
-docker compose --env-file .env.docker -f docker-compose.prod.yml up -d
 ```
 
-## Akun demo (setelah seeding)
-Login memakai NIK + Nomor WhatsApp. Semua password: `password`.
+## Update versi baru
 
-| Peran | NIK | Nomor WhatsApp |
-|-------|-----|----------------|
-| Admin Aplikasi | 3217010101010001 | 082123456789 |
-| Admin RW | 3217010101010002 | 081234567890 |
-| Ketua RT | 3217010101010008 | 081398765432 |
-| Warga | 3217010101010003 | 081987654321 |
+Migrasi berjalan otomatis saat container start (`docker/scripts/entrypoint.sh`); seeder TIDAK
+dijalankan otomatis. Jangan menjalankan ulang `scripts/server-setup.sh` atau `db:seed` di server yang
+sudah berisi data: seeder menimpa Pengaturan Sistem/Halaman Utama dan mengembalikan password akun.
 
-> PERINGATAN: ini data DEMO dengan password lemah. Untuk produksi nyata, ganti password akun-akun ini atau jalankan ulang tanpa `UserSeeder`.
+```bash
+cd /opt/wargadigi
+DC="docker compose --env-file .env.docker -f docker-compose.prod.yml"
+mkdir -p ~/backup
+
+# 1. Backup database dan unggahan
+$DC exec -T db sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction "$MYSQL_DATABASE"' > ~/backup/wargadigi-$(date +%F-%H%M).sql
+$DC exec -T app tar -czf - storage/app public/assets/images > ~/backup/uploads-$(date +%F-%H%M).tar.gz
+git rev-parse HEAD > ~/backup/commit-sebelum-deploy.txt
+
+# 2. Ambil kode, build, jalankan ulang (migrasi otomatis)
+git pull --ff-only origin main
+$DC build app
+$DC up -d
+
+# 3. Cek
+$DC logs --tail=50 app
+```
+
+Rollback: `git checkout $(cat ~/backup/commit-sebelum-deploy.txt)`, lalu `$DC build app && $DC up -d`.
+Bila migrasi sudah berjalan, pulihkan database:
+`$DC exec -T db sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < ~/backup/wargadigi-<tanggal>.sql`.
+
+> PERHATIAN: volume `storage_data` hanya menyimpan `storage/app`. Foto agenda dan galeri
+> (`public/assets/images/agenda`, `public/assets/images/galeri`) berada di dalam container, sehingga
+> hilang setiap kali container dibuat ulang (`build` + `up -d`). Backup langkah 1 menyelamatkannya;
+> pulihkan dengan `$DC exec -T app tar -xzf - < ~/backup/uploads-<tanggal>.tar.gz` setelah update.
+
+## Akun demo (setelah seeding DemoSeeder)
+Login memakai username. Semua password: `password`.
+
+| Username | Peran |
+|---|---|
+| `superadmin` | Admin Aplikasi |
+| `adminrw21` | Admin RW |
+| `pimpinan` | Ketua RW |
+| `opkontenrw21` / `opkeuanganrw21` | Op Konten RW / Op Keuangan RW |
+| `dkm` | DKM |
+| `ketuart01rw21` | Ketua RT 01 |
+| `opkontenrt01rw21` / `opkeuanganrt01rw21` | Op Konten RT 01 / Op Keuangan RT 01 |
+| `opkonten_3` / `operator_rt3` | Op Konten RT 03 / Op Keuangan RT 03 |
+| `budisampurno` | Ketua RT 03 + Warga (pilih peran saat login) |
+| `budisantoso` | Warga RT 03 |
+| `donisetiawan` | Warga nonaktif (contoh akun dinonaktifkan) |
+
+> PERINGATAN: ini data DEMO dengan password lemah. Untuk produksi nyata, jangan jalankan DemoSeeder; pakai `MasterSeeder` lalu ganti password `superadmin`.
 
 ## Catatan penting
 - `.env.docker` berisi rahasia (password DB, APP_KEY) dan sudah masuk `.gitignore`. Backup file ini secara aman.

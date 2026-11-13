@@ -30,8 +30,8 @@ FROM php:8.3-fpm-bookworm AS app
 # Paket sistem + ekstensi PHP
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx supervisor git unzip libzip-dev libpng-dev libjpeg-dev \
-        libfreetype6-dev libonig-dev libxml2-dev default-mysql-client \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+        libfreetype6-dev libwebp-dev libonig-dev libxml2-dev default-mysql-client \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql mbstring zip exif bcmath gd \
     && rm -rf /var/lib/apt/lists/*
 
