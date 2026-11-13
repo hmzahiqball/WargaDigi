@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pengumuman extends Model
 {
-    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt;
+    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt, \App\Models\Concerns\PunyaSlug, \App\Models\Concerns\PunyaKategoriKonten;
 
     protected $table = 'pengumuman';
 
@@ -20,6 +20,9 @@ class Pengumuman extends Model
         'catatan_revisi',
         'operator_id',
         'rt_id',
+        'kategori_id',
+        'kategori',
+        'slug',
         'approval_id',
         'tanggal_publish',
     ];
@@ -28,6 +31,11 @@ class Pengumuman extends Model
         'is_priority' => 'boolean',
         'tanggal_publish' => 'datetime',
     ];
+
+    public function kolomJudulSlug(): string
+    {
+        return 'judul_pengumuman';
+    }
 
     public function operator()
     {

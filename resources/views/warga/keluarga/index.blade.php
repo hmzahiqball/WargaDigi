@@ -31,18 +31,6 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
     <!-- Alert Akses Terbatas -->
     <div class="alert alert-success bg-success bg-opacity-10 border-0 border-start border-success border-4 d-flex align-items-start p-3 mb-4 rounded-3" role="alert">

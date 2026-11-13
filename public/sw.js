@@ -1,6 +1,6 @@
 // Service Worker WargaDigi: PWA installable + Web Push.
-const CACHE_NAME = 'wargadigi-shell-v1';
-const OFFLINE_URLS = ['/offline.html'];
+const CACHE_NAME = 'wargadigi-shell-v2';
+const OFFLINE_URLS = ['/offline.html', '/ikon-aplikasi/192.png'];
 
 // Install: cache shell minimal (offline fallback).
 self.addEventListener('install', (event) => {
@@ -44,8 +44,8 @@ self.addEventListener('push', (event) => {
     const title = data.judul || 'WargaDigi';
     const options = {
         body: data.pesan || '',
-        icon: data.icon || '/icons/icon-192.png',
-        badge: data.badge || '/icons/icon-192.png',
+        icon: data.icon || '/ikon-aplikasi/192.png',
+        badge: data.badge || '/ikon-aplikasi/192.png',
         data: { url: data.url || '/' },
     };
 

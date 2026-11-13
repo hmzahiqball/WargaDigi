@@ -388,4 +388,37 @@ class ManajemenHakAksesTest extends TestCase
 
         $this->assertTrue($akun->fresh()->hasRole('Op Keuangan RW'));
     }
-}
+
+    public function test_daftar_pengguna_dipaginasi_sepuluh_per_halaman_dan_jumlah_selalu_tampil(): void
+    {
+        $admin = $this->admin();
+        foreach (range(1, 12) as $n) {
+            User::create([
+                'nik' => null, 'username' => sprintf('pengguna_uji_%02d', $n), 'role' => 'Warga',
+                'status_akun' => 'Active', 'password' => 'password123',
+            ]);
+        }
+        // Total 13 akun (12 + admin): halaman 1 berisi 10, halaman 2 berisi 3.
+        $this->actingAs($admin)->get(route('admin.manajemen-hak-akses'))->assertOk()
+            ->assertSee('data-testid="paginasi-pengguna"', false)
+            ->assertSee('Menampilkan 1-10 dari 13 pengguna')
+            ->assertSee('page=2', false);
+
+        $this->actingAs($admin)->get(route('admin.manajemen-hak-akses', ['page' => 2]))->assertOk()
+            ->assertSee('Menampilkan 11-13 dari 13 pengguna');
+    }
+
+    public function test_pencarian_mempertahankan_filter_pada_tautan_halaman(): void
+    {
+        $admin = $this->admin();
+        foreach (range(1, 12) as $n) {
+            User::create([
+                'nik' => null, 'username' => sprintf('cari_uji_%02d', $n), 'role' => 'Warga',
+                'status_akun' => 'Active', 'password' => 'password123',
+            ]);
+        }
+
+        $this->actingAs($admin)->get(route('admin.manajemen-hak-akses', ['search' => 'cari_uji']))->assertOk()
+            ->assertSee('Menampilkan 1-10 dari 12 pengguna')
+            ->assertSee('search=cari_uji', false);
+    }}

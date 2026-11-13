@@ -2,121 +2,61 @@
 
 namespace Database\Seeders;
 
+use App\Models\MasterRt;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
+/**
+ * Seeder DEMO: akun per peran, disamakan dengan akun terbaru.
+ * Semua kata sandi demo: "password".
+ *
+ * - Pengurus/petugas login dengan username (tanpa NIK).
+ * - Warga tertaut NIK penduduk (lihat KeluargaSeeder/PendudukSeeder).
+ * - budisampurno: Ketua RT 03 sekaligus Warga (dua peran, pilih peran saat login).
+ * - donisetiawan: contoh pemegang akun lama yang dinonaktifkan.
+ */
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $rt01 = \App\Models\MasterRt::where('kode_rt', '01')->first();
-        $rt01Id = $rt01 ? $rt01->id : null;
+        $rt = fn (string $kode) => MasterRt::where('kode_rt', $kode)->value('id');
 
-        // Akun PENGURUS/PETUGAS: tanpa NIK (login via username). Paket 2B.
-        $pengurus = [
-            [
-                'username' => 'superadmin',
-                'password' => Hash::make('password'),
-                'role' => 'Admin Aplikasi',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'adminrw21',
-                'password' => Hash::make('password'),
-                'role' => 'Admin RW',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'pimpinan',
-                'password' => Hash::make('password'),
-                'role' => 'Ketua RW',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'opkontenrw21',
-                'password' => Hash::make('password'),
-                'role' => 'Op Konten RW',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'opkeuanganrw21',
-                'password' => Hash::make('password'),
-                'role' => 'Op Keuangan RW',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'dkm',
-                'password' => Hash::make('password'),
-                'role' => 'DKM',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'ketuart01rw21',
-                'password' => Hash::make('password'),
-                'role' => 'Ketua RT',
-                'rt_id' => $rt01Id,
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'opkeuanganrt01rw21',
-                'password' => Hash::make('password'),
-                'role' => 'Op Keuangan RT',
-                'rt_id' => $rt01Id,
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-            [
-                'username' => 'opkontenrt01rw21',
-                'password' => Hash::make('password'),
-                'role' => 'Op Konten RT',
-                'rt_id' => $rt01Id,
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
+        $akun = [
+            // username, role, rt, nik, status, peran tambahan
+            ['superadmin',         'Admin Aplikasi', null, null, 'Active', []],
+            ['adminrw21',          'Admin RW',       null, null, 'Active', []],
+            ['pimpinan',           'Ketua RW',       null, null, 'Active', []],
+            ['opkontenrw21',       'Op Konten RW',   null, null, 'Active', []],
+            ['opkeuanganrw21',     'Op Keuangan RW', null, null, 'Active', []],
+            ['dkm',                'DKM',            null, null, 'Active', []],
+            ['ketuart01rw21',      'Ketua RT',       '01', null, 'Active', []],
+            ['opkontenrt01rw21',   'Op Konten RT',   '01', null, 'Active', []],
+            ['opkeuanganrt01rw21', 'Op Keuangan RT', '01', null, 'Active', []],
+            ['opkonten_3',         'Op Konten RT',   '03', null, 'Active', []],
+            ['operator_rt3',       'Op Keuangan RT', '03', null, 'Active', []],
+            ['budisampurno',       'Ketua RT',       '03', '3217010101010003', 'Active', ['Warga']],
+            ['budisantoso',        'Warga',          '03', '3204111122220002', 'Active', []],
+            ['donisetiawan',       'Warga',          '03', '3217010101010010', 'Nonaktif', []],
         ];
 
-        foreach ($pengurus as $userData) {
-            // Dedupe berdasarkan username (akun pengurus tidak punya NIK).
-            User::updateOrCreate(
-                ['username' => $userData['username']],
-                array_merge($userData, ['nik' => null])
-            );
-        }
-
-        // Akun WARGA (Kepala Keluarga): tetap tertaut NIK kependudukan.
-        $warga = [
-            [
-                'nik' => '3217010101010003',
-                'username' => 'budisampurno',
-                'password' => Hash::make('password'),
-                'role' => 'Warga',
-                'status_akun' => 'Active',
+        foreach ($akun as [$username, $role, $kodeRt, $nik, $status, $tambahan]) {
+            $user = User::updateOrCreate(['username' => $username], [
+                'nik'             => $nik,
+                'password'        => Hash::make('password'),
+                'role'            => $role,
+                'rt_id'           => $kodeRt ? $rt($kodeRt) : null,
+                'status_akun'     => $status,
                 'nik_verified_at' => now(),
-            ],
-            // Akun demo untuk pengajuan permohonan surat.
-            [
-                'nik' => '3204111122220002',
-                'username' => 'budisantoso',
-                'password' => Hash::make('warga_pass'),
-                'role' => 'Warga',
-                'status_akun' => 'Active',
-                'nik_verified_at' => now(),
-            ],
-        ];
+            ]);
 
-        foreach ($warga as $userData) {
-            User::updateOrCreate(
-                ['nik' => $userData['nik']],
-                $userData
-            );
+            // Akun nonaktif tidak memegang peran apa pun; lainnya: peran utama + tambahan.
+            $peran = $status === 'Nonaktif' ? [] : array_merge([$role], $tambahan);
+            foreach ($peran as $r) {
+                Role::findOrCreate($r, 'web');
+            }
+            $user->syncRoles($peran);
         }
     }
 }

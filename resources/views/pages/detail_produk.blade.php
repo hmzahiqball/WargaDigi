@@ -4,34 +4,34 @@
         $isDashboard = true;
     }
     $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
-    $isFromKelola = $isFromKelola 
-        ?? (request('from') === 'kelola_umkm' 
-            || request('from') === 'kelola' 
-            || str_contains(url()->previous(), 'galeri/kelola') 
+    $isFromKelola = $isFromKelola
+        ?? (request('from') === 'kelola_umkm'
+            || request('from') === 'kelola'
+            || str_contains(url()->previous(), 'galeri/kelola')
             || str_contains(request()->header('referer', ''), 'galeri/kelola'));
 
     $namaProduk = $produk->nama_produk ?? 'Patung Kayu Jati Tradisional';
     $harga = number_format($produk->harga ?? 350000, 0, ',', '.');
     $statusStok = strtolower($produk->status_stok ?? 'tersedia');
     $deskripsi = $produk->deskripsi ?? 'Karya seni patung tradisional yang dipahat tangan secara detail dan cermat oleh pengrajin lokal berpengalaman menggunakan teknik ukir tradisional nusantara, menghasilkan lekukan artistik bernilai estetika tinggi tanpa cetakan mesin massal.';
-    $fotoProduk = !empty($produk->foto_produk) 
-        ? asset('storage/' . $produk->foto_produk) 
+    $fotoProduk = !empty($produk->foto_produk)
+        ? asset('storage/' . $produk->foto_produk)
         : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop';
 
     $usaha = $usaha ?? $produk->usaha ?? null;
     $namaUsaha = $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom';
-    $fotoUsaha = !empty($usaha->foto_usaha) 
-        ? asset('storage/' . $usaha->foto_usaha) 
+    $fotoUsaha = !empty($usaha->foto_usaha)
+        ? asset('storage/' . $usaha->foto_usaha)
         : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&auto=format&fit=crop';
-    $kategoriNama = $produk->kategori_produk->nama_kategori 
-        ?? $usaha->kategori_umkm->nama_kategori 
+    $kategoriNama = $produk->kategori_produk->nama_kategori
+        ?? $usaha->kategori_umkm->nama_kategori
         ?? 'Kriya & Kerajinan';
-    $ownerName = $usaha->user->penduduk->nama_lengkap 
-        ?? $usaha->user->username 
+    $ownerName = $usaha->user->penduduk->nama_lengkap
+        ?? $usaha->user->username
         ?? 'Bpk. Jago';
-    $namaRt = $usaha->user->penduduk->keluarga->rt->nama_rt 
+    $namaRt = $usaha->user->penduduk->keluarga->rt->nama_rt
         ?? 'RT 03';
-    $alamatUsaha = $usaha->alamat_usaha 
+    $alamatUsaha = $usaha->alamat_usaha
         ?? 'Jl. Dahlia No. 14, RT 03 / RW 12, Kelurahan Tanimulya';
 
     $rawWa = $usaha->no_wa ?? '628123456789';
@@ -113,7 +113,7 @@
             <ol class="breadcrumb mb-0 small">
                 @if($isFromKelola)
                     <li class="breadcrumb-item">
-                        <a href="{{ route('warga.umkm.galeri') }}" class="text-decoration-none text-muted">Galeri UMKM</a>
+                        <a href="{{ route('warga.umkm.galeri') }}" class="text-decoration-none text-muted">Pojok UMKM</a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{{ route('warga.umkm.kelola', isset($usaha->id) ? ['usaha_id' => $usaha->id] : []) }}" class="text-decoration-none text-muted">Kelola UMKM</a>
@@ -123,7 +123,7 @@
                     </li>
                 @elseif($isDashboard)
                     <li class="breadcrumb-item">
-                        <a href="{{ route('warga.umkm.galeri') }}" class="text-decoration-none text-muted">Galeri UMKM</a>
+                        <a href="{{ route('warga.umkm.galeri') }}" class="text-decoration-none text-muted">Pojok UMKM</a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{{ isset($usaha->id) ? route('warga.umkm.detail_usaha', $usaha->id) : (Route::has('warga.umkm.galeri') ? route('warga.umkm.galeri') : '#') }}" class="text-decoration-none text-muted">{{ $namaUsaha }}</a>
@@ -192,8 +192,8 @@
                         </div>
                         <div>
                             @php
-                                $storeDetailUrl = $isDashboard 
-                                    ? (isset($usaha->id) && Route::has('warga.umkm.detail_usaha') ? route('warga.umkm.detail_usaha', $usaha->id) : '#') 
+                                $storeDetailUrl = $isDashboard
+                                    ? (isset($usaha->id) && Route::has('warga.umkm.detail_usaha') ? route('warga.umkm.detail_usaha', $usaha->id) : '#')
                                     : (isset($usaha->id) && Route::has('pojok-umkm.detail_usaha') ? route('pojok-umkm.detail_usaha', $usaha->id) : '#');
                             @endphp
                             <h6 class="fw-bold text-dark mb-0 fs-6">
@@ -213,7 +213,7 @@
 
                 <h2 class="fw-bold text-dark mb-3 fs-3">{{ $namaProduk }}</h2>
 
-  
+
                 <div class="price-stock-box p-3 rounded-3 mb-4 d-flex justify-content-between align-items-center" style="background-color: #fafbfa; border: 1px solid #f1f5f9;">
                     <div>
                         <div class="text-muted fw-bold text-uppercase mb-1" style="font-size: 11px; letter-spacing: 0.5px;">
@@ -250,7 +250,7 @@
                     </p>
                 </div>
 
-    
+
                 <div class="specs-table-wrapper rounded-3 mb-4 overflow-hidden" style="border: 1px solid #e2e8f0; background-color: #fff;">
                     @foreach($specs as $label => $val)
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 {{ !$loop->last ? 'border-bottom' : '' }}" style="background-color: {{ $loop->odd ? '#ffffff' : '#fafbfa' }}; font-size: 13px;">
@@ -263,7 +263,7 @@
 
                 <div class="row g-3 mt-1">
                     @auth
-        
+
                     <div class="col-md-7">
                         <a href="{{ $linkDirectChat }}" target="_blank" onclick="trackWaClick('{{ $usaha->id ?? '' }}')" class="btn w-100 rounded-3 text-white text-decoration-none p-3 shadow-sm d-flex align-items-center gap-3 text-start h-100" style="background-color: {{ $messagingColor }}; border-color: {{ $messagingColor }};">
                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: rgba(255,255,255,0.2);">

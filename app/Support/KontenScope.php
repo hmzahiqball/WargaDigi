@@ -86,6 +86,41 @@ class KontenScope
         });
     }
 
+    public static function adminRw(?User $user): bool
+    {
+        return $user !== null && trim($user->activeRole() ?? '') === 'Admin RW';
+    }
+
+    /**
+     * Penyetuju konten (berita, agenda, pengumuman; RT maupun RW) hanya Admin RW.
+     * Ketua RT dan Ketua RW tidak menyetujui konten, hanya dapat memantau yang sudah terbit.
+     */
+    public static function bolehMenyetujui(string $jenis, ?User $user): bool
+    {
+        return self::adminRw($user);
+    }
+
+    /** Batasi query ke konten yang boleh ditinjau akun ini sebagai penyetuju: semua bagi Admin RW, kosong bagi lainnya. */
+    public static function untukSetuju($query, string $jenis, User $user, string $kolom = 'rt_id')
+    {
+        return self::adminRw($user) ? $query : $query->whereRaw('1 = 0');
+    }
+
+    /** Nama penyetuju yang ditampilkan kepada operator konten. */
+    public static function penyetuju(string $jenis, ?User $user): string
+    {
+        return 'Admin RW';
+    }
+    /**
+     * Konten yang boleh dipantau akun ini di Pusat Informasi (hanya untuk dilihat):
+     * - Ketua RT: konten RW dan konten RT-nya, sama seperti yang tampil bagi warga RT itu.
+     * - Admin RW, Ketua RW, dan pimpinan lain: seluruh konten (RW dan semua RT).
+     */
+    public static function untukPantau($query, User $user, string $kolom = 'rt_id')
+    {
+        return self::peranRt($user) ? self::untukWarga($query, $user, $kolom) : $query;
+    }
+
     /** Konten tertentu boleh dilihat akun ini sebagai warga. */
     public static function bolehDilihatWarga(Model $model, ?User $user): bool
     {

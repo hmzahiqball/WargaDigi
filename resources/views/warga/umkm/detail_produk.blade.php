@@ -5,7 +5,7 @@
 @section('content')
 <div class="mb-4">
     <a href="{{ route('warga.umkm.galeri') }}" class="text-decoration-none text-muted mb-3 d-inline-block">
-        <i class="bi bi-arrow-left"></i> Kembali ke Galeri
+        <i class="bi bi-arrow-left"></i> Kembali ke Pojok UMKM
     </a>
 </div>
 

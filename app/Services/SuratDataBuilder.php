@@ -71,6 +71,8 @@ class SuratDataBuilder
             'fields' => [],
         ];
         $kop = config('surat.kop', []);
+        // Logo kop mengikuti Pengaturan Sistem (bawaan: config surat).
+        $kop['logo'] = \App\Models\SystemSetting::gambarUnggahan('logo_kop') ? \App\Models\SystemSetting::gambarPath('logo_kop') : ($kop['logo'] ?? \App\Models\SystemSetting::gambarPath('logo_kop'));
 
         // --- Alamat ---------------------------------------------------------
         $alamatKk = $k ? ($k->alamatLengkap() ?: '-') : '-';

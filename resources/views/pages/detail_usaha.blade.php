@@ -6,8 +6,8 @@
     $layout = $isDashboard ? 'layouts.global' : 'layouts.app';
 
     $namaUsaha = $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom';
-    $fotoUsaha = !empty($usaha->foto_usaha) 
-        ? asset('storage/' . $usaha->foto_usaha) 
+    $fotoUsaha = !empty($usaha->foto_usaha)
+        ? asset('storage/' . $usaha->foto_usaha)
         : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1000&auto=format&fit=crop';
     $kategoriNama = $usaha->kategori_umkm->nama_kategori ?? $usaha->kategori ?? 'Kerajinan';
     $ownerName = $usaha->user->penduduk->nama_lengkap ?? $usaha->user->username ?? 'Bpk. Jago';
@@ -32,19 +32,19 @@
     $hubungiText = "Halo {$namaUsaha}, saya tertarik dengan produk usaha Anda di WargaDigi RW 21.";
     $linkDirectChatUsaha = \App\Services\Messaging\MessagingService::getDirectChatUrl($cleanWa, $hubungiText);
 
-    $filterActionUrl = $isDashboard 
-        ? (Route::has('umkm.usaha.show') ? route('umkm.usaha.show', $usaha->id ?? '') : request()->url()) 
+    $filterActionUrl = $isDashboard
+        ? (Route::has('umkm.usaha.show') ? route('umkm.usaha.show', $usaha->id ?? '') : request()->url())
         : (Route::has('pojok-umkm.detail_usaha') ? route('pojok-umkm.detail_usaha', $usaha->id ?? '') : request()->url());
 
-    $isFromKelola = request('from') === 'kelola' 
-        || request('from') === 'kelola_umkm' 
-        || str_contains(url()->previous(), 'galeri/kelola') 
+    $isFromKelola = request('from') === 'kelola'
+        || request('from') === 'kelola_umkm'
+        || str_contains(url()->previous(), 'galeri/kelola')
         || str_contains(request()->header('referer', ''), 'galeri/kelola');
 
     $backUrl = $isFromKelola && Route::has('warga.umkm.kelola')
         ? route('warga.umkm.kelola', ['usaha_id' => $usaha->id ?? null])
         : ($isDashboard ? (Route::has('umkm.galeri') ? route('umkm.galeri') : route('warga.umkm.galeri')) : route('pojok-umkm'));
-    $backLabel = $isFromKelola ? 'Kembali ke Kelola Usaha' : ($isDashboard ? 'Kembali ke Galeri' : 'Kembali ke Pojok UMKM');
+    $backLabel = $isFromKelola ? 'Kembali ke Kelola Usaha' : 'Kembali ke Pojok UMKM';
 @endphp
 
 @extends($layout)
@@ -109,7 +109,7 @@
         @forelse($produk as $item)
             @include('warga.umkm.components.cardProduct', ['item' => $item, 'showOwner' => false])
         @empty
-           
+
         @endforelse
     </div>
 

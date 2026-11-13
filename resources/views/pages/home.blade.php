@@ -4,40 +4,49 @@
 @section('meta_description', 'WargaDigi 21 — Digitalisasi Gotong Royong RW 21 Tanimulya. Mewujudkan lingkungan yang modern, transparan, dan saling mendukung.')
 
 @section('content')
-{{-- Hero Section --}}
+{{-- Hero Section: teks dan gambar diatur Admin Aplikasi di Pengaturan Halaman Utama. --}}
+@php
+    $hb = \App\Services\HalamanUtama::data()['banner'];
+    $hg = $hb['gambar'];
+    $urlHero = fn ($slot) => \App\Services\HalamanUtama::urlGambar($slot, $hg[$slot]);
+@endphp
 <section class="hero-section">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-5 mb-4 mb-lg-0">
-                <div class="hero-badge">
-                    <i class="bi bi-geo-alt-fill"></i> Halo Warga RW 21
-                </div>
-                <h1>Digitalisasi Gotong Royong RW 21 Tanimulya</h1>
-                <p>Mewujudkan lingkungan RW 21 yang modern, transparan, dan saling mendukung melalui platform digital terpadu untuk pelayanan warga dan penyelenggaraan kegiatan.</p>
-                <a href="#" class="btn btn-hero mt-2">
-                    <i class="bi bi-grid-fill"></i> Layanan Warga
-                </a>
+        <div class="row align-items-center g-4">
+            <div class="col-lg-5">
+                @if($hb['badge'])
+                    <div class="hero-badge">
+                        <i class="bi bi-geo-alt-fill"></i> {{ $hb['badge'] }}
+                    </div>
+                @endif
+                <h1>{{ $hb['judul'] }}</h1>
+                @if($hb['deskripsi'])
+                    <p>{{ $hb['deskripsi'] }}</p>
+                @endif
+                @if($hb['tombol_teks'] && $hb['tombol_url'])
+                    <a href="{{ $hb['tombol_url'] }}" class="btn btn-hero mt-2"
+                       @if(\Illuminate\Support\Str::startsWith($hb['tombol_url'], ['http://', 'https://'])) target="_blank" rel="noopener" @endif>
+                        <i class="bi bi-grid-fill"></i> {{ $hb['tombol_teks'] }}
+                    </a>
+                @endif
             </div>
             <div class="col-lg-7">
                 <div class="hero-images">
                     <div class="hero-img-main">
-                        <img src="{{ asset('images/hero-main.jpg') }}" alt="Kegiatan Warga RW 21">
+                        <img src="{{ $urlHero('utama') }}" alt="{{ $hb['judul'] }}" fetchpriority="high">
                     </div>
                     <div class="hero-img-side">
-                        <div class="side-card">
-                            <img src="{{ asset('images/hero-side-1.jpg') }}" alt="Harmoni Warga">
-                            <div class="side-label">
-                                Harmoni Warga
-                                <small>Kebersamaan Kita</small>
+                        @foreach(['samping1', 'samping2'] as $slot)
+                            <div class="side-card">
+                                <img src="{{ $urlHero($slot) }}" alt="{{ $hg[$slot]['label'] ?: 'Kegiatan warga' }}" loading="lazy">
+                                @if($hg[$slot]['label'] || $hg[$slot]['sublabel'])
+                                    <div class="side-label">
+                                        {{ $hg[$slot]['label'] }}
+                                        @if($hg[$slot]['sublabel'])<small>{{ $hg[$slot]['sublabel'] }}</small>@endif
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                        <div class="side-card">
-                            <img src="{{ asset('images/hero-side-2.jpg') }}" alt="Dasar & Aman">
-                            <div class="side-label">
-                                Dasar & Aman
-                                <small>Untuk Kita</small>
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -45,21 +54,7 @@
     </div>
 </section>
 
-{{-- Stats Bar --}}
-<section class="container">
-    <div class="stats-bar">
-        <div class="row">
-            @foreach($stats as $stat)
-            <div class="col-4">
-                <div class="stat-item">
-                    <div class="stat-number" data-count-up data-target="{{ $stat['number'] }}" data-suffix="{{ $stat['suffix'] }}">0</div>
-                    <div class="stat-label">{{ $stat['label'] }}</div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
+{{-- Statistik jumlah KK, jiwa, dan layanan digital dihapus dari halaman publik (terlalu membuka data warga). --}}
 
 {{-- Berita Terkini --}}
 <section class="container py-5">
@@ -75,13 +70,13 @@
         @forelse($berita as $item)
         <div class="col-md-4 fade-on-scroll">
             <div class="card-warga">
-                @php($beritaImg = $item['image'] ? (\Illuminate\Support\Str::startsWith($item['image'], ['http://','https://']) ? $item['image'] : asset('storage/'.$item['image'])) : asset('images/berita-1.jpg'))
+                @php($beritaImg = \App\Models\Berita::urlGambar($item['image']) ?? asset('images/berita-1.jpg'))
                 <img src="{{ $beritaImg }}" class="card-img-top" alt="{{ $item['title'] }}">
                 <div class="card-body">
-                    <div class="card-date">{{ $item['date'] }}</div>
+                    <div class="card-date">{{ $item['date'] }} <span class="berita-asal ms-1"><i class="bi bi-geo-alt-fill"></i> {{ $item['origin'] }}</span></div>
                     <h5 class="card-title">{{ $item['title'] }}</h5>
                     <p class="card-text">{{ $item['excerpt'] }}</p>
-                    <a href="{{ route('berita.show', $item['id']) }}" class="link-green" style="font-size: 0.9rem;">Baca Selengkapnya <i class="bi bi-arrow-right"></i></a>
+                    <a href="{{ route('berita.show', $item['slug']) }}" class="link-green" style="font-size: 0.9rem;">Baca Selengkapnya <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
         </div>
@@ -93,12 +88,12 @@
     </div>
 </section>
 
-{{-- Kalender Interaktif --}}
+{{-- Kalender Kegiatan --}}
 <section class="py-5" style="background: #f0f5f0;">
     <div class="container">
         <div class="text-center mb-4">
             <div class="section-badge"><i class="bi bi-calendar3"></i> Kegiatan & Rencana RW 21</div>
-            <h2>Kalender Interaktif</h2>
+            <h2>Kalender Kegiatan</h2>
             <p class="text-muted">Jangan lewatkan informasi penting terkait jadwal kegiatan atau acara di lingkungan kita.</p>
         </div>
 
@@ -120,14 +115,14 @@
                                 <h6>{{ $item['title'] }}</h6>
                                 <small>{{ $item['time'] }}</small>
                             </div>
-                            <a href="#" class="agenda-link">Detail</a>
+                            <a href="{{ $item['url'] }}" class="agenda-link">Detail</a>
                         </div>
                         @empty
                         <p class="text-muted mb-0">Belum ada agenda mendatang.</p>
                         @endforelse
                     </div>
                     <div class="text-center mt-3">
-                        <a href="#" class="btn btn-outline-warga">Lihat Semua Agenda</a>
+                        <a href="{{ route('agenda') }}" class="btn btn-outline-warga">Lihat Semua Agenda</a>
                     </div>
                 </div>
             </div>
@@ -178,11 +173,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize calendar
         if (typeof initCalendar === 'function') {
-            initCalendar('calendarWidget', [
-                { day: 17, month: 7 },
-                { day: 25, month: 7 },
-                { day: 1, month: 8 },
-            ]);
+            // Tanda tanggal agenda terbit dari database (bulan 0-11, sesuai kalender JS).
+            initCalendar('calendarWidget', @json($tandaKalender));
         }
     });
 </script>

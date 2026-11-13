@@ -1,5 +1,5 @@
 @php
-    $isPimpinan = $isPimpinan ?? in_array(Auth::user()->role ?? '', ['Ketua RW', 'Pimpinan']);
+    $isPimpinan = $isPimpinan ?? trim((string) Auth::user()->activeRole()) !== 'Admin RW';
     $fotoUsahaUrl = $item->foto_usaha 
         ? asset('storage/' . $item->foto_usaha) 
         : 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop';

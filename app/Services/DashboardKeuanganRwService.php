@@ -51,6 +51,21 @@ class DashboardKeuanganRwService
         ];
     }
 
+    /**
+     * Ringkasan kas RW yang ringan untuk dashboard pimpinan RW (hanya baca):
+     * saldo, pemasukan dan pengeluaran bulan berjalan, serta laporan RW terakhir.
+     */
+    public static function ringkasanKas(): array
+    {
+        $sekarang = Carbon::now();
+
+        return self::ringkasan($sekarang) + [
+            'nama_bulan' => IuranService::BULAN[$sekarang->month] . ' ' . $sekarang->year,
+            'laporan'    => LaporanKeuangan::where('unit', 'RW')
+                ->orderByDesc('periode_tahun')->orderByDesc('periode_bulan')->first(),
+        ];
+    }
+
     protected static function ringkasan(Carbon $now): array
     {
         $semua = self::agregat(self::transaksi());

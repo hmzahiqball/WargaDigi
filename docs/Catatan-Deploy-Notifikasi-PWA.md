@@ -39,7 +39,8 @@ Web Push membutuhkan:
 ## 2. PWA (installable di smartphone)
 
 Sudah disiapkan:
-- `public/manifest.webmanifest` (name, icons 192/512 + maskable, theme #2E7D32, display standalone).
+- Route `/manifest.webmanifest` (`PwaController`, dibuat dinamis dari Pengaturan Sistem: nama instansi dan ikon
+  `/ikon-aplikasi/{varian}.png` dari logo yang diunggah; theme #2E7D32, display standalone).
 - `public/sw.js` (service worker: install/activate, offline fallback, event push & notificationclick).
 - `public/offline.html` (halaman offline).
 - Ikon: `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.

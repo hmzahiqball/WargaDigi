@@ -115,6 +115,27 @@ class ResiPembayaranTest extends TestCase
         $this->assertNull($resi['ttd']); // belum ada TTD default
     }
 
+    public function test_logo_kop_resi_mengikuti_pengaturan_sistem_dan_kembali_ke_bawaan(): void
+    {
+        if (! is_dir(public_path('storage'))) {
+            $this->markTestSkipped('Tautan public/storage belum dibuat.');
+        }
+        $pembayaran = $this->lunas(true, $this->opRt);
+        $this->assertSame('images/logo_rw21.png', ResiPembayaranBuilder::bangun($pembayaran)['kop']['logo']);
+
+        $path = 'settings/uji-kop-resi.png';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, 'png-uji');
+        try {
+            \App\Models\SystemSetting::set('logo_kop', $path);
+            $this->assertSame('storage/' . $path, ResiPembayaranBuilder::bangun($pembayaran)['kop']['logo']);
+
+            // Berkas hilang: kembali ke logo bawaan, PDF tidak merujuk berkas yang tidak ada.
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            $this->assertSame('images/logo_rw21.png', ResiPembayaranBuilder::bangun($pembayaran)['kop']['logo']);
+        } finally {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+        }
+    }
     public function test_resi_data_lama_tanpa_pengesah_tetap_memakai_bendahara_dari_kepengurusan(): void
     {
         $resi = ResiPembayaranBuilder::bangun($this->lunas(true, null));

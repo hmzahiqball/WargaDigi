@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
  * Setoran kolektif RT ke RW.
  * - Op Keuangan RT: mencatat setoran + melihat kewajiban dan riwayat RT sendiri.
  * - Op Keuangan RW: rekap seluruh RT, konfirmasi/tolak/batalkan setoran, pengaturan nominal.
- * - Admin RW / Ketua RW / Pimpinan: rekap read-only (rekapRw).
+ * - Admin RW / Ketua RW: rekap read-only (rekapRw).
  */
 class SetoranRtController extends Controller
 {
@@ -57,7 +57,7 @@ class SetoranRtController extends Controller
         };
     }
 
-    /** Rekap read-only untuk Admin RW, Ketua RW, dan Pimpinan. */
+    /** Rekap read-only untuk Admin RW dan Ketua RW. */
     public function rekapRw(Request $request)
     {
         return $this->tampilanRw($request, false);

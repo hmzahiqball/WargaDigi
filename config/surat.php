@@ -9,6 +9,7 @@
 | App\Models\PengajuanSurat::TIPE_SURAT.
 |
 | Tiap jenis:
+|  - ikon, deskripsi: kartu layanan di halaman publik Layanan Mandiri.
 |  - judul          : judul surat yang dicetak.
 |  - tujuan         : kalimat peruntukan. Token {keperluan} diganti isian
 |                     "keperluan" pemohon (kosong -> titik-titik).
@@ -35,6 +36,8 @@ return [
     'jenis' => [
 
         'Kartu Keluarga' => [
+            'ikon'      => 'bi-people-fill',
+            'deskripsi' => 'Pengantar pembuatan baru, perubahan, atau penambahan anggota Kartu Keluarga.',
             'judul'  => 'SURAT PENGANTAR KARTU KELUARGA',
             'tujuan' => 'Surat keterangan ini diperlukan sebagai pengantar untuk pengurusan Kartu Keluarga (KK) pada instansi yang berwenang.',
             'alamat' => 'kk',
@@ -45,6 +48,8 @@ return [
         ],
 
         'Kartu Tanda Penduduk' => [
+            'ikon'      => 'bi-person-vcard',
+            'deskripsi' => 'Pengantar pembuatan baru atau perubahan data KTP elektronik.',
             'judul'  => 'SURAT PENGANTAR KARTU TANDA PENDUDUK',
             'tujuan' => 'Surat keterangan ini diperlukan sebagai pengantar untuk pengurusan Kartu Tanda Penduduk (KTP) pada instansi yang berwenang.',
             'alamat' => 'kk',
@@ -55,6 +60,8 @@ return [
         ],
 
         'Surat Keterangan Ahli Waris' => [
+            'ikon'      => 'bi-diagram-3',
+            'deskripsi' => 'Keterangan susunan ahli waris untuk keperluan warisan atau perbankan.',
             'judul'            => 'SURAT KETERANGAN AHLI WARIS',
             'tujuan'           => 'Surat keterangan ini diperlukan sebagai pengantar untuk pengurusan Surat Keterangan Ahli Waris.',
             'alamat'           => 'kk',
@@ -67,6 +74,8 @@ return [
         ],
 
         'Surat Kelahiran' => [
+            'ikon'      => 'bi-balloon-heart',
+            'deskripsi' => 'Pengantar pelaporan kelahiran untuk pembuatan akta kelahiran.',
             'judul'            => 'SURAT KETERANGAN KELAHIRAN',
             'tujuan'           => 'Surat keterangan ini diperlukan sebagai pengantar untuk pengurusan Akta/Surat Kelahiran.',
             'alamat'           => 'kk',
@@ -82,6 +91,8 @@ return [
         ],
 
         'Surat Kematian' => [
+            'ikon'      => 'bi-flower1',
+            'deskripsi' => 'Pengantar pelaporan kematian untuk pembuatan akta kematian.',
             'judul'            => 'SURAT KETERANGAN KEMATIAN',
             'tujuan'           => 'Surat keterangan ini diperlukan sebagai pengantar untuk pengurusan Surat Keterangan Kematian.',
             'alamat'           => 'kk',
@@ -97,6 +108,8 @@ return [
         ],
 
         'Surat Keterangan Domisili' => [
+            'ikon'      => 'bi-house-door',
+            'deskripsi' => 'Keterangan tempat tinggal untuk perbankan, administrasi, atau usaha.',
             'judul'  => 'SURAT KETERANGAN DOMISILI',
             'tujuan' => 'Menerangkan bahwa yang bersangkutan benar berdomisili dan bertempat tinggal di alamat tersebut di atas. Surat keterangan ini diperlukan untuk {keperluan}.',
             'alamat' => 'domisili',
@@ -106,6 +119,8 @@ return [
         ],
 
         'Surat Keterangan Miskin / Tidak Mampu' => [
+            'ikon'      => 'bi-heart-pulse',
+            'deskripsi' => 'Keterangan tidak mampu untuk bantuan sosial, sekolah, atau kesehatan.',
             'judul'  => 'SURAT KETERANGAN TIDAK MAMPU',
             'tujuan' => 'Menerangkan bahwa yang bersangkutan tergolong keluarga kurang mampu. Surat keterangan ini diperlukan untuk {keperluan}.',
             'alamat' => 'kk',
@@ -115,6 +130,8 @@ return [
         ],
 
         'Surat Keterangan Serbaguna' => [
+            'ikon'      => 'bi-file-earmark-text',
+            'deskripsi' => 'Keterangan umum untuk keperluan lain sesuai kebutuhan warga.',
             'judul'  => 'SURAT KETERANGAN',
             'tujuan' => 'Surat keterangan ini diperlukan untuk {keperluan}.',
             'alamat' => 'kk',
@@ -122,6 +139,8 @@ return [
         ],
 
         'Surat Keterangan Kelakuan Baik / Catatan Kepolisian' => [
+            'ikon'      => 'bi-shield-check',
+            'deskripsi' => 'Pengantar SKCK untuk melamar kerja atau keperluan lain.',
             'judul'  => 'SURAT KETERANGAN KELAKUAN BAIK',
             'tujuan' => 'Berdasarkan pengamatan dan sepengetahuan kami, yang bersangkutan benar warga di lingkungan kami, berkelakuan baik, serta belum pernah terlibat tindak pidana atau perkara kriminal. Surat keterangan ini dibuat untuk keperluan {keperluan}.',
             'alamat' => 'kk',

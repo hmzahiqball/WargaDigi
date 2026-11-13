@@ -375,7 +375,7 @@ class KeluargaController extends Controller
             'alamat' => 'nullable|string|max:255',
             'alamat_domisili' => 'nullable|string|max:255',
             'status_warga' => 'nullable|in:tetap,tidak_tetap',
-            'file_ktp_path' => 'nullable|string|max:255',
+            'file_ktp_path' => ['nullable', 'string', 'max:255', new \App\Rules\BerkasSementaraMilikSendiri()],
             'nama_ayah' => 'nullable|string',
             'nama_ibu' => 'nullable|string',
             'file_kk' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -395,24 +395,28 @@ class KeluargaController extends Controller
                 ->with('error', 'Masih terdapat pengajuan penambahan anggota yang sedang diproses.');
         }
 
-        $filePath = null;
-        if ($request->hasFile('file_kk')) {
-            $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');
-        }
+        // KK dan KTP dikonversi ke WebP saat pengajuan disimpan, sehingga RT/RW meninjau berkas final.
+        $berkas = \App\Services\DokumenSementara::untuk(Auth::user());
+        $mutasiBaru = $berkas->jalankan(function () use ($berkas, $request, $keluarga) {
+            $filePath = $request->hasFile('file_kk')
+                ? $berkas->simpanLangsung($request->file('file_kk'), 'mutasi_kk')
+                : null;
 
-        $dataPengajuan = $request->except(['_token', 'file_kk']);
+            $dataPengajuan = $request->except(['_token', 'file_kk']);
+            $dataPengajuan['file_ktp_path'] = $berkas->finalisasi($dataPengajuan['file_ktp_path'] ?? null, 'dokumen/ktp');
 
-        $mutasiBaru = MutasiWarga::create([
-            'keluarga_id' => $keluarga->id,
-            'penduduk_id' => null, // null for new member
-            'jenis_mutasi' => 'tambah',
-            'data_pengajuan' => $dataPengajuan,
-            'data_lama' => null, // anggota baru: tidak ada data lama
-            'file_bukti' => $filePath,
-            'status' => 'menunggu_rt',
-            'diajukan_oleh' => Auth::id(),
-            'diajukan_at' => now(),
-        ]);
+            return MutasiWarga::create([
+                'keluarga_id' => $keluarga->id,
+                'penduduk_id' => null, // null for new member
+                'jenis_mutasi' => 'tambah',
+                'data_pengajuan' => $dataPengajuan,
+                'data_lama' => null, // anggota baru: tidak ada data lama
+                'file_bukti' => $filePath,
+                'status' => 'menunggu_rt',
+                'diajukan_oleh' => Auth::id(),
+                'diajukan_at' => now(),
+            ]);
+        });
 
         // Notifikasi: perubahan data menunggu persetujuan RT.
         \App\Services\NotificationService::notifikasiMutasiMenungguRt($mutasiBaru);
@@ -465,7 +469,7 @@ class KeluargaController extends Controller
             'alamat' => 'nullable|string|max:255',
             'alamat_domisili' => 'nullable|string|max:255',
             'status_warga' => 'nullable|in:tetap,tidak_tetap',
-            'file_ktp_path' => 'nullable|string|max:255',
+            'file_ktp_path' => ['nullable', 'string', 'max:255', new \App\Rules\BerkasSementaraMilikSendiri()],
             'file_kk' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
@@ -497,11 +501,7 @@ class KeluargaController extends Controller
                 ->withErrors(['file_kk' => 'Dokumen KK wajib diunggah jika NIK atau nama diubah.']);
         }
 
-        $filePath = null;
-        if ($request->hasFile('file_kk')) {
-            $filePath = $request->file('file_kk')->store('mutasi_kk', 'public');
-        }
-
+        $berkas = \App\Services\DokumenSementara::untuk(Auth::user());
         $dataPengajuan = $request->except(['_token', 'file_kk', '_method']);
 
         // Snapshot data LAMA penduduk untuk field yang relevan dengan pengajuan.
@@ -512,17 +512,25 @@ class KeluargaController extends Controller
             'alamat', 'alamat_domisili', 'status_warga', 'nama_ayah', 'nama_ibu',
         ]);
 
-        $mutasiBaru = MutasiWarga::create([
-            'keluarga_id' => $penduduk->keluarga->id,
-            'penduduk_id' => $anggota->id,
-            'jenis_mutasi' => 'edit',
-            'data_pengajuan' => $dataPengajuan,
-            'data_lama' => $dataLama,
-            'file_bukti' => $filePath,
-            'status' => 'menunggu_rt',
-            'diajukan_oleh' => Auth::id(),
-            'diajukan_at' => now(),
-        ]);
+        // KK dan KTP dikonversi ke WebP saat pengajuan disimpan, sehingga RT/RW meninjau berkas final.
+        $mutasiBaru = $berkas->jalankan(function () use ($berkas, $request, $penduduk, $anggota, $dataPengajuan, $dataLama) {
+            $filePath = $request->hasFile('file_kk')
+                ? $berkas->simpanLangsung($request->file('file_kk'), 'mutasi_kk')
+                : null;
+            $dataPengajuan['file_ktp_path'] = $berkas->finalisasi($dataPengajuan['file_ktp_path'] ?? null, 'dokumen/ktp');
+
+            return MutasiWarga::create([
+                'keluarga_id' => $penduduk->keluarga->id,
+                'penduduk_id' => $anggota->id,
+                'jenis_mutasi' => 'edit',
+                'data_pengajuan' => $dataPengajuan,
+                'data_lama' => $dataLama,
+                'file_bukti' => $filePath,
+                'status' => 'menunggu_rt',
+                'diajukan_oleh' => Auth::id(),
+                'diajukan_at' => now(),
+            ]);
+        });
 
         // Notifikasi: perubahan data menunggu persetujuan RT.
         \App\Services\NotificationService::notifikasiMutasiMenungguRt($mutasiBaru);

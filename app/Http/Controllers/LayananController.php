@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LayananSurat;
+use App\Models\PengajuanSurat;
 
 class LayananController extends Controller
 {
+    /**
+     * Layanan Mandiri: satu kartu per jenis surat yang benar-benar dapat diajukan
+     * (PengajuanSurat::TIPE_SURAT), dengan ikon dan deskripsi dari config/surat.php.
+     * Tombol "Buat Pengajuan" membuka form dengan jenis terpilih; warga wajib login.
+     */
     public function index()
     {
-        // Ambil layanan surat dari DB (MASTER), urut sesuai kolom urutan.
-        $services = LayananSurat::orderBy('urutan')
-            ->get()
-            ->map(fn (LayananSurat $l) => [
-                'icon' => $l->icon,
-                'title' => $l->judul,
-                'desc' => $l->deskripsi,
+        $services = collect(PengajuanSurat::TIPE_SURAT)
+            ->map(fn (string $tipe) => [
+                'icon'  => config("surat.jenis.{$tipe}.ikon", 'bi-file-earmark-text'),
+                'title' => $tipe,
+                'desc'  => config("surat.jenis.{$tipe}.deskripsi", ''),
+                'url'   => route('warga.surat.index', ['jenis' => $tipe]),
             ])
             ->all();
 

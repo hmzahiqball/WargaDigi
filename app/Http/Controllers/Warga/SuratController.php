@@ -115,35 +115,38 @@ class SuratController extends Controller
             $pemohon = $kandidat;
         }
 
-        // Tentukan file KTP: upload baru > data pemohon
-        $fileKtp = $pemohon->file_ktp;
-        if ($request->hasFile('file_ktp')) {
-            $fileKtp = $request->file('file_ktp')->store('dokumen/ktp', 'public');
-            // Update juga di data pemohon supaya tersimpan permanen
-            $pemohon->update(['file_ktp' => $fileKtp]);
-        }
-
-        // Tentukan file KK: upload baru > data pemohon
-        $fileKk = $pemohon->file_kk;
-        if ($request->hasFile('file_kk')) {
-            $fileKk = $request->file('file_kk')->store('dokumen/kk', 'public');
-            $pemohon->update(['file_kk' => $fileKk]);
-        }
-
         // Isian tambahan khusus jenis surat: hanya simpan field yang memang
         // dikenal untuk tipe tersebut, dan buang nilai kosong.
         $dataTambahan = $this->bersihkanDataTambahan($request->tipe_surat, (array) $request->input('data_tambahan', []));
 
-        // Simpan pengajuan ke database (atas nama pemohon terpilih).
-        $pengajuan = PengajuanSurat::create([
-            'penduduk_id' => $pemohon->id,
-            'tipe_surat' => $request->tipe_surat,
-            'keterangan_tambahan' => $request->keperluan,
-            'data_tambahan' => $dataTambahan ?: null,
-            'file_ktp' => $fileKtp,
-            'file_kk' => $fileKk,
-            'status' => 'Diajukan',
-        ]);
+        // KTP/KK baru dikonversi ke WebP saat pengajuan disimpan. Berkas lama pemohon
+        // tidak dihapus karena masih dirujuk pengajuan surat sebelumnya.
+        $berkas = \App\Services\DokumenSementara::untuk($request->user());
+        $pengajuan = $berkas->jalankan(function () use ($berkas, $request, $pemohon, $dataTambahan) {
+            // Tentukan file KTP/KK: upload baru > data pemohon.
+            $fileKtp = $request->hasFile('file_ktp')
+                ? $berkas->simpanLangsung($request->file('file_ktp'), 'dokumen/ktp')
+                : $pemohon->file_ktp;
+            $fileKk = $request->hasFile('file_kk')
+                ? $berkas->simpanLangsung($request->file('file_kk'), 'dokumen/kk')
+                : $pemohon->file_kk;
+
+            return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $pemohon, $dataTambahan, $fileKtp, $fileKk) {
+                // Simpan juga di data pemohon supaya tersimpan permanen.
+                $pemohon->update(['file_ktp' => $fileKtp, 'file_kk' => $fileKk]);
+
+                // Simpan pengajuan ke database (atas nama pemohon terpilih).
+                return PengajuanSurat::create([
+                    'penduduk_id' => $pemohon->id,
+                    'tipe_surat' => $request->tipe_surat,
+                    'keterangan_tambahan' => $request->keperluan,
+                    'data_tambahan' => $dataTambahan ?: null,
+                    'file_ktp' => $fileKtp,
+                    'file_kk' => $fileKk,
+                    'status' => 'Diajukan',
+                ]);
+            });
+        });
 
         // Notifikasi: ke Ketua RT di RT pemohon.
         \App\Services\NotificationService::notifikasiSuratDiajukan($pengajuan);

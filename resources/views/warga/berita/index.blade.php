@@ -625,9 +625,10 @@
     let currentDetailItem = null;
 
     function openDetail(id, type) {
-        const item = semuaData.find(x => x.id == id && x.type == type);
+        const item = semuaData.find(x => (x.id == id || x.slug == id) && x.type == type);
         if(!item) return;
         currentDetailItem = item;
+        window.history.replaceState({}, '', window.location.pathname + '?open=' + encodeURIComponent(item.slug || item.id) + '&type=' + encodeURIComponent(item.type));
 
         // Hide List, Show Detail
         document.getElementById('listView').style.display = 'none';
@@ -717,6 +718,7 @@
     }
 
     function closeDetail() {
+        window.history.replaceState({}, '', window.location.pathname);
         document.getElementById('detailView').style.display = 'none';
         const listView = document.getElementById('listView');
         listView.style.display = 'block';
@@ -735,7 +737,8 @@
         e.stopPropagation(); // Prevent card click from opening detail
         const title = e.currentTarget.getAttribute('data-title') || '';
         const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        const shareUrl = baseUrl + '?open=' + encodeURIComponent(id) + '&type=' + encodeURIComponent(type);
+        const dataItem = semuaData.find(x => x.id == id && x.type == type);
+        const shareUrl = baseUrl + '?open=' + encodeURIComponent((dataItem && dataItem.slug) || id) + '&type=' + encodeURIComponent(type);
         const message = '📰 *' + title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
         const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
         
@@ -748,7 +751,7 @@
 
         const item = currentDetailItem;
         const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        const shareUrl = baseUrl + '?open=' + encodeURIComponent(item.id) + '&type=' + encodeURIComponent(item.type);
+        const shareUrl = baseUrl + '?open=' + encodeURIComponent(item.slug || item.id) + '&type=' + encodeURIComponent(item.type);
         const message = '📰 *' + item.title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
         const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
         
@@ -763,9 +766,6 @@
         if (openParam && typeParam) {
             setTimeout(() => {
                 openDetail(openParam, typeParam);
-                // Clean URL without reloading page
-                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                window.history.replaceState({path:newUrl}, '', newUrl);
             }, 100);
         }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agenda;
 use App\Models\AgendaKehadiran;
 use App\Support\KontenScope;
+use App\Support\SlugKonten;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class AgendaController extends Controller
     {
         $userId = Auth::id();
 
-        $agendas = KontenScope::untukWarga(Agenda::with('operator'), Auth::user())->where('status', 'Publish')
+        $agendas = KontenScope::untukWarga(Agenda::with(['operator', 'kategoriMaster']), Auth::user())->where('status', 'Publish')
             ->orderBy('tanggal_mulai', 'asc')
             ->get()
             ->map(function ($item) use ($userId) {
@@ -25,18 +26,9 @@ class AgendaController extends Controller
                     ? Carbon::parse($item->tanggal_selesai)->setTimezone('Asia/Jakarta')
                     : (clone $start)->addHours(1);
 
-                // Assign colors based on kategori
-                $colorMap = [
-                    'Rapat'         => ['bg' => '#dcfce7', 'border' => '#86efac', 'text' => '#166534'],
-                    'Keagamaan'     => ['bg' => '#fef9c3', 'border' => '#fde047', 'text' => '#854d0e'],
-                    'Sosial'        => ['bg' => '#dbeafe', 'border' => '#93c5fd', 'text' => '#1e40af'],
-                    'Gotong Royong' => ['bg' => '#f3e8ff', 'border' => '#d8b4fe', 'text' => '#6b21a8'],
-                    'Kesehatan'     => ['bg' => '#ccfbf1', 'border' => '#5eead4', 'text' => '#115e59'],
-                    'Olahraga'      => ['bg' => '#fce7f3', 'border' => '#f9a8d4', 'text' => '#9d174d'],
-                    'Pendidikan'    => ['bg' => '#e0f2fe', 'border' => '#7dd3fc', 'text' => '#075985'],
-                    'Lainnya'       => ['bg' => '#f3f4f6', 'border' => '#d1d5db', 'text' => '#374151'],
-                ];
-                $colors = $colorMap[$item->kategori] ?? $colorMap['Lainnya'];
+                // Warna mengikuti master kategori konten (diatur Operator Konten RW).
+                $w = \App\Models\KategoriKonten::warnaDari($item->kategoriMaster?->warna);
+                $colors = ['bg' => $w['bg'], 'border' => $w['border'], 'text' => $w['text']];
                 
                 // Past event logic
                 $now = Carbon::now('Asia/Jakarta');
@@ -59,6 +51,7 @@ class AgendaController extends Controller
 
                 return [
                     'id'              => $item->id,
+                    'slug'            => $item->kunci_url,
                     'title'           => $item->judul_agenda,
                     'start'           => $start->toIso8601String(),
                     'end'             => $end->toIso8601String(),
@@ -91,7 +84,16 @@ class AgendaController extends Controller
     public function show($id)
     {
         $userId = Auth::id();
-        $agenda = KontenScope::untukWarga(Agenda::with('operator'), Auth::user())->where('status', 'Publish')->findOrFail($id);
+        $agenda = SlugKonten::cari(
+            KontenScope::untukWarga(Agenda::with('operator'), Auth::user())->where('status', 'Publish'),
+            (string) $id
+        );
+        abort_if(! $agenda, 404);
+
+        // Link lama berbasis id dialihkan ke URL ber-slug.
+        if ($agenda->slug && $id !== $agenda->slug) {
+            return redirect()->route('warga.agenda.show', $agenda->slug, 301);
+        }
 
         $start = Carbon::parse($agenda->tanggal_mulai)->setTimezone('Asia/Jakarta');
         $end = $agenda->tanggal_selesai

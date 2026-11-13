@@ -3,25 +3,21 @@
     $searchPlaceholder = $placeholder ?? 'Cari Produk Berdasarkan Nama';
     $showStatus = $showStatus ?? true;
 
+    // Pilihan kategori selalu dari data master, tanpa daftar hardcode:
+    // - halaman satu usaha (produk usaha tsb): master kategori produk milik usaha itu;
+    // - halaman lintas usaha (daftar UMKM, galeri/koleksi produk): master kategori UMKM.
     if (!isset($categoryOptions) || empty($categoryOptions)) {
-        if (isset($usaha) && $usaha && $usaha->kategori_produk && $usaha->kategori_produk->isNotEmpty()) {
-            $categoryOptions = $usaha->kategori_produk->pluck('nama_kategori')->unique()->values()->all();
-        } elseif (isset($kategoriProdukList) && $kategoriProdukList->isNotEmpty()) {
-            $categoryOptions = $kategoriProdukList->pluck('nama_kategori')->unique()->values()->all();
-        } elseif (isset($daftarKategoriUmkm) && count($daftarKategoriUmkm) > 0 && !isset($usaha)) {
-            $categoryOptions = $daftarKategoriUmkm->pluck('nama_kategori')->all();
-        } elseif (isset($produk) && count($produk) > 0) {
-            $extracted = $produk->map(function($item) {
-                return $item->kategori_produk->nama_kategori 
-                    ?? $item->kategori_umkm->nama_kategori 
-                    ?? $item->usaha->kategori_umkm->nama_kategori 
-                    ?? null;
-            })->filter()->unique()->values()->all();
-
-            $categoryOptions = !empty($extracted) ? $extracted : ['Kuliner', 'Fashion', 'Jasa', 'Kerajinan', 'Koperasi'];
+        $usahaFilter = (isset($usaha) && $usaha instanceof \App\Models\UmkmUsaha) ? $usaha : null;
+        if ($usahaFilter) {
+            $sumber = (isset($kategoriProdukList) && $kategoriProdukList instanceof \Illuminate\Support\Collection && $kategoriProdukList->isNotEmpty())
+                ? $kategoriProdukList
+                : \App\Models\KategoriProduk::where('umkm_usaha_id', $usahaFilter->id)->get();
         } else {
-            $categoryOptions = ['Kuliner', 'Fashion', 'Jasa', 'Kerajinan', 'Koperasi'];
+            $sumber = (isset($daftarKategoriUmkm) && $daftarKategoriUmkm instanceof \Illuminate\Support\Collection && $daftarKategoriUmkm->isNotEmpty())
+                ? $daftarKategoriUmkm
+                : \App\Models\KategoriUmkm::all();
         }
+        $categoryOptions = $sumber->pluck('nama_kategori')->filter()->unique()->sort(SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
     }
 @endphp
 

@@ -26,9 +26,6 @@
     </div>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" style="border-radius:12px;"><i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-@endif
 @if($errors->any())
 <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" style="border-radius:12px;"><ul class="mb-0 list-unstyled">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 @endif

@@ -59,8 +59,11 @@
 @push('scripts')
 <script>
 (function () {
+// Chart.js dimuat lewat app.js (module Vite, deferred) sehingga belum tersedia saat script inline ini dibaca.
+// Module dieksekusi sebelum DOMContentLoaded, jadi grafik digambar setelah event itu.
+function gambarDemografi() {
     const demografi = @json($demografi);
-    if (typeof Chart === 'undefined') return;
+    if (typeof Chart === 'undefined') { console.warn('Chart.js belum dimuat; grafik demografi tidak ditampilkan.'); return; }
 
     // Palet warna kontras (kategorikal) untuk membedakan antar segmen.
     const palet = [
@@ -112,6 +115,12 @@
     if (demografi.sebaran_rt) {
         buat('chartSebaranRt', 'bar', demografi.sebaran_rt, { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } });
     }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', gambarDemografi);
+} else {
+    gambarDemografi();
+}
 })();
 </script>
 @endpush

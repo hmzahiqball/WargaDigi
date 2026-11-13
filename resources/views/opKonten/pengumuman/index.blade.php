@@ -241,6 +241,7 @@
                     <option value="Review" {{ request('status') == 'Review' ? 'selected' : '' }}>Ditinjau</option>
                     <option value="Revisi" {{ request('status') == 'Revisi' ? 'selected' : '' }}>Revisi</option>
                     <option value="Publish" {{ request('status') == 'Publish' ? 'selected' : '' }}>Terbit</option>
+                        <option value="Archive" {{ request('status') == 'Archive' ? 'selected' : '' }}>Diarsipkan</option>
                 </select>
             </div>
             <div>
@@ -310,6 +311,7 @@
                                     'Review' => ['bg' => '#FEF3C7', 'color' => '#D97706', 'label' => 'Ditinjau'],
                                     'Revisi' => ['bg' => '#FEE2E2', 'color' => '#991B1B', 'label' => 'Revisi'],
                                     'Publish' => ['bg' => '#D1FAE5', 'color' => '#065F46', 'label' => 'Terbit'],
+                'Archive' => ['bg' => '#E5E7EB', 'color' => '#374151', 'label' => 'Diarsipkan'],
                                 ];
                                 $s_bg = $statusColors[$item->status]['bg'] ?? '#F3F4F6';
                                 $s_color = $statusColors[$item->status]['color'] ?? '#6B7280';
@@ -389,7 +391,7 @@
                         <div class="d-flex gap-3">
                             <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
                             <div>
-                                <h6 class="fw-bold mb-1">Catatan Revisi dari RW:</h6>
+                                <h6 class="fw-bold mb-1">Catatan Revisi dari {{ \App\Support\KontenScope::penyetuju('pengumuman', auth()->user()) }}:</h6>
                                 <p id="teksCatatanRevisi" class="mb-0 small" style="font-size: 14px;"></p>
                             </div>
                         </div>
@@ -399,6 +401,15 @@
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Judul Pengumuman</label>
                             <input type="text" name="judul_pengumuman" id="judulPengumuman" class="form-control" placeholder="Masukkan judul pengumuman..." required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium text-dark" style="font-size: 14px;" for="kategoriPengumuman">Kategori</label>
+                            <select name="kategori_id" id="kategoriPengumuman" class="form-select" required>
+                                <option value="">Pilih kategori...</option>
+                                @foreach($kategoriPilihan as $kat)
+                                    <option value="{{ $kat->id }}">{{ $kat->nama }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div class="col-12">
@@ -427,8 +438,11 @@
 
                 <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-end gap-2" style="border-color: #BFCABA !important;">
                     <button type="button" class="btn btn-draft fw-semibold" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="confirmCloseModal()">Batal</button>
-                    <button type="submit" class="btn btn-gradient-green fw-semibold px-4 text-white d-flex align-items-center gap-2">
+                    <button type="submit" class="btn btn-draft fw-semibold px-4 d-flex align-items-center gap-2" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="document.getElementById('formAction').value='draft'">
                         <i class="bi bi-save"></i> <span id="submitBtnPengumumanText">Simpan ke Draf</span>
+                    </button>
+                    <button type="submit" id="btnAjukanPengumuman" class="btn btn-gradient-green fw-semibold px-4 text-white d-flex align-items-center gap-2" onclick="document.getElementById('formAction').value='review'">
+                        <i class="bi bi-send"></i> <span>{{ $teks['tombol'] }}</span>
                     </button>
                 </div>
         </form>
@@ -486,7 +500,7 @@
                     <div class="d-flex gap-3">
                         <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
                         <div>
-                            <h6 class="fw-bold mb-1">Catatan Revisi dari RW:</h6>
+                            <h6 class="fw-bold mb-1">Catatan Revisi dari {{ \App\Support\KontenScope::penyetuju('pengumuman', auth()->user()) }}:</h6>
                             <p id="teksDetailCatatanRevisi" class="mb-0 small" style="font-size: 14px;"></p>
                         </div>
                     </div>
@@ -627,6 +641,32 @@
                 return false;
             }
             document.getElementById('isiPengumumanInput').value = quill.root.innerHTML;
+            // Mengajukan/menerbitkan perlu konfirmasi; menyimpan draf langsung.
+            if (document.getElementById('formAction').value === 'review') {
+                e.preventDefault();
+                Swal.fire({
+                    title: {!! json_encode($teks['judul']) !!},
+                    text: {!! json_encode($teks['isi']) !!},
+                    icon: 'question',
+                    showCancelButton: true,
+                    buttonsStyling: false,
+                    confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'custom-swal-popup',
+                        confirmButton: 'btn text-white btn-gradient-green fw-semibold w-100 m-0 mb-2',
+                        cancelButton: 'btn btn-cancel-swal fw-semibold w-100 m-0'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        allowModalClose = true;
+                        form.submit();
+                    } else if (window.resetFormSubmitting) {
+                        window.resetFormSubmitting(form);
+                    }
+                });
+            }
         });
 
         // Debounce search input
@@ -641,15 +681,9 @@
             });
         }
 
-        // Toast
-        @if(session('success'))
-            showNotification("{!! addslashes(session('success')) !!}");
-        @endif
+        // Pesan sukses/galat sesi ditampilkan oleh dialog global (alertModal); hanya galat validasi yang ditampilkan di sini.
         @if($errors->any())
             showNotification("{!! addslashes($errors->first()) !!}", true);
-        @endif
-        @if(session('error'))
-            showNotification("{!! addslashes(session('error')) !!}", true);
         @endif
     });
 
@@ -679,6 +713,8 @@
 
         document.getElementById('formMethod').value = 'POST';
         form.action = "{{ route('opkonten.pengumuman.store') }}";
+        document.getElementById('formAction').value = 'draft';
+        document.getElementById('btnAjukanPengumuman').classList.remove('d-none');
         document.getElementById('pengumumanIdInput').value = '';
         document.getElementById('alertCatatanRevisi').classList.add('d-none');
 
@@ -696,15 +732,25 @@
 
         document.getElementById('formMethod').value = 'PUT';
         form.action = `/op-konten/pengumuman/${item.id}`;
+        document.getElementById('formAction').value = 'draft';
+        document.getElementById('btnAjukanPengumuman').classList.toggle('d-none', item.status === 'Revisi');
         document.getElementById('pengumumanIdInput').value = item.id;
         document.getElementById('modalTitle').textContent = 'Edit Pengumuman';
 
         const submitBtnText = document.getElementById('submitBtnPengumumanText');
         if (submitBtnText) {
-            submitBtnText.textContent = item.status === 'Revisi' ? 'Simpan & Ajukan Ulang' : 'Simpan Perubahan';
+            submitBtnText.textContent = item.status === 'Revisi' ? ({!! json_encode($teks['perlu'] ? 'Simpan & Ajukan Ulang' : 'Simpan & Terbitkan') !!}) : 'Simpan Perubahan';
         }
 
         document.getElementById('judulPengumuman').value = item.judul_pengumuman;
+        (function () {
+            const sel = document.getElementById('kategoriPengumuman');
+            // Kategori yang sudah dinonaktifkan tetap tampil agar draf lama bisa disimpan.
+            if (item.kategori_id && !Array.from(sel.options).some(o => o.value === item.kategori_id)) {
+                sel.add(new Option(item.kategori + ' (nonaktif)', item.kategori_id));
+            }
+            sel.value = item.kategori_id || '';
+        })();
         document.getElementById('isPriorityToggle').checked = item.is_priority;
         quill.root.innerHTML = item.isi_pengumuman;
 
@@ -749,7 +795,8 @@
             'Draft': { bg: '#F3F4F6', color: '#6B7280', label: 'Draf' },
             'Review': { bg: '#FEF3C7', color: '#D97706', label: 'Ditinjau' },
             'Revisi': { bg: '#FEE2E2', color: '#991B1B', label: 'Revisi' },
-            'Publish': { bg: '#D1FAE5', color: '#065F46', label: 'Terbit' }
+            'Publish': { bg: '#D1FAE5', color: '#065F46', label: 'Terbit' },
+            'Archive': { bg: '#E5E7EB', color: '#374151', label: 'Diarsipkan' }
         };
         const s_bg = statusColors[item.status]?.bg || '#F3F4F6';
         const s_color = statusColors[item.status]?.color || '#6B7280';
@@ -799,8 +846,8 @@
                 </button>
                 <form action="/op-konten/pengumuman/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Pengumuman">
-                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Pengumuman</span><span class="label-short">Ajukan</span>
+                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="{{ $teks['tombol'] }}">
+                        <i class="bi bi-send"></i> <span class="label-full">{{ $teks['tombol'] }}</span><span class="label-short">{{ $teks['singkat'] }}</span>
                     </button>
                 </form>
             `;
@@ -815,7 +862,30 @@
             `;
         }
 
-        if (item.status !== 'Review') {
+        if (item.status === 'Publish') {
+            actionsHtml += `
+                <form action="/op-konten/pengumuman/${item.id}/archive" method="POST" class="d-inline" id="formArchive_${item.id}"
+                      data-konfirmasi="Arsipkan pengumuman ini? Pengumuman tidak akan tampil lagi bagi warga." data-konfirmasi-judul="Arsipkan Pengumuman" data-konfirmasi-tombol="Arsipkan">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="PUT">
+                    <button type="submit" class="btn btn-outline-secondary fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="tooltip" title="Arsipkan">
+                        <i class="bi bi-archive"></i> <span class="label-full">Arsipkan</span><span class="label-short">Arsip</span>
+                    </button>
+                </form>
+            `;
+        } else if (item.status === 'Archive') {
+            actionsHtml += `
+                <form action="/op-konten/pengumuman/${item.id}/unarchive" method="POST" class="d-inline" id="formUnarchive_${item.id}"
+                      data-konfirmasi="Buka arsip dan tampilkan lagi pengumuman ini kepada warga?" data-konfirmasi-judul="Buka Arsip" data-konfirmasi-tombol="Buka Arsip">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="PUT">
+                    <button type="submit" class="btn btn-outline-primary fw-semibold px-4 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="tooltip" title="Buka Arsip">
+                        <i class="bi bi-box-arrow-up"></i> <span class="label-full">Buka Arsip</span><span class="label-short">Arsip</span>
+                    </button>
+                </form>
+            `;
+        }
+        if (item.status === 'Draft' || item.status === 'Revisi') {
             actionsHtml += `
                 <form action="/op-konten/pengumuman/${item.id}" method="POST" class="d-inline ms-auto" id="formDelete_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
@@ -868,12 +938,12 @@
 
     function confirmSubmit(id) {
         Swal.fire({
-            title: 'Ajukan pengumuman ke Ketua RW?',
-            text: "Pengumuman akan masuk tahap review dan menunggu persetujuan Ketua RW.",
+            title: {!! json_encode($teks['judul']) !!},
+            text: {!! json_encode($teks['isi']) !!},
             icon: 'question',
             showCancelButton: true,
             buttonsStyling: false,
-            confirmButtonText: 'Ya, ajukan!',
+            confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
             cancelButtonText: 'Batal',
             customClass: {
                 popup: 'custom-swal-popup',

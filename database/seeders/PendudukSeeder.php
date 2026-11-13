@@ -17,7 +17,10 @@ class PendudukSeeder extends Seeder
         $kkBambang = Keluarga::where('no_kk', '3217010101000005')->first();
         $kkRian = Keluarga::where('no_kk', '3217010101000006')->first();
         $kkFajar = Keluarga::where('no_kk', '3217010101000007')->first();
-        $kkBudiSantoso = Keluarga::where('no_kk', '3204xxxxxxxx0001')->first();
+        $kkBudiSantoso = Keluarga::where('no_kk', '3204111122220001')->first();
+        // KK sendiri untuk Hasan Basri (DKM) dan Yudi Santoso (Op Keuangan RT), sesuai KeluargaSeeder.
+        $kkHasan = Keluarga::where('no_kk', '3217010101000008')->first();
+        $kkYudi = Keluarga::where('no_kk', '3217010101000010')->first();
 
         $penduduks = [
             // 1. Budi Sampurno (Warga / Pemilik UMKM Kriya Kayu)
@@ -190,7 +193,7 @@ class PendudukSeeder extends Seeder
             // 8. Ustadz Hasan Basri (DKM)
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000011',
-                'keluarga_id' => $kkHendra ? $kkHendra->id : null,
+                'keluarga_id' => $kkHasan ? $kkHasan->id : null,
                 'nik' => '3217010101010007',
                 'nama_lengkap' => 'Hasan Basri',
                 'jenis_kelamin' => 'L',
@@ -207,7 +210,7 @@ class PendudukSeeder extends Seeder
             // 9. Yudi Santoso (Op Keuangan RT)
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000012',
-                'keluarga_id' => $kkZaki ? $kkZaki->id : null,
+                'keluarga_id' => $kkYudi ? $kkYudi->id : null,
                 'nik' => '3217010101010009',
                 'nama_lengkap' => 'Yudi Santoso',
                 'jenis_kelamin' => 'L',
@@ -257,7 +260,7 @@ class PendudukSeeder extends Seeder
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000015',
                 'keluarga_id' => $kkBudiSantoso ? $kkBudiSantoso->id : null,
-                'nik' => '3204xxxxxxxx0002',
+                'nik' => '3204111122220003',
                 'nama_lengkap' => 'Siti Rahma',
                 'jenis_kelamin' => 'P',
                 'tempat_lahir' => 'Bandung',
@@ -272,7 +275,7 @@ class PendudukSeeder extends Seeder
             [
                 'id' => 'b1c2d3e4-0001-4000-8000-000000000016',
                 'keluarga_id' => $kkBudiSantoso ? $kkBudiSantoso->id : null,
-                'nik' => '3204xxxxxxxx0003',
+                'nik' => '3204111122220004',
                 'nama_lengkap' => 'Andi Saputra',
                 'jenis_kelamin' => 'L',
                 'tempat_lahir' => 'Bandung',

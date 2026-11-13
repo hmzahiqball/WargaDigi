@@ -43,7 +43,7 @@
             </div>
 
             <a href="{{ route('umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2">
-                Kembali ke Galeri
+                Kembali ke Pojok UMKM
             </a>
         </div>
     </div>
@@ -69,7 +69,7 @@
                             <i class="bi bi-arrow-clockwise me-1"></i> Reset Filter
                         </a>
                         <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-success btn-sm rounded-pill px-3 text-white">
-                            <i class="bi bi-grid me-1"></i> Galeri Utama
+                            <i class="bi bi-grid me-1"></i> Pojok UMKM
                         </a>
                     </div>
                 </div>

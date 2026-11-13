@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnAction = document.getElementById('btnConfirmDeleteAction');
 
         if (prefixEl) prefixEl.innerText = options.prefix || 'Hapus Produk';
-        
+
         let itemName = options.itemName || options.name || '';
         if (itemName && !itemName.endsWith('?')) {
             itemName = itemName + '?';
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
             subtitle: subtitle
         });
     });
-    
+
     @if(session('success'))
         setTimeout(function() {
             window.showSuccessModal({
@@ -301,13 +301,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 150);
     @endif
 
+    {{-- Satu-satunya tempat pesan flash sesi ditampilkan (dialog). Halaman tidak perlu menampilkan alert/toast sendiri. --}}
     @if(session('error'))
         setTimeout(function() {
-            if (typeof window.showAdminToast === 'function') {
-                window.showAdminToast({!! json_encode(session('error')) !!}, 'error');
-            } else {
-                window.tampilkanPemberitahuan({!! json_encode(session('error')) !!}, { jenis: 'bahaya', judul: 'Terjadi Kesalahan' });
-            }
+            window.tampilkanPemberitahuan({!! json_encode(session('error')) !!}, { jenis: 'bahaya', judul: 'Terjadi Kesalahan' });
+        }, 150);
+    @endif
+
+    @if(session('warning'))
+        setTimeout(function() {
+            window.tampilkanPemberitahuan({!! json_encode(session('warning')) !!}, { jenis: 'bahaya', judul: 'Perhatian' });
         }, 150);
     @endif
 });

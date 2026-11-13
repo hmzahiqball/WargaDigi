@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Agenda;
 use App\Models\Berita;
-use App\Models\Keluarga;
-use App\Models\LayananSurat;
-use App\Models\Penduduk;
 use App\Models\UmkmProduk;
 use App\Support\KontenScope;
 use Illuminate\Support\Str;
@@ -15,25 +12,23 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Statistik ringkas (struktur lama: number, suffix, label).
-        $stats = [
-            ['number' => Keluarga::count(), 'suffix' => '+', 'label' => 'Kepala Keluarga'],
-            ['number' => Penduduk::count(), 'suffix' => '', 'label' => 'Jiwa Aktif'],
-            ['number' => LayananSurat::count(), 'suffix' => '', 'label' => 'Layanan Digital'],
-        ];
+        // Statistik jumlah KK, jiwa, dan layanan sengaja tidak ditampilkan di halaman publik.
 
         // Berita terkini (Publish) terbaru.
-        $berita = KontenScope::untukWarga(Berita::query(), auth()->user())->where('status', 'Publish')
+        // Berita terbit tingkat RW maupun RT (agenda tetap mengikuti cakupan RT).
+        $berita = Berita::with('rt')->where('status', 'Publish')
             ->orderByDesc('tanggal_publish')
             ->take(3)
             ->get()
             ->map(fn (Berita $b) => [
                 'id' => $b->id,
+                'slug' => $b->kunci_url,
                 'image' => $b->featured_image,
                 'date' => optional($b->tanggal_publish)->format('d M Y') ?? '',
                 'title' => $b->judul_berita,
                 'excerpt' => Str::limit(strip_tags($b->isi_berita), 120),
                 'category' => $b->kategori,
+                'origin' => $b->asal_label,
             ])
             ->all();
 
@@ -56,26 +51,31 @@ class HomeController extends Controller
             })
             ->all();
 
-        // Agenda mendatang (Publish) yang belum lewat.
-        $agenda = KontenScope::untukWarga(Agenda::query(), auth()->user())->where('status', 'Publish')
-            ->whereDate('tanggal_mulai', '>=', today())
+        // Agenda terbit yang sedang berlangsung atau akan datang (belum selesai).
+        $agendaTerbit = fn () => KontenScope::untukWarga(Agenda::query(), auth()->user())->where('status', 'Publish');
+        $agenda = $agendaTerbit()
+            ->where(fn ($q) => $q->where('tanggal_selesai', '>=', now())
+                ->orWhere(fn ($w) => $w->whereNull('tanggal_selesai')->where('tanggal_mulai', '>=', today())))
             ->orderBy('tanggal_mulai')
             ->take(3)
             ->get()
             ->map(function (Agenda $a) {
                 $mulai = $a->tanggal_mulai;
                 $waktu = $mulai ? $mulai->format('H:i') : '';
-                $lokasi = $a->lokasi ? ' ' . $a->lokasi : '';
-
+                $lokasi = $a->lokasi ? ' · ' . $a->lokasi : '';
                 return [
                     'day' => $mulai ? $mulai->format('d') : '--',
                     'month' => $mulai ? $mulai->translatedFormat('M') : '',
                     'title' => $a->judul_agenda,
                     'time' => trim($waktu . $lokasi),
+                    'url' => route('agenda.show', $a->kunci_url),
                 ];
             })
             ->all();
 
-        return view('pages.home', compact('stats', 'berita', 'umkm', 'agenda'));
+        // Tanda tanggal di kalender: agenda terbit dari 3 bulan lalu sampai 6 bulan ke depan.
+        $tandaKalender = AgendaPublikController::tandaKalender($agendaTerbit());
+
+        return view('pages.home', compact('berita', 'umkm', 'agenda', 'tandaKalender'));
     }
 }

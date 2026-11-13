@@ -8,7 +8,7 @@
         <div class="row h-100 bg-white shadow-sm overflow-hidden" style="border-radius: 1rem; min-height: 600px;">
             {{-- Left Side: Hero Image --}}
             <div class="col-lg-6 d-none d-lg-flex p-0 position-relative">
-                <img src="{{ asset('images/auth-hero.jpg') }}" alt="WargaDigi Community" class="w-100 h-100" style="object-fit: cover;">
+                <img src="{{ \App\Models\SystemSetting::gambarUrl('gambar_login') }}" alt="WargaDigi Community" class="w-100 h-100" style="object-fit: cover;">
                 <div class="position-absolute bottom-0 start-0 w-100 p-5" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
                     <h2 class="text-white fw-bold mb-2">WargaDigi 21</h2>
                     <p class="text-white-50 mb-0">Digital Gotong Royong. Membangun lingkungan yang lebih baik, terhubung, dan sejahtera bersama-sama.</p>

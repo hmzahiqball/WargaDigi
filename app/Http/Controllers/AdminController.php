@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemSetting;
+use App\Services\GambarPengaturan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -69,41 +70,73 @@ class AdminController extends Controller
 
     public function updatePengaturanSistem(Request $request)
     {
+        // Aturan unggahan tiap gambar (logo, logo kop, gambar login, ikon aplikasi) berasal dari registri SystemSetting::GAMBAR.
+        $aturanGambar = [];
+        foreach (SystemSetting::GAMBAR as $kunci => $cfg) {
+            $aturanGambar[$kunci] = array_merge(['nullable'], $cfg['aturan']);
+            $aturanGambar['hapus_' . $kunci] = ['nullable'];
+        }
+
         $validated = $request->validate([
             'instance_name'    => ['required', 'string', 'max:100'],
             'domain'           => ['nullable', 'string', 'max:150'],
             'description'      => ['nullable', 'string', 'max:500'],
-            'logo'             => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
-            'session_timeout'  => ['required', 'integer', 'in:15,30,60,120'],
+            // Bagian lanjutan (notifikasi, keamanan, pemeliharaan) hanya diproses bila tampil di form (penanda bagian_lanjutan).
+            'bagian_lanjutan'  => ['nullable'],
+            'session_timeout'  => ['required_with:bagian_lanjutan', 'nullable', 'integer', 'in:15,30,60,120'],
             'notif_whatsapp'   => ['nullable'],
             'notif_email'      => ['nullable'],
             'notif_push'       => ['nullable'],
             'two_factor'       => ['nullable'],
             'maintenance_mode' => ['nullable'],
+            'konten_approval_berita'     => ['nullable'],
+            'konten_approval_agenda'     => ['nullable'],
+            'konten_approval_pengumuman' => ['nullable'],
+            'konten_approval_form'       => ['nullable'],
+        ] + $aturanGambar, [
+            'logo.dimensions'          => 'Logo terlalu kecil.',
+            'gambar_login.dimensions'  => 'Gambar halaman login minimal 800 x 600 piksel.',
+            'ikon_aplikasi.dimensions' => 'Ikon aplikasi minimal 512 x 512 piksel.',
+            '*.mimes'                  => 'Format berkas tidak didukung untuk :attribute.',
+            '*.max'                    => 'Ukuran berkas :attribute terlalu besar.',
         ]);
 
         SystemSetting::setMany([
             'instance_name'    => $validated['instance_name'],
             'domain'           => $validated['domain'] ?? '',
             'description'      => $validated['description'] ?? '',
-            'session_timeout'  => (int) $validated['session_timeout'],
-            'notif_whatsapp'   => $request->boolean('notif_whatsapp'),
-            'notif_email'      => $request->boolean('notif_email'),
-            'notif_push'       => $request->boolean('notif_push'),
-            'two_factor'       => $request->boolean('two_factor'),
-            'maintenance_mode' => $request->boolean('maintenance_mode'),
         ]);
 
-        if ($request->hasFile('logo')) {
-            // Remove previous logo if it exists.
-            $oldLogo = SystemSetting::get('logo');
-            if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
-                Storage::disk('public')->delete($oldLogo);
-            }
-            $path = $request->file('logo')->store('settings', 'public');
-            SystemSetting::set('logo', $path);
+        // Checkbox yang mati tidak terkirim. Karena itu bagian ini hanya diterapkan bila benar-benar ada di form;
+        // bila disembunyikan, pengaturan yang tersimpan (mis. mode pemeliharaan) tidak boleh ikut tertimpa.
+        if ($request->has('bagian_lanjutan')) {
+            SystemSetting::setMany([
+                'session_timeout'  => (int) $validated['session_timeout'],
+                'notif_whatsapp'   => $request->boolean('notif_whatsapp'),
+                'notif_email'      => $request->boolean('notif_email'),
+                'notif_push'       => $request->boolean('notif_push'),
+                'two_factor'       => $request->boolean('two_factor'),
+                'maintenance_mode' => $request->boolean('maintenance_mode'),
+            ]);
         }
 
+        // Persetujuan konten: checkbox yang mati tidak terkirim, jadi hanya diterapkan bila bagian ini dikirim dari form.
+        if ($request->has('konten_approval_form')) {
+            SystemSetting::setMany([
+                'konten_approval_berita'     => $request->boolean('konten_approval_berita'),
+                'konten_approval_agenda'     => $request->boolean('konten_approval_agenda'),
+                'konten_approval_pengumuman' => $request->boolean('konten_approval_pengumuman'),
+            ]);
+        }
+
+        // Gambar: unggahan baru menggantikan yang lama; kotak "kembalikan ke bawaan" menghapus unggahan.
+        foreach (array_keys(SystemSetting::GAMBAR) as $kunci) {
+            if ($request->hasFile($kunci)) {
+                GambarPengaturan::simpan($kunci, $request->file($kunci));
+            } elseif ($request->boolean('hapus_' . $kunci)) {
+                GambarPengaturan::hapus($kunci);
+            }
+        }
         return redirect()
             ->route('admin.pengaturan-sistem')
             ->with('success', 'Pengaturan sistem berhasil disimpan.');
@@ -119,7 +152,7 @@ class AdminController extends Controller
                     ->orWhere('nik', 'like', "%{$search}%");
             })
             ->orderBy('username')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         // Daftar peran yang bisa ditetapkan (urut sesuai enum kanonik).

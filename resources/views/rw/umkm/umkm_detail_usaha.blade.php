@@ -17,7 +17,7 @@
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap text-muted small">
                 <span>
-                    <i class="bi bi-person-circle text-success me-1"></i> 
+                    <i class="bi bi-person-circle text-success me-1"></i>
                     <strong>{{ $usaha->pemilik->penduduk->nama_lengkap ?? $usaha->user->username ?? 'Warga' }}</strong>
                 </span>
                 <span>•</span>
@@ -33,12 +33,25 @@
             </div>
         </div>
 
-        <div>
-            <a href="{{ route('rw.umkm.index', ['tab' => 'terdaftar']) }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2" style="height: 44px;">
-                Kembali ke Daftar UMKM Terdaftar
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if(trim((string) auth()->user()->activeRole()) === 'Admin RW')
+                @include('rw.umkm.components.aksiStatusUsaha', ['item' => $usaha])
+            @endif
+            <a href="{{ route('rw.umkm.index') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2" style="height: 44px;">
+                Kembali ke Pojok UMKM
             </a>
         </div>
     </div>
+
+    @if($usaha->status_verifikasi === 'Approved' && ! $usaha->is_active)
+        <div class="alert alert-secondary border-0 shadow-sm rounded-4 mb-4" data-testid="info-umkm-nonaktif">
+            <i class="bi bi-pause-circle me-1"></i>
+            Usaha ini sedang dinonaktifkan dan tidak tampil di Pojok UMKM.
+            @if($usaha->catatan_verifikasi)
+                <span class="d-block small mt-1">Alasan: {{ $usaha->catatan_verifikasi }}</span>
+            @endif
+        </div>
+    @endif
 
     @include('rw.umkm.components.bannerUsahaReadOnly', ['usaha' => $usaha])
 
@@ -52,7 +65,7 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
         <div>
             <h5 class="fw-bold text-dark mb-1">Katalog Produk & Etalase Usaha</h5>
-            <p class="text-muted small mb-0">Daftar produk yang telah didaftarkan oleh pelaku UMKM dan tampil di Galeri Warga.</p>
+            <p class="text-muted small mb-0">Daftar produk yang telah didaftarkan oleh pelaku UMKM dan tampil di Pojok UMKM.</p>
         </div>
     </div>
 

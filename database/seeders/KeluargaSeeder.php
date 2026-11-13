@@ -111,9 +111,9 @@ class KeluargaSeeder extends Seeder
             // Keluarga Budi Santoso (Demo Permohonan Surat) - RT 03
             [
                 'id' => 'a1b2c3d4-0001-4000-8000-000000000011', // Ubah ujungnya jadi 0011
-                'no_kk' => '3204xxxxxxxx0001',
+                'no_kk' => '3204111122220001',
                 'nik_kepala_keluarga' => '3204111122220002',
-                'alamat' => 'Jl. Merdeka Barat No. 45, RT 03 / RW 05, Kelurahan Sukamaju',
+                'alamat' => 'Jl. Merdeka Barat No. 45, RT 03 / RW 21, Tanimulya',
                 'rt_id' => $rt03 ? $rt03->id : null, // Sesuaikan dengan RT 03
                 'no_wa' => '081234567890',
                 'status_aktivasi' => 'Active',

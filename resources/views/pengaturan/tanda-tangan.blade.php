@@ -8,12 +8,6 @@
     <p class="text-muted mb-0">Simpan tanda tangan dan stempel default agar tidak perlu mengisi ulang setiap menyetujui surat.</p>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
-    <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 @if($errors->any())
 <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
     <ul class="mb-0 list-unstyled">@foreach($errors->all() as $e)<li><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $e }}</li>@endforeach</ul>

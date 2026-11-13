@@ -44,8 +44,8 @@ class WebPushChannel
             'judul' => $data['judul'] ?? 'WargaDigi',
             'pesan' => $data['pesan'] ?? '',
             'url'   => $data['url'] ?? config('app.url'),
-            'icon'  => '/icons/icon-192.png',
-            'badge' => '/icons/icon-192.png',
+            'icon'  => route('pwa.ikon', ['varian' => '192']) . '?v=' . \App\Services\GambarPengaturan::versiIkon(),
+            'badge' => route('pwa.ikon', ['varian' => '192']) . '?v=' . \App\Services\GambarPengaturan::versiIkon(),
         ]);
 
         try {

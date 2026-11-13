@@ -168,7 +168,9 @@ class RtKeluargaManagementTest extends TestCase
             ->assertSee('Profil Keluarga')
             ->assertSee('Daftar Semua Penduduk')
             ->assertSee('3217010100000001')   // No. KK di tab Profil Keluarga
-            ->assertSee('Kepala Uji');         // kepala keluarga
+            ->assertSee('Kepala Uji')          // kepala keluarga
+            ->assertSee('data-testid="btn-tambah-keluarga"', false) // RT boleh menambah data
+            ->assertDontSee('name="rt_id"', false);                 // tanpa filter RT
     }
 
     public function test_ketua_rt_bisa_export_excel_lingkup_rt_sendiri(): void

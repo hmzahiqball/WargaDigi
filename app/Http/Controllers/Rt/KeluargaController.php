@@ -60,7 +60,7 @@ class KeluargaController extends Controller
             'kode_pos'         => ['nullable', 'string', 'max:10'],
             'status_warga'     => ['nullable', 'in:tetap,tidak_tetap'],
             'pemilik_rumah'    => ['nullable', 'boolean'],
-            'file_kk_path'     => ['nullable', 'string', 'max:255'],
+            'file_kk_path'     => ['nullable', 'string', 'max:255', new \App\Rules\BerkasSementaraMilikSendiri()],
 
             // Data Penduduk (array, minimal 1).
             'penduduk'                        => ['required', 'array', 'min:1'],
@@ -81,7 +81,7 @@ class KeluargaController extends Controller
             'penduduk.*.kewarganegaraan'      => ['nullable', 'in:WNI,WNA'],
             'penduduk.*.nama_ayah'            => ['nullable', 'string', 'max:100'],
             'penduduk.*.nama_ibu'             => ['nullable', 'string', 'max:100'],
-            'penduduk.*.file_ktp_path'        => ['nullable', 'string', 'max:255'],
+            'penduduk.*.file_ktp_path'        => ['nullable', 'string', 'max:255', new \App\Rules\BerkasSementaraMilikSendiri()],
 
             // Pemegang akun keluarga (index dari array penduduk) + kredensial.
             'pemegang_akun' => ['required', 'integer'],
@@ -129,6 +129,28 @@ class KeluargaController extends Controller
         // Token aktivasi sekali pakai (Opsi B): warga menetapkan password via link.
         $activationToken = \Illuminate\Support\Str::random(40);
 
+        // KTP/KK hasil OCR dikonversi ke WebP dan dipindah ke folder final saat data disimpan.
+        // Bila penyimpanan gagal, berkas final dibuang; bila berhasil, berkas sementara dibuang.
+        $berkas = \App\Services\DokumenSementara::untuk($request->user());
+        $berkas->jalankan(function () use ($berkas, &$validated, $rtId, $kepala, $pemegangIdx, $statusWarga, $noWaKeluarga, $activationToken) {
+            $validated['file_kk_path'] = $berkas->finalisasi($validated['file_kk_path'] ?? null, 'dokumen/kk');
+            foreach ($validated['penduduk'] as $i => $p) {
+                $validated['penduduk'][$i]['file_ktp_path'] = $berkas->finalisasi($p['file_ktp_path'] ?? null, 'dokumen/ktp');
+            }
+
+            $this->simpanKeluargaBaru($validated, $rtId, $kepala, $pemegangIdx, $statusWarga, $noWaKeluarga, $activationToken);
+        });
+
+        return redirect()
+            ->route('rt.penduduk.index')
+            ->with('success', 'Data keluarga berhasil disimpan. Bagikan link aktivasi di bawah kepada pemegang akun agar dapat membuat username & password sendiri.')
+            ->with('activation_link', route('aktivasi.token', ['token' => $activationToken]))
+            ->with('activation_username', $kepala['nama_lengkap'] ?? 'pemegang akun');
+    }
+
+    /** Simpan keluarga, penduduk, dan akun pemegang dalam satu transaksi. */
+    private function simpanKeluargaBaru(array $validated, $rtId, array $kepala, int $pemegangIdx, string $statusWarga, ?string $noWaKeluarga, string $activationToken): void
+    {
         DB::transaction(function () use ($validated, $rtId, $kepala, $pemegangIdx, $statusWarga, $noWaKeluarga, $activationToken) {
             $keluarga = Keluarga::create([
                 'no_kk' => $validated['no_kk'],
@@ -204,12 +226,6 @@ class KeluargaController extends Controller
                 }
             }
         });
-
-        return redirect()
-            ->route('rt.penduduk.index')
-            ->with('success', 'Data keluarga berhasil disimpan. Bagikan link aktivasi di bawah kepada pemegang akun agar dapat membuat username & password sendiri.')
-            ->with('activation_link', route('aktivasi.token', ['token' => $activationToken]))
-            ->with('activation_username', $kepala['nama_lengkap'] ?? 'pemegang akun');
     }
 
     /**
@@ -248,10 +264,16 @@ class KeluargaController extends Controller
             ? route('aktivasi.token', ['token' => $akun->activation_token])
             : null;
 
-        return view('rt.keluarga.show', [
-            'keluarga'     => $keluargaModel,
-            'akun'         => $akun,
-            'linkAktivasi' => $linkAktivasi,
+        // View bersama RT/RW. Lingkup RW hanya melihat (tidak mengelola akun).
+        $lingkupRw = $request->routeIs('rw.*');
+
+        return view('penduduk.keluarga', [
+            'keluarga'        => $keluargaModel,
+            'akun'            => $akun,
+            'linkAktivasi'    => $linkAktivasi,
+            'routeKembali'    => $lingkupRw ? 'rw.penduduk.index' : 'rt.penduduk.index',
+            'routePenduduk'   => $lingkupRw ? 'rw.penduduk.show' : 'rt.penduduk.show',
+            'bolehKelolaAkun' => ! $lingkupRw,
         ]);
     }
 

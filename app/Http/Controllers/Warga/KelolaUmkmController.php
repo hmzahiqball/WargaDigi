@@ -27,9 +27,9 @@ class KelolaUmkmController extends Controller
 
         $daftarUsaha = collect();
         if ($userNik) {
+            // Usaha ditolak ikut ditampilkan agar pemilik dapat memperbaiki dan mengajukan ulang.
             $daftarUsaha = UmkmUsaha::with(['kategori_umkm', 'user.penduduk.keluarga.rt'])
                 ->where('nik', $userNik)
-                ->where('status_verifikasi', '!=', 'Rejected')
                 ->get();
         }
 
@@ -38,7 +38,7 @@ class KelolaUmkmController extends Controller
 
         if ($selectedUsahaId) {
             $candidate = $daftarUsaha->firstWhere('id', $selectedUsahaId);
-            if ($candidate && $candidate->status_verifikasi === 'Approved') {
+            if ($candidate && in_array($candidate->status_verifikasi, ['Approved', 'Rejected'], true)) {
                 $usaha = $candidate;
             } elseif ($candidate && $candidate->status_verifikasi === 'Pending' && $approvedUsaha->isEmpty()) {
                 $usaha = $candidate;
@@ -120,21 +120,52 @@ class KelolaUmkmController extends Controller
             abort(403, 'Anda tidak memiliki hak akses untuk mengubah data profil usaha ini.');
         }
 
-        $kategoriId = $request->get('kategori_umkm_id');
-        if ($kategoriId && !KategoriUmkm::where('id', $kategoriId)->exists()) {
-            $kat = KategoriUmkm::firstOrCreate(['nama_kategori' => $kategoriId]);
-            $kategoriId = $kat->id;
-        } elseif (!$kategoriId && $request->filled('kategori')) {
-            $kat = KategoriUmkm::firstOrCreate(['nama_kategori' => $request->kategori]);
-            $kategoriId = $kat->id;
+        // no_wa otomatis diformat oleh mutator setNoWaAttribute di model UmkmUsaha
+        $usaha->update($this->validasiProfilUsaha($request, $usaha));
+
+        return redirect()->route('warga.umkm.kelola', ['usaha_id' => $usaha->id])
+            ->with('success', 'Data profil UMKM berhasil diperbarui.');
+    }
+
+    /**
+     * Perbaiki data usaha yang ditolak lalu ajukan ulang (kembali Pending, ditinjau Admin RW).
+     */
+    public function ajukanUlangUsaha(Request $request, $id)
+    {
+        $usaha = UmkmUsaha::findOrFail($id);
+        $userNik = Auth::user()->nik ?? null;
+        if (!$userNik || $usaha->nik !== $userNik) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengajukan ulang usaha ini.');
         }
+        if ($usaha->status_verifikasi !== 'Rejected') {
+            return back()->with('error', 'Hanya usaha yang ditolak yang dapat diajukan ulang.');
+        }
+
+        $usaha->update($this->validasiProfilUsaha($request, $usaha) + [
+            'status_verifikasi' => 'Pending',
+            'is_active' => false,
+            'catatan_verifikasi' => null,
+        ]);
+
+        Auth::user()->notify(new \App\Notifications\UmkmStatusNotification($usaha, 'Pending'));
+        GaleriUmkmController::notifikasiMenungguVerifikasi($usaha, true);
+
+        return redirect()->route('warga.umkm.kelola', ['usaha_id' => $usaha->id])
+            ->with('success', 'Usaha ' . $usaha->nama_usaha . ' berhasil diajukan ulang dan menunggu verifikasi Admin RW.');
+    }
+
+    /** Validasi profil usaha; kategori hanya dari master (kategori lama tetap diterima). */
+    private function validasiProfilUsaha(Request $request, UmkmUsaha $usaha): array
+    {
+        GaleriUmkmController::terapkanKontakProfil($request);
 
         $validated = $request->validate([
             'nama_usaha' => 'required|string|max:100',
+            'kategori_umkm_id' => KategoriUmkm::aturan($usaha->kategori_umkm_id),
             'alamat_usaha' => 'required|string',
             'no_wa' => 'required|string|max:20',
             'deskripsi' => 'nullable|string',
-        ]);
+        ], KategoriUmkm::pesan());
 
         $validated['nama_usaha'] = strip_tags($validated['nama_usaha']);
         $validated['alamat_usaha'] = strip_tags($validated['alamat_usaha']);
@@ -142,15 +173,7 @@ class KelolaUmkmController extends Controller
             $validated['deskripsi'] = strip_tags($validated['deskripsi']);
         }
 
-        if ($kategoriId) {
-            $validated['kategori_umkm_id'] = $kategoriId;
-        }
-
-        // no_wa otomatis diformat oleh mutator setNoWaAttribute di model UmkmUsaha
-        $usaha->update($validated);
-
-        return redirect()->route('warga.umkm.kelola', ['usaha_id' => $usaha->id])
-            ->with('success', 'Data profil UMKM berhasil diperbarui.');
+        return $validated;
     }
 
     public function updateSampulUsaha(Request $request, $id)
@@ -171,7 +194,7 @@ class KelolaUmkmController extends Controller
             if ($usaha->foto_usaha && Storage::disk('public')->exists($usaha->foto_usaha)) {
                 Storage::disk('public')->delete($usaha->foto_usaha);
             }
-            $path = $file->store('umkm-photos', 'public');
+            $path = \App\Services\KonversiGambarWebp::simpanKeDisk($file, 'umkm-photos', 'public', \App\Services\KonversiGambarWebp::KONTEN);
             $usaha->update(['foto_usaha' => $path]);
         }
 
@@ -203,8 +226,8 @@ class KelolaUmkmController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk menambahkan produk pada usaha ini.');
         }
 
-        if ($umkm->status_verifikasi === 'Pending') {
-            return back()->with('error', 'Usaha ' . $umkm->nama_usaha . ' masih dalam status Pending. Produk baru dapat ditambahkan setelah usaha disetujui oleh Pengurus RW.');
+        if ($umkm->status_verifikasi !== 'Approved') {
+            return back()->with('error', 'Usaha ' . $umkm->nama_usaha . ' belum disetujui. Produk baru dapat ditambahkan setelah usaha disetujui oleh Admin RW.');
         }
 
         $kategoriProdukId = $request->get('kategori_produk_id');
@@ -273,7 +296,7 @@ class KelolaUmkmController extends Controller
 
         if ($request->hasFile('foto_produk')) {
             $file = $request->file('foto_produk');
-            $path = $file->store('umkm-photos', 'public');
+            $path = \App\Services\KonversiGambarWebp::simpanKeDisk($file, 'umkm-photos', 'public', \App\Services\KonversiGambarWebp::KONTEN);
             $validated['foto_produk'] = $path;
         }
 
@@ -363,7 +386,7 @@ class KelolaUmkmController extends Controller
             if ($produk->foto_produk && Storage::disk('public')->exists($produk->foto_produk)) {
                 Storage::disk('public')->delete($produk->foto_produk);
             }
-            $path = $file->store('umkm-photos', 'public');
+            $path = \App\Services\KonversiGambarWebp::simpanKeDisk($file, 'umkm-photos', 'public', \App\Services\KonversiGambarWebp::KONTEN);
             $validated['foto_produk'] = $path;
         }
 

@@ -212,7 +212,7 @@
 
         @if(isset($beritaTerkini) && $beritaTerkini->count() > 0)
             @foreach($beritaTerkini as $berita)
-            <a href="{{ route('warga.berita.index') }}?open={{ $berita->id }}&type=Berita" class="text-decoration-none">
+            <a href="{{ route('warga.berita.index') }}?open={{ $berita->kunci_url }}&type=Berita" class="text-decoration-none">
                 <div class="card card-custom mb-3 overflow-hidden shadow-sm border-0 transition-hover">
                     <div class="row g-0">
                         <div class="col-md-3 bg-light d-flex align-items-center justify-content-center overflow-hidden" style="height: 140px; position: relative;">

@@ -77,7 +77,7 @@ class UmkmProduk extends Model
         if (empty($noWa)) {
             return '#';
         }
-        
+
         $pesan = urlencode('Halo, saya tertarik dengan produk ' . $this->nama_produk . ' yang ada di WargaDigi.');
         return 'https://wa.me/' . $noWa . '?text=' . $pesan;
     }
@@ -88,7 +88,7 @@ class UmkmProduk extends Model
     public function scopeSearch($query, $search)
     {
         if (empty($search)) return $query;
-        
+
         $words = array_filter(preg_split('/[\s,]+/', trim($search)));
         if (empty($words)) return $query;
 
@@ -112,10 +112,14 @@ class UmkmProduk extends Model
             return $query;
         }
 
-        return $query->whereHas('kategori_produk', function ($q) use ($kategori) {
-            $q->where('nama_kategori', $kategori);
-        })->orWhereHas('usaha.kategori_umkm', function ($q) use ($kategori) {
-            $q->where('nama_kategori', $kategori);
+        // Dibungkus satu grup: orWhere di level atas akan melewati batasan lain pada query
+        // (mis. hanya usaha Approved/aktif), sehingga produk usaha yang belum disetujui ikut tampil.
+        return $query->where(function ($w) use ($kategori) {
+            $w->whereHas('kategori_produk', function ($q) use ($kategori) {
+                $q->where('nama_kategori', $kategori);
+            })->orWhereHas('usaha.kategori_umkm', function ($q) use ($kategori) {
+                $q->where('nama_kategori', $kategori);
+            });
         });
     }
 
@@ -144,7 +148,7 @@ class UmkmProduk extends Model
         if ($sort === 'terpopuler') return $query->orderByDesc('jumlah_akses')->latest();
         if ($sort === 'termahal') return $query->orderByDesc('harga');
         if ($sort === 'termurah') return $query->orderBy('harga', 'asc');
-        
+
         return $query->latest();
     }
 }

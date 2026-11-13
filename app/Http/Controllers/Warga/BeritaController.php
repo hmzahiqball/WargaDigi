@@ -26,6 +26,7 @@ class BeritaController extends Controller
                     'id' => $item->id,
                     'type' => 'Berita',
                     'asal' => $item->asal_label,
+                    'slug' => $item->kunci_url,
                     'title' => $item->judul_berita,
                     'description' => strip_tags($item->isi_berita),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -48,6 +49,7 @@ class BeritaController extends Controller
                     'id' => $item->id,
                     'type' => 'Agenda',
                     'asal' => $item->asal_label,
+                    'slug' => $item->kunci_url,
                     'title' => $item->judul_agenda,
                     'description' => strip_tags($item->detail_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -75,6 +77,7 @@ class BeritaController extends Controller
                     'id' => $item->id,
                     'type' => 'Pengumuman',
                     'asal' => $item->asal_label,
+                    'slug' => $item->kunci_url,
                     'title' => $item->judul_pengumuman,
                     'description' => strip_tags($item->isi_pengumuman ?? ''),
                     'author' => $item->operator->username ?? 'Unknown',
@@ -82,7 +85,7 @@ class BeritaController extends Controller
                     'location' => null,
                     'image' => null,
                     'raw_content' => $item->isi_pengumuman,
-                    'kategori' => 'Pengumuman Warga',
+                    'kategori' => $item->kategori ?: 'Pengumuman Warga',
                     'is_priority' => $item->is_priority,
                     'updated_at' => $item->updated_at
                 ];

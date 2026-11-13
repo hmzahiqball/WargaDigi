@@ -231,12 +231,10 @@
                 <label class="form-label text-muted small fw-medium mb-1">Kategori</label>
                 <select name="kategori" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 160px;" onchange="document.getElementById('filterForm').submit()">
                     <option value="">Semua Kategori</option>
-                    <option value="Sosial" {{ request('kategori') == 'Sosial' ? 'selected' : '' }}>Sosial</option>
-                    <option value="Infrastruktur" {{ request('kategori') == 'Infrastruktur' ? 'selected' : '' }}>Infrastruktur</option>
-                    <option value="Hiburan" {{ request('kategori') == 'Hiburan' ? 'selected' : '' }}>Hiburan</option>
-                    <option value="Kesehatan" {{ request('kategori') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
-                    <option value="Keamanan" {{ request('kategori') == 'Keamanan' ? 'selected' : '' }}>Keamanan</option>
-                    <option value="Organisasi" {{ request('kategori') == 'Organisasi' ? 'selected' : '' }}>Organisasi</option>
+                    {{-- Dari master kategori konten (berlaku agenda), sama dengan filter halaman Agenda. --}}
+                    @foreach($kategoriFilter as $kat)
+                        <option value="{{ $kat->nama }}" {{ request('kategori') == $kat->nama ? 'selected' : '' }}>{{ $kat->nama }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -459,13 +457,7 @@
         dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
         fotoInput.addEventListener('change', (e) => { handleFiles(e.target.files); });
 
-        // Toast
-        @if(session('success'))
-            showNotification("{!! addslashes(session('success')) !!}");
-        @endif
-        @if(session('error'))
-            showNotification("{!! addslashes(session('error')) !!}", true);
-        @endif
+        // Pesan sukses/galat sesi ditampilkan oleh dialog global (alertModal).
         @if($errors->any())
             showNotification("{!! addslashes($errors->first()) !!}", true);
         @endif

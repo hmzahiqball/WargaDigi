@@ -163,10 +163,7 @@
                 <div class="photo-gallery-grid">
                     @foreach($fotos as $index => $foto)
                         <div class="photo-gallery-item">
-                            <img src="{{ asset($foto) }}" alt="Dokumentasi {{ $index + 1 }}" onclick="openLightbox('{{ asset($foto) }}')">
-                            <div class="photo-info d-flex justify-content-between align-items-center">
-                                <span>{{ basename($foto) }}</span>
-                            </div>
+                            <img src="{{ asset($foto) }}" alt="Dokumentasi {{ $index + 1 }}" loading="lazy" onclick="openLightbox('{{ asset($foto) }}')">
                         </div>
                     @endforeach
                 </div>
@@ -404,12 +401,6 @@
             fotoInput.addEventListener('change', (e) => { handleShowFiles(e.target.files); });
         }
 
-        @if(session('success'))
-            showToast("{!! addslashes(session('success')) !!}");
-        @endif
-        @if(session('error'))
-            showToast("{!! addslashes(session('error')) !!}", true);
-        @endif
     });
 
     function showToast(message, isError = false) {
@@ -516,7 +507,7 @@
             if (result.isConfirmed) {
                 // Hide photo element
                 document.getElementById('edit-photo-' + index).style.display = 'none';
-                
+
                 // Add hidden input to tell controller to delete it
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -537,7 +528,7 @@
             boxZoom: false,
             keyboard: false
         }).setView([{{ $agenda->latitude }}, {{ $agenda->longitude }}], 15);
-        
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);

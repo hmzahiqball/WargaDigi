@@ -17,8 +17,8 @@
     };
 
     $kat1 = $hero1->kategori_produk->nama_kategori ?? $hero1->usaha->kategori_umkm->nama_kategori ?? 'Kerajinan';
-    $bg1 = ($hero1 && !empty($hero1->foto_produk)) 
-        ? (str_starts_with($hero1->foto_produk, 'http') ? $hero1->foto_produk : asset('storage/' . $hero1->foto_produk)) 
+    $bg1 = ($hero1 && !empty($hero1->foto_produk))
+        ? (str_starts_with($hero1->foto_produk, 'http') ? $hero1->foto_produk : asset('storage/' . $hero1->foto_produk))
         : $defaultImg($kat1);
     $badgeStyle1 = match(strtolower($kat1)) {
         'kuliner', 'makanan & minuman' => 'badge-kuliner',
@@ -38,8 +38,8 @@
     $messagingSolidBtn = \App\Services\Messaging\MessagingService::getSolidButtonClass();
 
     $kat2 = $hero2->kategori_produk->nama_kategori ?? $hero2->usaha->kategori_umkm->nama_kategori ?? 'Kuliner';
-    $bg2 = ($hero2 && !empty($hero2->foto_produk)) 
-        ? (str_starts_with($hero2->foto_produk, 'http') ? $hero2->foto_produk : asset('storage/' . $hero2->foto_produk)) 
+    $bg2 = ($hero2 && !empty($hero2->foto_produk))
+        ? (str_starts_with($hero2->foto_produk, 'http') ? $hero2->foto_produk : asset('storage/' . $hero2->foto_produk))
         : $defaultImg($kat2);
     $badgeStyle2 = match(strtolower($kat2)) {
         'kuliner', 'makanan & minuman' => 'badge-kuliner',
@@ -52,8 +52,8 @@
     $detailUrl2 = $hero2 ? route('produk.show', $hero2->id) : route('umkm.usaha.show');
 
     $kat3 = $hero3->kategori_produk->nama_kategori ?? $hero3->usaha->kategori_umkm->nama_kategori ?? 'Fashion';
-    $bg3 = ($hero3 && !empty($hero3->foto_produk)) 
-        ? (str_starts_with($hero3->foto_produk, 'http') ? $hero3->foto_produk : asset('storage/' . $hero3->foto_produk)) 
+    $bg3 = ($hero3 && !empty($hero3->foto_produk))
+        ? (str_starts_with($hero3->foto_produk, 'http') ? $hero3->foto_produk : asset('storage/' . $hero3->foto_produk))
         : $defaultImg($kat3);
     $badgeStyle3 = match(strtolower($kat3)) {
         'kuliner', 'makanan & minuman' => 'badge-kuliner',
@@ -68,18 +68,18 @@
 
 @extends($layout)
 
-@section('title', 'Galeri UMKM')
+@section('title', 'Pojok UMKM')
 
 @section('content')
 <div class="{{ $isDashboard ? 'container-fluid px-0' : 'container py-4' }}">
     <div class="row align-items-center mb-4 g-3">
         <div class="col-md-7">
-            <h2 class="fw-bold text-success mb-2">Galeri UMKM</h2>
+            <h2 class="fw-bold text-success mb-2">Pojok UMKM</h2>
             <p class="text-muted mb-0" style="max-width: 680px;">
                 Dukung usaha tetangga, majukan ekonomi lokal RW 21 Tanimulya. Temukan berbagai produk dan jasa terbaik dari komunitas kita.
             </p>
         </div>
-        @if(Auth::check() && Auth::user()->role === 'Warga')
+        @if(Auth::check() && trim((string) Auth::user()->activeRole()) === 'Warga')
         <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
             <button type="button" class="btn btn-success fw-semibold px-3 py-2 rounded-3 text-white shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDaftarUsaha">
                 <i class="bi bi-plus-circle me-1"></i> Daftarkan Usaha Anda
@@ -138,7 +138,7 @@
                         </div>
                     </div>
                 </div>
-            </div>  
+            </div>
 
             <div class="col-lg-5 d-flex flex-column gap-3">
                 <div class="umkm-hero-card flex-grow-1" style="min-height: 180px; background-image: url('{{ $bg2 }}'); cursor: pointer;" onclick="if(!event.target.closest('a')) window.location.href='{{ $detailUrl2 }}'">
@@ -266,15 +266,10 @@
                         </h6>
                         <div class="row g-3">
                             <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1">Alamat Lengkap (RT/RW)</label>
-                                <input type="text" name="alamat_usaha" class="form-control rounded-3 py-2 px-3 border-1 shadow-none" placeholder="Jl. Mawar No. 12, RT 03/RW 12" required>
+                                @include('warga.umkm.partials.input-alamat-usaha', ['idInput' => 'alamatDaftarUsaha'])
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-semibold text-dark mb-1">No. WhatsApp Business</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-dark rounded-start-3 small fw-semibold px-3">+62</span>
-                                    <input type="text" name="no_wa" class="form-control rounded-end-3 py-2 px-3 border-1 shadow-none" placeholder="8123456789" required>
-                                </div>
+                                @include('warga.umkm.partials.input-kontak-bisnis', ['idInput' => 'noWaDaftarUsaha'])
                             </div>
                         </div>
                     </div>
@@ -317,6 +312,24 @@ function previewFileName(input, labelId) {
 }
 
 
+
+@if(Auth::check() && trim((string) Auth::user()->activeRole()) === 'Warga')
+// Buka modal pendaftaran otomatis bila datang dari tombol "Daftarkan Usaha Saya" (?daftar=1)
+// atau bila pendaftaran sebelumnya gagal validasi.
+document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    const bukaDariLink = params.get('daftar') === '1';
+    const adaGalatDaftar = {{ $errors->hasAny(['nama_usaha', 'kategori_umkm_id', 'alamat_usaha', 'no_wa', 'deskripsi', 'foto_sampul', 'foto_usaha']) ? 'true' : 'false' }};
+    const modalEl = document.getElementById('modalDaftarUsaha');
+    if (!modalEl || typeof bootstrap === 'undefined' || !(bukaDariLink || adaGalatDaftar)) return;
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    if (bukaDariLink) {
+        params.delete('daftar');
+        const sisa = params.toString();
+        history.replaceState(null, '', window.location.pathname + (sisa ? '?' + sisa : '') + window.location.hash);
+    }
+});
+@endif
 </script>
 @endpush
 @endsection

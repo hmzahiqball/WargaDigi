@@ -4,7 +4,11 @@
     </div>
     <div class="timeline-content">
         <div class="fw-bold text-dark mb-1 timeline-title">
-            {{ $activity['title'] ?? '' }}
+            @if(!empty($activity['link']))
+                <a href="{{ $activity['link'] }}" class="text-dark text-decoration-none">{{ $activity['title'] ?? '' }}</a>
+            @else
+                {{ $activity['title'] ?? '' }}
+            @endif
         </div>
         <div class="text-muted text-xs mb-2">{{ $activity['time'] ?? '' }}</div>
         @if(!empty($activity['badge']))

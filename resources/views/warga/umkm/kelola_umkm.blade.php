@@ -16,7 +16,7 @@
                 </p>
                 <div class="d-flex justify-content-center gap-2">
                     <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-light border rounded-pill px-4 py-2 fw-semibold small">
-                        Kembali ke Galeri
+                        Kembali ke Pojok UMKM
                     </a>
                     <a href="{{ route('warga.umkm.daftar') }}" class="btn btn-success rounded-pill px-4 py-2 fw-semibold small text-white" style="background-color: #5b9b76; border-color: #5b9b76;">
                         <i class="bi bi-plus-circle me-1"></i> Daftarkan Usaha Saya
@@ -30,8 +30,8 @@
             <h2 class="fw-bold text-success mb-1">{{ $usaha->nama_usaha ?? 'Pahatan Kayu Jati Custom' }}</h2>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="text-muted small">
-                    <i class="bi bi-shop text-success me-1"></i> 
-                    {{ $usaha->user->username ?? $usaha->user->penduduk->nama_lengkap ?? 'Bpk. Jago' }} 
+                    <i class="bi bi-shop text-success me-1"></i>
+                    {{ $usaha->user->username ?? $usaha->user->penduduk->nama_lengkap ?? 'Bpk. Jago' }}
                     ({{ $usaha->user->penduduk->keluarga->rt->nama_rt ?? 'RT 03' }})
                 </span>
                 @if(isset($usaha) && $usaha->status_verifikasi === 'Approved')
@@ -68,7 +68,7 @@
                                 <span class="badge bg-warning text-dark rounded-pill flex-shrink-0" style="font-size: 9px; padding: 2px 6px;">Pending</span>
                             @endif
                         </div>
-                        <div class="text-muted text-truncate" style="font-size: 11px; line-height: 1.2;">Ganti Usaha ({{ $daftarUsaha->where('status_verifikasi', '!=', 'Rejected')->count() }})</div>
+                        <div class="text-muted text-truncate" style="font-size: 11px; line-height: 1.2;">Ganti Usaha ({{ $daftarUsaha->count() }})</div>
                     </div>
                     <i class="bi bi-chevron-down ms-2 text-muted dropdown-arrow-icon flex-shrink-0" style="transition: transform 0.25s ease-in-out; font-size: 13px;"></i>
                 </button>
@@ -78,17 +78,17 @@
                             <i class="bi bi-collection me-1"></i> Pilih Usaha Anda
                         </span>
                         <span class="badge bg-light text-muted border rounded-pill small" style="font-size: 10px;">
-                            {{ $daftarUsaha->where('status_verifikasi', '!=', 'Rejected')->count() }} Toko
+                            {{ $daftarUsaha->count() }} Toko
                         </span>
                     </div>
 
                     {{-- Search Input di dalam Dropdown --}}
                     <div class="px-1 pb-2" onclick="event.stopPropagation();">
                         <div class="input-group input-group-sm">
-                            <input type="text" 
-                                   class="form-control bg-white border-start-0 ps-1" 
-                                   id="searchUsahaDropdownInput" 
-                                   placeholder="Cari toko / usaha..." 
+                            <input type="text"
+                                   class="form-control bg-white border-start-0 ps-1"
+                                   id="searchUsahaDropdownInput"
+                                   placeholder="Cari toko / usaha..."
                                    autocomplete="off"
                                    style="font-size: 12px; border-radius: 8px 8px 8px 8px;">
                         </div>
@@ -97,17 +97,14 @@
                     {{-- Container Scrollable untuk Daftar Toko (Dibatasi Ketinggiannya) --}}
                     <div id="dropdownUsahaItemsList" class="custom-dropdown-scroll pe-1" style="max-height: 220px; overflow-y: auto;">
                         @foreach($daftarUsaha->sortByDesc(fn($item) => $item->status_verifikasi === 'Pending') as $itemUsaha)
-                            @if($itemUsaha->status_verifikasi === 'Rejected')
-                                @continue
-                            @endif
                             @php
                                 $isSelected = $usaha && ($usaha->id === $itemUsaha->id);
                                 $isPending = $itemUsaha->status_verifikasi === 'Pending';
                             @endphp
                             <div class="usaha-dropdown-item mb-1" data-nama="{{ strtolower($itemUsaha->nama_usaha . ' ' . ($itemUsaha->kategori_umkm->nama_kategori ?? '')) }}">
                                 @if($isPending)
-                                    <div class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between text-muted" 
-                                         style="cursor: not-allowed; background-color: #f8fafc; opacity: 0.85;" 
+                                    <div class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between text-muted"
+                                         style="cursor: not-allowed; background-color: #f8fafc; opacity: 0.85;"
                                          title="Usaha sedang dalam peninjauan RW (Pending) dan belum dapat dipilih">
                                         <div class="d-flex align-items-center gap-2 text-truncate me-2" style="min-width: 0; flex: 1;">
                                             <i class="bi bi-clock-history text-warning flex-shrink-0"></i>
@@ -123,7 +120,7 @@
                                         </span>
                                     </div>
                                 @else
-                                    <a class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between {{ $isSelected ? 'active bg-success text-white' : 'text-dark' }}" 
+                                    <a class="dropdown-item rounded-2 py-2 px-3 d-flex align-items-center justify-content-between {{ $isSelected ? 'active bg-success text-white' : 'text-dark' }}" data-status="{{ $itemUsaha->status_verifikasi }}"
                                        href="{{ route('warga.umkm.kelola', ['usaha_id' => $itemUsaha->id]) }}">
                                         <div class="d-flex align-items-center gap-2 text-truncate" style="min-width: 0; flex: 1;">
                                             <i class="bi bi-shop {{ $isSelected ? 'text-white' : 'text-success' }} flex-shrink-0"></i>
@@ -134,6 +131,11 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @if($itemUsaha->status_verifikasi === 'Rejected')
+                                            <span class="badge bg-danger rounded-pill px-2 py-1 flex-shrink-0 ms-2" style="font-size: 10px;">Ditolak</span>
+                                        @elseif(! $itemUsaha->is_active)
+                                            <span class="badge bg-secondary rounded-pill px-2 py-1 flex-shrink-0 ms-2" style="font-size: 10px;">Nonaktif</span>
+                                        @endif
                                         @if($isSelected)
                                             <i class="bi bi-check2 fs-5 ms-2 flex-shrink-0"></i>
                                         @endif
@@ -151,7 +153,7 @@
             @endif
 
             <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-white bg-white border rounded-3 px-3 py-2 small fw-semibold text-dark shadow-sm text-decoration-none d-inline-flex align-items-center gap-2" style="height: 46px;">
-               Kembali ke Galeri UMKM
+               Kembali ke Pojok UMKM
             </a>
         </div>
     </div>
@@ -178,11 +180,39 @@
     </div>
     @endif
 
+    @if(isset($usaha) && $usaha->status_verifikasi === 'Rejected')
+    <div class="alert border-0 shadow-sm d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 p-md-4 mb-4 rounded-4 gap-3" style="background-color: #fef2f2; border-left: 6px solid #dc2626 !important;" data-testid="banner-umkm-ditolak">
+        <div class="d-flex align-items-start gap-3">
+            <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: rgba(220, 38, 38, 0.15); width: 46px; height: 46px;">
+                <i class="bi bi-x-octagon text-danger fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1 text-dark">Pendaftaran Usaha "{{ $usaha->nama_usaha }}" Ditolak</h5>
+                @if($usaha->catatan_verifikasi)
+                    <p class="small mb-1 text-dark"><strong>Alasan:</strong> {{ $usaha->catatan_verifikasi }}</p>
+                @endif
+                <p class="text-muted small mb-0">Perbaiki data usaha sesuai catatan, lalu ajukan ulang untuk ditinjau kembali oleh Admin RW.</p>
+            </div>
+        </div>
+        <button type="button" class="btn btn-danger rounded-3 px-3 py-2 fw-semibold flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalEditUMKM">
+            <i class="bi bi-arrow-repeat me-1"></i> Perbaiki &amp; Ajukan Ulang
+        </button>
+    </div>
+    @elseif(isset($usaha) && $usaha->status_verifikasi === 'Approved' && ! $usaha->is_active)
+    <div class="alert alert-secondary border-0 shadow-sm p-3 p-md-4 mb-4 rounded-4" data-testid="banner-umkm-nonaktif">
+        <h6 class="fw-bold mb-1 text-dark"><i class="bi bi-pause-circle me-1"></i> Usaha Dinonaktifkan oleh RW</h6>
+        @if($usaha->catatan_verifikasi)
+            <p class="small mb-1 text-dark"><strong>Alasan:</strong> {{ $usaha->catatan_verifikasi }}</p>
+        @endif
+        <p class="text-muted small mb-0">Usaha dan produk Anda tidak tampil di Pojok UMKM sampai diaktifkan kembali oleh Admin RW. Hubungi pengurus RW bila sudah diperbaiki.</p>
+    </div>
+    @endif
+
     <div class="card border-0 rounded-4 overflow-hidden mb-4 shadow-sm position-relative text-white" style="min-height: 320px; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%), url('{{ !empty($usaha->foto_usaha) ? asset('storage/' . $usaha->foto_usaha) : 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&auto=format&fit=crop' }}') center/cover no-repeat;">
         <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-between">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="badge bg-dark bg-opacity-75 text-white rounded-pill px-3 py-2 fw-semibold">
-                    <i class="bi bi-circle-fill {{ ($usaha->is_active ?? true) ? 'text-success' : 'text-secondary' }} me-1" style="font-size: 8px;"></i> 
+                    <i class="bi bi-circle-fill {{ ($usaha->is_active ?? true) ? 'text-success' : 'text-secondary' }} me-1" style="font-size: 8px;"></i>
                     {{ ($usaha->is_active ?? true) ? 'Toko Sedang Aktif' : 'Toko Non-Aktif' }}
                 </span>
             </div>
@@ -212,8 +242,8 @@
             <p class="text-muted small mb-0">Kelola daftar produk terlaris yang ditampilkan kepada warga RW 12.</p>
         </div>
         <div class="d-flex gap-2">
-            @if(isset($usaha) && $usaha->status_verifikasi === 'Pending')
-                <button type="button" class="btn btn-secondary text-white rounded-3 px-3 py-2 fw-semibold shadow-sm small disabled" style="cursor: not-allowed; opacity: 0.7;" title="Menunggu persetujuan RW sebelum dapat menambah produk">
+            @if(isset($usaha) && $usaha->status_verifikasi !== 'Approved')
+                <button type="button" class="btn btn-secondary text-white rounded-3 px-3 py-2 fw-semibold shadow-sm small disabled" style="cursor: not-allowed; opacity: 0.7;" title="Produk dapat ditambahkan setelah usaha disetujui Admin RW">
                     <i class="bi bi-lock-fill me-1"></i> Tambah Produk (Terkunci)
                 </button>
             @else
@@ -241,14 +271,14 @@
             @endforeach
         @endif
         <div class="col-sm-6 col-md-4 col-lg-3">
-            @if(isset($usaha) && $usaha->status_verifikasi === 'Pending')
+            @if(isset($usaha) && $usaha->status_verifikasi !== 'Approved')
                 <div class="add-product-card text-muted" style="cursor: not-allowed; opacity: 0.75; background-color: #f8fafc; border-color: #cbd5e1;">
                     <div class="add-product-icon bg-light text-muted">
                         <i class="bi bi-lock fs-3"></i>
                     </div>
                     <h6 class="fw-bold text-secondary mb-2">Penambahan Produk Dikunci</h6>
                     <p class="text-muted small mb-0">
-                        Profil UMKM Anda sedang ditinjau Pengurus RW. Penambahan produk akan aktif otomatis setelah disetujui.
+                        {{ $usaha->status_verifikasi === 'Rejected' ? 'Pendaftaran usaha ditolak. Perbaiki data lalu ajukan ulang untuk membuka penambahan produk.' : 'Profil UMKM Anda sedang ditinjau Pengurus RW. Penambahan produk akan aktif otomatis setelah disetujui.' }}
                     </p>
                 </div>
             @else
@@ -258,7 +288,7 @@
                     </div>
                     <h6 class="fw-bold text-dark mb-2">Tambah Produk Baru</h6>
                     <p class="text-muted small mb-0">
-                        Perluas katalog UMKM Anda dengan menambahkan item baru ke galeri.
+                        Perluas katalog UMKM Anda dengan menambahkan item baru ke Pojok UMKM.
                     </p>
                 </a>
             @endif
@@ -280,7 +310,8 @@
                 <h4 class="modal-title fw-bold text-dark" id="modalEditUMKMLabel">Edit Data UMKM</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ isset($usaha) ? route('warga.umkm.update-usaha', $usaha->id) : '#' }}" method="POST">
+            @php $modeAjukanUlang = isset($usaha) && $usaha->status_verifikasi === 'Rejected'; @endphp
+            <form action="{{ isset($usaha) ? route($modeAjukanUlang ? 'warga.umkm.ajukan-ulang' : 'warga.umkm.update-usaha', $usaha->id) : '#' }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="modal-body px-4 py-3">
@@ -292,33 +323,24 @@
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold text-dark">Kategori</label>
                             <select name="kategori_umkm_id" class="form-select rounded-3 py-2 px-3 border-1 shadow-none text-dark" required>
-                                @if(isset($daftarKategoriUmkm) && count($daftarKategoriUmkm) > 0)
-                                    @foreach($daftarKategoriUmkm as $kat)
-                                        <option value="{{ $kat->id }}" {{ (isset($usaha) && $usaha->kategori_umkm_id == $kat->id) ? 'selected' : '' }}>
-                                            {{ $kat->nama_kategori }}
-                                        </option>
-                                    @endforeach
-                                @else
-                                    <option value="Kerajinan" {{ ($usaha->kategori_umkm->nama_kategori ?? '') == 'Kerajinan' ? 'selected' : '' }}>Kerajinan</option>
-                                    <option value="Kuliner" {{ ($usaha->kategori_umkm->nama_kategori ?? '') == 'Kuliner' ? 'selected' : '' }}>Kuliner</option>
-                                    <option value="Fashion" {{ ($usaha->kategori_umkm->nama_kategori ?? '') == 'Fashion' ? 'selected' : '' }}>Fashion</option>
-                                    <option value="Jasa" {{ ($usaha->kategori_umkm->nama_kategori ?? '') == 'Jasa' ? 'selected' : '' }}>Jasa</option>
-                                @endif
+                                {{-- Hanya dari master; kategori nonaktif (Koperasi) hanya tampil bila sedang dipakai usaha ini. --}}
+                                @foreach($daftarKategoriUmkm ?? [] as $kat)
+                                    @php $dipakai = isset($usaha) && $usaha->kategori_umkm_id == $kat->id; @endphp
+                                    @if(! $dipakai && in_array(strtolower(trim($kat->nama_kategori)), \App\Models\KategoriUmkm::DINONAKTIFKAN, true))
+                                        @continue
+                                    @endif
+                                    <option value="{{ $kat->id }}" {{ $dipakai ? 'selected' : '' }}>{{ $kat->nama_kategori }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-dark">Alamat Usaha (RT/RW)</label>
-                            <input type="text" name="alamat_usaha" class="form-control rounded-3 py-2 px-3 border-1 shadow-none" value="{{ $usaha->alamat_usaha ?? '' }}" placeholder="Contoh: Jl. Mawar No. 12, RT 03/RW 12" required>
+                            @include('warga.umkm.partials.input-alamat-usaha', ['idInput' => 'alamatEditUsaha', 'nilai' => $usaha->alamat_usaha ?? null])
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-dark">No. WhatsApp Business</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-dark rounded-start-3 small fw-semibold px-3">+62</span>
-                                <input type="text" name="no_wa" class="form-control rounded-end-3 py-2 px-3 border-1 shadow-none" value="{{ preg_replace('/^(62|\+62|0)/', '', $usaha->no_wa ?? '') }}" placeholder="8123456789" required>
-                            </div>
+                            @include('warga.umkm.partials.input-kontak-bisnis', ['idInput' => 'noWaEditUsaha', 'nilai' => $usaha->no_wa ?? null])
                         </div>
                     </div>
 
@@ -329,7 +351,7 @@
                 </div>
                 <div class="modal-footer justify-content-end gap-2 px-4 py-3 border-top" style="background-color: #f1f8f3; border-top-color: #e2ece4 !important; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;">
                     <button type="button" class="btn btn-light border px-4 py-2 rounded-3 small fw-semibold text-dark" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success px-4 py-2 rounded-3 small fw-semibold text-white" style="background-color: #5b9b76; border-color: #5b9b76;">Simpan Perubahan</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-3 small fw-semibold text-white" style="background-color: #5b9b76; border-color: #5b9b76;">{{ ($modeAjukanUlang ?? false) ? 'Simpan & Ajukan Ulang' : 'Simpan Perubahan' }}</button>
                 </div>
             </form>
         </div>

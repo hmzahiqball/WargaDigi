@@ -8,12 +8,6 @@
     <p class="text-muted">Konfigurasi informasi instance aplikasi.</p>
 </div>
 
-@if (session('success'))
-    <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="border-radius: 0.5rem;">
-        <i class="bi bi-check-circle-fill"></i>
-        <span>{{ session('success') }}</span>
-    </div>
-@endif
 @if ($errors->any())
     <div class="alert alert-danger mb-4" style="border-radius: 0.5rem;">
         <i class="bi bi-exclamation-triangle-fill"></i> Terjadi kesalahan:
@@ -50,22 +44,42 @@
                 <label class="form-label small fw-semibold">Deskripsi</label>
                 <textarea class="form-control admin-input" name="description" rows="3" id="instanceDesc">{{ old('description', $settings['description']) }}</textarea>
             </div>
-            <div class="col-md-6">
-                <label class="form-label small fw-semibold">Logo Instance</label>
-                @if (!empty($settings['logo']))
-                    <div class="mb-2">
-                        <img src="{{ asset('storage/' . $settings['logo']) }}" alt="Logo" style="height: 48px; border-radius: 0.4rem; border: 1px solid #e0e0e0; padding: 4px; background:#fff;">
-                    </div>
-                @endif
-                <input type="file" name="logo" accept=".png,.jpg,.jpeg,.svg,.webp" class="form-control admin-input">
-                <small class="text-muted">Format PNG/JPG/SVG/WEBP, maksimal 2 MB.</small>
-            </div>
         </div>
     </div>
 </div>
 
-{{-- Bagian Notifikasi, Keamanan, dan Mode Pemeliharaan disembunyikan sementara (@if(false)). --}}
+{{-- Logo dan Gambar --}}
+<div class="admin-card mb-4 animate-in delay-1" data-testid="kartu-logo-gambar">
+    <div class="admin-card-header-inline">
+        <h5><i class="bi bi-images text-success"></i> Logo dan Gambar</h5>
+    </div>
+    <div class="admin-card-body">
+        <p class="text-muted small mb-3">Ganti logo dan gambar yang tampil di aplikasi. Bila tidak diunggah, dipakai gambar bawaan. Perubahan berlaku setelah menekan "Simpan Semua Perubahan".</p>
+        <div class="row g-4">
+            @foreach(\App\Models\SystemSetting::GAMBAR as $kunci => $cfg)
+                @php $kustom = \App\Models\SystemSetting::gambarKustom($kunci); @endphp
+                <div class="col-md-6" data-testid="gambar-{{ $kunci }}">
+                    <label class="form-label small fw-semibold" for="gambar_{{ $kunci }}">{{ $cfg['label'] }}
+                        <span class="badge {{ $kustom ? 'bg-success' : 'bg-secondary' }} bg-opacity-10 {{ $kustom ? 'text-success' : 'text-secondary' }} ms-1">{{ $kustom ? 'Kustom' : 'Bawaan' }}</span>
+                    </label>
+                    <div class="d-flex align-items-center justify-content-center mb-2 rounded border bg-light p-2" style="height: 110px;">
+                        <img src="{{ \App\Models\SystemSetting::gambarUrl($kunci) }}" alt="Pratinjau {{ $cfg['label'] }}" id="pratinjau_{{ $kunci }}" style="max-height: 94px; max-width: 100%; object-fit: contain;">
+                    </div>
+                    <input type="file" id="gambar_{{ $kunci }}" name="{{ $kunci }}" accept="{{ $cfg['accept'] }}" class="form-control admin-input input-gambar" data-pratinjau="pratinjau_{{ $kunci }}" aria-describedby="info_{{ $kunci }}">
+                    <small id="info_{{ $kunci }}" class="text-muted d-block mt-1">{{ $cfg['info'] }} {{ $cfg['format'] }}</small>
+                    @if($kustom)
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="hapus_{{ $kunci }}" value="1" id="hapus_{{ $kunci }}">
+                            <label class="form-check-label small" for="hapus_{{ $kunci }}">Kembalikan ke gambar bawaan</label>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>{{-- Bagian Notifikasi, Keamanan, dan Mode Pemeliharaan disembunyikan sementara (@if(false)). --}}
 @if(false)
+<input type="hidden" name="bagian_lanjutan" value="1">
 {{-- Pengaturan Notifikasi --}}
 <div class="admin-card mb-4 animate-in delay-2">
     <div class="admin-card-header-inline">
@@ -188,7 +202,40 @@
 </div>
 @endif
 
-{{-- Simpan Semua --}}
+{{-- Persetujuan Konten --}}
+<div class="admin-card mb-4 animate-in delay-4" data-testid="kartu-persetujuan-konten">
+    <div class="admin-card-header-inline">
+        <h5><i class="bi bi-patch-check text-success"></i> Persetujuan Konten</h5>
+    </div>
+    <div class="admin-card-body">
+        <input type="hidden" name="konten_approval_form" value="1">
+        <p class="text-muted small mb-3">
+            Aktif: konten yang diajukan operator harus disetujui Admin RW sebelum tayang. Nonaktif: konten langsung terbit saat diajukan, tanpa persetujuan.
+            Perubahan berlaku untuk pengajuan berikutnya; konten yang sudah menunggu persetujuan tetap diproses penyetujunya.
+        </p>
+        <div class="settings-list">
+            @foreach([
+                'berita'     => ['Berita', 'bi-newspaper', 'Penyetuju: Admin RW (berita dari RT maupun RW)'],
+                'agenda'     => ['Agenda', 'bi-calendar-event', 'Penyetuju: Admin RW (agenda dari RT maupun RW)'],
+                'pengumuman' => ['Pengumuman', 'bi-megaphone', 'Penyetuju: Admin RW (pengumuman dari RT maupun RW)'],
+            ] as $jenis => [$label, $ikon, $penyetuju])
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-icon security"><i class="bi {{ $ikon }}"></i></div>
+                    <div>
+                        <h6>Perlu persetujuan: {{ $label }}</h6>
+                        <p class="text-muted small mb-0">{{ $penyetuju }}</p>
+                    </div>
+                </div>
+                <label class="admin-toggle">
+                    <input type="checkbox" name="konten_approval_{{ $jenis }}" value="1" {{ ($settings['konten_approval_' . $jenis] ?? true) ? 'checked' : '' }} data-setting="konten_approval_{{ $jenis }}">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</div>{{-- Simpan Semua --}}
 <div class="d-flex justify-content-end mb-5">
     <button type="submit" class="btn btn-success px-5 py-2" style="border-radius: 0.5rem;">
         <i class="bi bi-check-lg"></i> Simpan Semua Perubahan
@@ -201,6 +248,15 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Pratinjau gambar yang baru dipilih sebelum disimpan.
+    document.querySelectorAll('.input-gambar').forEach(input => {
+        input.addEventListener('change', function () {
+            const img = document.getElementById(this.dataset.pratinjau);
+            if (img && this.files && this.files[0]) {
+                img.src = URL.createObjectURL(this.files[0]);
+            }
+        });
+    });
     // Toggle switch interactions
     document.querySelectorAll('.admin-toggle input').forEach(toggle => {
         toggle.addEventListener('change', function() {
@@ -211,7 +267,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 'notif_email': 'Notifikasi Email',
                 'notif_push': 'Push Notification',
                 'two_factor': 'Verifikasi 2 Langkah',
-                'maintenance_mode': 'Mode Pemeliharaan'
+                'maintenance_mode': 'Mode Pemeliharaan',
+                'konten_approval_berita': 'Persetujuan berita',
+                'konten_approval_agenda': 'Persetujuan agenda',
+                'konten_approval_pengumuman': 'Persetujuan pengumuman'
             };
             showAdminToast(`${names[setting] || setting} ${state}`, this.checked ? 'success' : 'warning');
         });

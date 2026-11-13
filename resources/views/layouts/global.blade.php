@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="WargaDigi">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="{{ route('pwa.ikon', ['varian' => '192']) }}?v={{ \App\Services\GambarPengaturan::versiIkon() }}">
     <meta name="webpush-public-key" content="{{ config('webpush.public_key') }}">
     <title>@yield('title', 'Dashboard') — WargaDigi 21</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])

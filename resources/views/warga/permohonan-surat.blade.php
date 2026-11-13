@@ -25,12 +25,6 @@
 </div>
 
 {{-- Flash Messages --}}
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
-    <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 @if($errors->any())
 <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -662,6 +656,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Isi preview awal sesuai pemohon default (pemohon terpilih saat load).
         const awal = anggota.find(a => String(a.id) === String(pemohonSelect.value)) || anggota[0];
         isiDataPemohon(awal);
+    }
+
+    // Datang dari kartu Layanan Mandiri (?jenis=...): pilih jenis surat otomatis bila valid.
+    @php $jenisAwal = in_array(request('jenis'), $tipeSurat, true) ? request('jenis') : null; @endphp
+    const jenisAwal = @json($jenisAwal);
+    if (jenisAwal && selectEl) {
+        selectEl.value = jenisAwal;
+        selectEl.dispatchEvent(new Event('change'));
     }
 });
 

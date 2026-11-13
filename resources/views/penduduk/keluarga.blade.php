@@ -27,7 +27,7 @@
             <h3 class="fw-bold mb-1">Detail Keluarga</h3>
             <p class="text-muted mb-0">Data Kartu Keluarga dan anggota penduduk.</p>
         </div>
-        <a href="{{ route('rt.penduduk.index') }}" class="btn btn-light border" style="border-radius:0.5rem;">
+        <a href="{{ route($routeKembali) }}#kk" class="btn btn-light border" style="border-radius:0.5rem;">
             <i class="bi bi-arrow-left me-1"></i> Kembali
         </a>
     </div>
@@ -88,12 +88,16 @@
                     <button type="button" class="btn btn-success" id="btnSalinLinkDetail"><i class="bi bi-clipboard me-1"></i> Salin</button>
                 </div>
                 @endif
+                @if($bolehKelolaAkun)
                 <form method="POST" action="{{ route('rt.keluarga.aktivasi-ulang', $keluarga->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-arrow-repeat me-1"></i> Buat Ulang Link Aktivasi
                     </button>
                 </form>
+                @else
+                <p class="small text-muted mb-0">Link aktivasi dibuat ulang oleh Ketua RT terkait.</p>
+                @endif
             @endif
         </div>
     </div>
@@ -122,7 +126,7 @@
                             <td class="py-3">{{ $a->jenis_kelamin === 'L' ? 'Laki-laki' : ($a->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</td>
                             <td class="py-3">{{ $a->status_hubungan_keluarga }}</td>
                             <td class="py-3 text-end">
-                                <a href="{{ route('rt.penduduk.show', $a->id) }}" class="btn btn-sm btn-outline-primary">
+                                <a href="{{ route($routePenduduk, $a->id) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i> Detail
                                 </a>
                             </td>

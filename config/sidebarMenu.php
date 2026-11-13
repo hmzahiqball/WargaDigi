@@ -1,5 +1,16 @@
 <?php
 
+/*
+ * Menu sidebar per peran. Urutan menu mengikuti urutan item di file ini dan
+ * diseragamkan untuk semua peran:
+ *   1. Dashboard
+ *   2. Profil Keluarga / Kependudukan
+ *   3. Dokumen / Persetujuan
+ *   4. Keuangan
+ *   5. Pusat Informasi
+ *   6. Pojok UMKM
+ *   7. Sistem (khusus Admin Aplikasi)
+ */
 return [
     // --- ADMIN APLIKASI ---
     [
@@ -9,22 +20,6 @@ return [
         'icon'  => 'bi-grid-1x2-fill',
         'roles' => ['Admin Aplikasi'],
         'active' => ['admin.dashboard', 'admin/dashboard'],
-    ],
-    [
-        'title' => 'Pengaturan Sistem',
-        'route' => 'admin.pengaturan-sistem',
-        'url'   => '/admin/pengaturan-sistem',
-        'icon'  => 'bi-gear-fill',
-        'roles' => ['Admin Aplikasi'],
-        'active' => ['admin.pengaturan-sistem', 'admin/pengaturan-sistem*'],
-    ],
-    [
-        'title' => 'Manajemen Hak Akses',
-        'route' => 'admin.manajemen-hak-akses',
-        'url'   => '/admin/manajemen-hak-akses',
-        'icon'  => 'bi-people-fill',
-        'roles' => ['Admin Aplikasi'],
-        'active' => ['admin.manajemen-hak-akses', 'admin/manajemen-hak-akses*'],
     ],
     [
         'title' => 'Kepengurusan',
@@ -41,6 +36,38 @@ return [
         'icon'  => 'bi-tags',
         'roles' => ['Admin Aplikasi'],
         'active' => ['admin.kategori-transaksi.*', 'admin/kategori-transaksi*'],
+    ],
+    [
+        'title' => 'Pojok UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['galeri*'],
+    ],
+    [
+        'title' => 'Pengaturan Sistem',
+        'route' => 'admin.pengaturan-sistem',
+        'url'   => '/admin/pengaturan-sistem',
+        'icon'  => 'bi-gear-fill',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['admin.pengaturan-sistem', 'admin/pengaturan-sistem*'],
+    ],
+    [
+        'title' => 'Pengaturan Halaman Utama',
+        'route' => 'admin.halaman-utama',
+        'url'   => '/admin/halaman-utama',
+        'icon'  => 'bi-window-desktop',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['admin.halaman-utama*', 'admin/halaman-utama*'],
+    ],
+    [
+        'title' => 'Manajemen Hak Akses',
+        'route' => 'admin.manajemen-hak-akses',
+        'url'   => '/admin/manajemen-hak-akses',
+        'icon'  => 'bi-people-fill',
+        'roles' => ['Admin Aplikasi'],
+        'active' => ['admin.manajemen-hak-akses', 'admin/manajemen-hak-akses*'],
     ],
     [
         'title' => 'Log Aktivitas',
@@ -69,14 +96,6 @@ return [
     //     'roles' => ['Admin Aplikasi'],
     //     'active' => ['admin.manajemen-data', 'admin/manajemen-data*'],
     // ],
-    [
-        'title' => 'Galeri UMKM',
-        'route' => 'umkm.galeri',
-        'url'   => '/galeri',
-        'icon'  => 'bi-shop',
-        'roles' => ['Admin Aplikasi'],
-        'active' => ['galeri*'],
-    ],
 
     // --- ADMIN RW / Ketua RW ---
     [
@@ -93,7 +112,7 @@ return [
         'url'   => '/rw/penduduk',
         'icon'  => 'bi-people-fill',
         'roles' => ['Admin RW', 'Ketua RW'],
-        'active' => ['rw.penduduk.index', 'rw.penduduk.show', 'rw/penduduk*'],
+        'active' => ['rw.penduduk.index', 'rw.penduduk.show', 'rw/penduduk*', 'rw/keluarga*'],
     ],
     [
         'title' => 'Manajemen RT',
@@ -111,6 +130,8 @@ return [
         'active' => [
             'rw.persetujuan-dokumen*', 'rw/persetujuan-dokumen*', 'rw.surat.preview*',
             'rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*',
+            'rw.persetujuan-konten*', 'rw/persetujuan-konten*',
+            'rw.persetujuan-umkm*', 'rw/persetujuan-umkm*',
             'rw.mutasi.index',
         ],
         'children' => [
@@ -122,12 +143,29 @@ return [
                 'active' => ['rw.persetujuan-dokumen*', 'rw/persetujuan-dokumen*', 'rw.surat.preview*'],
                 'roles' => ['Admin RW', 'Ketua RW'],
             ],
+            // Disembunyikan sementara: menu Persetujuan Keuangan di RW. Rute dan controllernya tetap ada; aktifkan kembali bila dibutuhkan.
+            // [
+            //     'title' => 'Persetujuan Keuangan',
+            //     'icon'  => 'bi-cash-coin',
+            //     'route' => 'rw.persetujuan-keuangan.index',
+            //     'url'   => '/rw/persetujuan-keuangan',
+            //     'active' => ['rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*'],
+            //     'roles' => ['Admin RW', 'Ketua RW'],
+            // ],
             [
-                'title' => 'Persetujuan Keuangan',
-                'icon'  => 'bi-cash-coin',
-                'route' => 'rw.persetujuan-keuangan.index',
-                'url'   => '/rw/persetujuan-keuangan',
-                'active' => ['rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*'],
+                'title' => 'Persetujuan Konten',
+                'icon'  => 'bi-newspaper',
+                'route' => 'rw.persetujuan-konten.index',
+                'url'   => '/rw/persetujuan-konten',
+                'active' => ['rw.persetujuan-konten*', 'rw/persetujuan-konten*'],
+                'roles' => ['Admin RW'],
+            ],
+            [
+                'title' => 'Persetujuan UMKM',
+                'icon'  => 'bi-shop-window',
+                'route' => 'rw.persetujuan-umkm',
+                'url'   => '/rw/persetujuan-umkm',
+                'active' => ['rw.persetujuan-umkm*', 'rw/persetujuan-umkm*'],
                 'roles' => ['Admin RW', 'Ketua RW'],
             ],
             [
@@ -136,23 +174,6 @@ return [
                 'route' => 'rw.mutasi.index',
                 'active' => ['rw.mutasi.index'],
                 'roles' => ['Admin RW', 'Ketua RW'],
-            ],
-        ],
-    ],
-    [
-        'title' => 'Persetujuan',
-        'icon'  => 'bi-file-earmark-check',
-        'position' => 'main',
-        'roles' => ['Pimpinan'],
-        'active' => ['rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*'],
-        'children' => [
-            [
-                'title' => 'Persetujuan Keuangan',
-                'icon'  => 'bi-cash-coin',
-                'route' => 'rw.persetujuan-keuangan.index',
-                'url'   => '/rw/persetujuan-keuangan',
-                'active' => ['rw.persetujuan-keuangan*', 'rw/persetujuan-keuangan*'],
-                'roles' => ['Pimpinan'],
             ],
         ],
     ],
@@ -173,20 +194,20 @@ return [
         'active' => ['rw.rekap-iuran', 'rw/rekap-iuran*'],
     ],
     [
-        'title' => 'UMKM',
-        'route' => 'rw.umkm.index',
-        'url'   => '/rw/umkm',
-        'icon'  => 'bi-shop',
-        'roles' => ['Admin RW', 'Ketua RW'],
-        'active' => ['rw/umkm*'],
-    ],
-    [
         'title' => 'Pusat Informasi',
         'route' => 'rw.pusat-informasi.index',
         'url'   => '/rw/pusat-informasi',
         'icon'  => 'bi-chat-dots-fill',
         'roles' => ['Admin RW', 'Ketua RW'],
         'active' => ['rw/pusat-informasi*'],
+    ],
+    [
+        'title' => 'Pojok UMKM',
+        'route' => 'rw.umkm.index',
+        'url'   => '/rw/umkm',
+        'icon'  => 'bi-shop',
+        'roles' => ['Admin RW', 'Ketua RW'],
+        'active' => ['rw/umkm*'],
     ],
     // Disembunyikan sementara: menu "Koperasi" belum memiliki fitur/halaman.
     // Aktifkan kembali bila modul koperasi sudah diimplementasikan.
@@ -206,6 +227,14 @@ return [
         'icon'  => 'bi-grid-1x2-fill',
         'roles' => ['Ketua RT'],
         'active' => ['rt.dashboard', 'rt', 'rt/dashboard'],
+    ],
+    [
+        'title' => 'Manajemen Penduduk',
+        'icon' => 'bi-people-fill',
+        'route' => 'rt.penduduk.index',
+        'active' => ['rt.penduduk.index', 'rt.penduduk.show', 'rt/penduduk*', 'rt/keluarga*', 'rt.keluarga.create'],
+        'position' => 'main',
+        'roles' => ['Ketua RT'],
     ],
     [
         'title' => 'Persetujuan',
@@ -243,22 +272,6 @@ return [
         ],
     ],
     [
-        'title' => 'Pusat Informasi',
-        'route' => 'rt.pusat-informasi.index',
-        'url'   => '/rt/pusat-informasi',
-        'icon'  => 'bi-chat-dots-fill',
-        'roles' => ['Ketua RT'],
-        'active' => ['rt/pusat-informasi*'],
-    ],
-    [
-        'title' => 'Manajemen Penduduk',
-        'icon' => 'bi-people-fill',
-        'route' => 'rt.penduduk.index',
-        'active' => ['rt.penduduk.index', 'rt.penduduk.show', 'rt/penduduk*', 'rt/keluarga*', 'rt.keluarga.create'],
-        'position' => 'main',
-        'roles' => ['Ketua RT'],
-    ],
-    [
         'title' => 'Laporan Keuangan',
         'route' => 'laporan-keuangan.publik',
         'url'   => '/laporan-keuangan',
@@ -267,7 +280,15 @@ return [
         'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
     ],
     [
-        'title' => 'Galeri UMKM',
+        'title' => 'Pusat Informasi',
+        'route' => 'rt.pusat-informasi.index',
+        'url'   => '/rt/pusat-informasi',
+        'icon'  => 'bi-chat-dots-fill',
+        'roles' => ['Ketua RT'],
+        'active' => ['rt/pusat-informasi*'],
+    ],
+    [
+        'title' => 'Pojok UMKM',
         'route' => 'umkm.galeri',
         'url'   => '/galeri',
         'icon'  => 'bi-shop',
@@ -309,6 +330,14 @@ return [
         'active' => ['opkonten.pengumuman*', 'op-konten/pengumuman*'],
     ],
     [
+        'title' => 'Kategori Konten',
+        'route' => 'opkonten.kategori.index',
+        'url'   => '/op-konten/kategori-konten',
+        'icon'  => 'bi-tags',
+        'roles' => ['Op Konten RW', 'Op. Konten RW'],
+        'active' => ['opkonten.kategori*', 'op-konten/kategori-konten*'],
+    ],
+    [
         'title' => 'Galeri Dokumentasi',
         'route' => 'opkonten.galeri.index',
         'url'   => '/op-konten/galeri',
@@ -317,7 +346,7 @@ return [
         'active' => ['opkonten.galeri*', 'op-konten/galeri*'],
     ],
     [
-        'title' => 'Galeri UMKM',
+        'title' => 'Pojok UMKM',
         'route' => 'umkm.galeri',
         'url'   => '/galeri',
         'icon'  => 'bi-shop',
@@ -422,12 +451,12 @@ return [
         'active' => ['warga.dashboard', 'warga/dashboard*'],
     ],
     [
-        'title' => 'Pusat Informasi',
-        'route' => 'warga.berita.index',
-        'url'   => '/warga/berita',
-        'icon'  => 'bi-newspaper',
+        'title' => 'Profil Keluarga',
+        'route' => 'warga.keluarga.index',
+        'url'   => '/warga/keluarga',
+        'icon'  => 'bi-people-fill',
         'roles' => ['Warga'],
-        'active' => ['warga.berita*'],
+        'active' => ['warga.keluarga.*'],
     ],
     [
         'title' => 'Permohonan Surat',
@@ -436,30 +465,6 @@ return [
         'icon'  => 'bi-file-earmark-text-fill',
         'roles' => ['Warga'],
         'active' => ['warga.surat.*'],
-    ],
-    [
-        'title' => 'Galeri UMKM',
-        'route' => 'umkm.galeri',
-        'url'   => '/galeri',
-        'icon'  => 'bi-shop',
-        'roles' => ['Warga'],
-        'active' => ['warga/galeri/kelola*', 'warga/galeri/daftar*', 'galeri*'],
-    ],
-    [
-        'title' => 'Agenda Warga',
-        'route' => 'warga.agenda.index',
-        'url'   => '/warga/agenda',
-        'icon'  => 'bi-calendar-event-fill',
-        'roles' => ['Warga'],
-        'active' => ['warga.agenda*'],
-    ],
-    [
-        'title' => 'Profil Keluarga',
-        'route' => 'warga.keluarga.index',
-        'url'   => '/warga/keluarga',
-        'icon'  => 'bi-people-fill',
-        'roles' => ['Warga'],
-        'active' => ['warga.keluarga.*'],
     ],
     [
         'title' => 'Iuran Warga',
@@ -493,6 +498,30 @@ return [
         'icon'  => 'bi-wallet2',
         'roles' => ['Warga'],
         'active' => ['laporan-keuangan.publik', 'laporan-keuangan*'],
+    ],
+    [
+        'title' => 'Pusat Informasi',
+        'route' => 'warga.berita.index',
+        'url'   => '/warga/berita',
+        'icon'  => 'bi-newspaper',
+        'roles' => ['Warga'],
+        'active' => ['warga.berita*'],
+    ],
+    [
+        'title' => 'Agenda Warga',
+        'route' => 'warga.agenda.index',
+        'url'   => '/warga/agenda',
+        'icon'  => 'bi-calendar-event-fill',
+        'roles' => ['Warga'],
+        'active' => ['warga.agenda*'],
+    ],
+    [
+        'title' => 'Pojok UMKM',
+        'route' => 'umkm.galeri',
+        'url'   => '/galeri',
+        'icon'  => 'bi-shop',
+        'roles' => ['Warga'],
+        'active' => ['warga/galeri/kelola*', 'warga/galeri/daftar*', 'galeri*'],
     ],
 
     // --- BOTTOM MENU ITEMS ---

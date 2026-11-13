@@ -52,6 +52,27 @@ class KategoriTransaksiSeeder extends Seeder
             );
         }
 
+        // Kategori khusus unit (dibuat operator RW / DKM lewat halaman masing-masing; disamakan dengan data terbaru).
+        $khusus = [
+            ['nama' => 'Iuran Fasilitas',          'tipe' => 'pemasukan',   'unit' => 'RW',  'rw' => true,  'dkm' => false],
+            ['nama' => 'Donasi Kematian',          'tipe' => 'pemasukan',   'unit' => 'RW',  'rw' => false, 'dkm' => true],
+            ['nama' => 'Penyaluran Dana Kematian', 'tipe' => 'pengeluaran', 'unit' => 'RW',  'rw' => false, 'dkm' => true],
+            ['nama' => 'Pengadaan barang',         'tipe' => 'pengeluaran', 'unit' => 'DKM', 'rw' => false, 'dkm' => true],
+        ];
+        foreach ($khusus as $item) {
+            KategoriTransaksi::updateOrCreate(
+                ['nama' => $item['nama'], 'unit' => $item['unit'], 'rt_id' => null],
+                [
+                    'tipe'        => $item['tipe'],
+                    'berlaku_rw'  => $item['rw'],
+                    'berlaku_rt'  => false,
+                    'berlaku_dkm' => $item['dkm'],
+                    'aktif'       => true,
+                    'urutan'      => 0,
+                ]
+            );
+        }
+
         // Backfill kategori_id pada transaksi lama berdasarkan kecocokan nama.
         if (\Illuminate\Support\Facades\Schema::hasColumn('transaksi_keuangan', 'kategori_id')) {
             foreach (KategoriTransaksi::all() as $kat) {

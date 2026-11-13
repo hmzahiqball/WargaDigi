@@ -1,6 +1,6 @@
 @extends('layouts.global')
 
-@section('title', 'Pusat Informasi')
+@section('title', ($mode ?? 'publikasi') === 'persetujuan' ? 'Persetujuan Konten' : 'Pusat Informasi')
 
 @push('styles')
 <style>
@@ -179,7 +179,7 @@
 
     /* Scrollbar */
     .list-container {
-        height: calc(100vh - 180px);
+        height: calc(100vh - 240px);
         overflow-y: auto;
         padding-right: 6px;
     }
@@ -209,8 +209,13 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-end mb-4">
     <div>
+        @if(($mode ?? 'publikasi') === 'persetujuan')
+        <h2 class="fw-bold text-dark mb-1">Persetujuan Konten</h2>
+        <p class="text-muted mb-0">Meninjau pengajuan Berita, Agenda, & Pengumuman sebelum tayang. {{ $keterangan ?? '' }}</p>
+        @else
         <h2 class="fw-bold text-dark mb-1">Pusat Informasi{{ ($tingkat ?? 'RW') === 'RT' ? ' RT' : '' }}</h2>
-        <p class="text-muted mb-0">Meninjau dan mengelola pengajuan Agenda, Berita, & Pengumuman.{{ ($tingkat ?? 'RW') === 'RT' ? ' Hanya konten RT Anda yang tampil di sini.' : ' Hanya konten tingkat RW yang tampil di sini.' }}</p>
+        <p class="text-muted mb-0" data-testid="keterangan-pusat-informasi">{{ $keterangan ?? '' }}</p>
+        @endif
     </div>
 </div>
 
@@ -223,7 +228,9 @@
             {{-- Tabs --}}
             <div class="custom-tabs mb-0">
                 <button class="custom-tab-btn active" id="tabSemua" onclick="switchTab('Semua')">Lihat Semua</button>
+                @if($bolehBerita ?? false)
                 <button class="custom-tab-btn" id="tabBerita" onclick="switchTab('Berita')">Berita Komunitas</button>
+                @endif
                 <button class="custom-tab-btn" id="tabAgenda" onclick="switchTab('Agenda')">Agenda Kegiatan</button>
                 <button class="custom-tab-btn" id="tabPengumuman" onclick="switchTab('Pengumuman')">Pengumuman</button>
             </div>
@@ -234,10 +241,10 @@
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Cari..." autocomplete="off">
                 </div>
-                <select id="statusFilter" class="form-select form-select-sm text-muted fw-medium" style="width: 140px;">
+                {{-- Pusat Informasi hanya memuat konten terbit, jadi filter status hanya untuk antrean persetujuan. --}}
+                <select id="statusFilter" class="form-select form-select-sm text-muted fw-medium @if(($mode ?? 'publikasi') !== 'persetujuan') d-none @endif" style="width: 140px;" aria-label="Filter status">
                     <option value="all">Semua Status</option>
                     <option value="Review">Ditinjau</option>
-                    <option value="Publish">Terbit</option>
                     <option value="Revisi">Revisi</option>
                 </select>
             </div>
@@ -246,6 +253,11 @@
         {{-- Items List --}}
         <div class="list-container" id="itemsList">
             <!-- Items will be rendered here by JS -->
+        </div>
+        {{-- Paginasi daftar (per tab, mengikuti pencarian dan filter status) --}}
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 pt-3" id="paginasiKonten" data-testid="paginasi-konten">
+            <span class="text-muted small" id="paginasiInfo" aria-live="polite"></span>
+            <nav aria-label="Paginasi konten"><ul class="pagination pagination-sm mb-0" id="paginasiNav"></ul></nav>
         </div>
     </div>
 
@@ -259,7 +271,7 @@
             </button>
             <nav aria-label="breadcrumb" class="mb-0">
                 <ol class="breadcrumb mb-0" style="font-size: 14px; font-weight: 500;">
-                    <li class="breadcrumb-item"><a href="#" onclick="closeDetail(); return false;" class="text-decoration-none text-success">Pusat Informasi</a></li>
+                    <li class="breadcrumb-item"><a href="#" onclick="closeDetail(); return false;" class="text-decoration-none text-success">{{ ($mode ?? 'publikasi') === 'persetujuan' ? 'Persetujuan Konten' : 'Pusat Informasi' }}</a></li>
                     <li class="breadcrumb-item text-secondary" id="breadcrumbType">Kategori</li>
                     <li class="breadcrumb-item active text-dark text-truncate" id="breadcrumbTitle" aria-current="page" style="max-width: 250px;">Judul Konten</li>
                 </ol>
@@ -434,7 +446,9 @@
     const beritaData = @json($berita);
     const pengumumanData = @json($pengumuman);
     
-    let currentTab = 'Semua';
+    const PER_HALAMAN = 10;
+    let halamanSaatIni = 1;
+        let currentTab = 'Semua';
     let currentData = semuaData;
     let selectedItem = null;
 
@@ -468,12 +482,14 @@
         
         document.getElementById('tabSemua').classList.toggle('active', tabName === 'Semua');
         document.getElementById('tabAgenda').classList.toggle('active', tabName === 'Agenda');
-        document.getElementById('tabBerita').classList.toggle('active', tabName === 'Berita');
+        const tabBerita = document.getElementById('tabBerita');
+        if (tabBerita) tabBerita.classList.toggle('active', tabName === 'Berita');
         document.getElementById('tabPengumuman').classList.toggle('active', tabName === 'Pengumuman');
         
         document.getElementById('searchInput').value = '';
         document.getElementById('statusFilter').value = 'all';
         
+        halamanSaatIni = 1;
         closeDetail();
         renderList();
         renderQuickReasons();
@@ -509,11 +525,17 @@
                     <p class="small text-muted mb-0">Coba sesuaikan kata kunci pencarian atau filter status.</p>
                 </div>
             `;
+            renderPaginasi(0);
             return;
         }
 
+        // Paginasi: batasi halaman ke rentang yang valid, lalu ambil potongan untuk halaman ini.
+        const totalHalaman = Math.ceil(filteredData.length / PER_HALAMAN);
+        halamanSaatIni = Math.min(Math.max(1, halamanSaatIni), totalHalaman);
+        const awal = (halamanSaatIni - 1) * PER_HALAMAN;
+        const dataHalaman = filteredData.slice(awal, awal + PER_HALAMAN);
         let html = '';
-        filteredData.forEach(item => {
+        dataHalaman.forEach(item => {
             const isSelected = selectedItem && selectedItem.id === item.id && selectedItem.type === item.type;
             const descPreview = item.description ? (item.description.length > 55 ? item.description.substring(0, 55) + '...' : item.description) : 'Tidak ada deskripsi.';
             
@@ -544,6 +566,7 @@
                         </div>
                         <p class="text-muted small mb-2 text-truncate" style="font-size: 12.5px;">${descPreview}</p>
                         <div class="d-flex align-items-center gap-3 text-muted" style="font-size: 11px; font-weight: 600;">
+                            <span class="badge bg-light text-dark border" style="font-size: 10px;">${item.asal || 'RW'}</span>
                             <span><i class="bi bi-clock me-1"></i> ${item.date}</span>
                             ${item.location ? `<span class="text-truncate" style="max-width: 150px;"><i class="bi bi-geo-alt me-1"></i> ${item.location}</span>` : ''}
                         </div>
@@ -553,6 +576,56 @@
         });
         
         listContainer.innerHTML = html;
+        renderPaginasi(filteredData.length);
+    }
+    function renderPaginasi(total) {
+        const wadah = document.getElementById('paginasiKonten');
+        const info = document.getElementById('paginasiInfo');
+        const nav = document.getElementById('paginasiNav');
+        if (!wadah) return;
+        if (total === 0) {
+            wadah.classList.add('d-none');
+            return;
+        }
+        wadah.classList.remove('d-none');
+        const totalHalaman = Math.ceil(total / PER_HALAMAN);
+        const awal = (halamanSaatIni - 1) * PER_HALAMAN + 1;
+        const akhir = Math.min(halamanSaatIni * PER_HALAMAN, total);
+        info.textContent = `Menampilkan ${awal}-${akhir} dari ${total} konten`;
+        if (totalHalaman <= 1) {
+            nav.innerHTML = '';
+            return;
+        }
+        // Nomor halaman ringkas: 1 ... (sekitar halaman aktif) ... terakhir
+        const nomor = [];
+        for (let i = 1; i <= totalHalaman; i++) {
+            if (i === 1 || i === totalHalaman || Math.abs(i - halamanSaatIni) <= 1) {
+                nomor.push(i);
+            } else if (nomor[nomor.length - 1] !== '...') {
+                nomor.push('...');
+            }
+        }
+        const tombol = (label, halaman, opsi = {}) => {
+            const kelas = ['page-item'];
+            if (opsi.aktif) kelas.push('active');
+            if (opsi.mati) kelas.push('disabled');
+            const aria = opsi.aktif ? ' aria-current="page"' : '';
+            const atributLabel = opsi.labelAria ? ` aria-label="${opsi.labelAria}"` : '';
+            return `<li class="${kelas.join(' ')}"${aria}><button type="button" class="page-link" data-halaman="${halaman}"${atributLabel}${opsi.mati ? ' disabled tabindex="-1"' : ''}>${label}</button></li>`;
+        };
+        let isi = tombol('&lsaquo;', halamanSaatIni - 1, { mati: halamanSaatIni === 1, labelAria: 'Halaman sebelumnya' });
+        nomor.forEach(n => {
+            isi += n === '...'
+                ? '<li class="page-item disabled"><span class="page-link">&hellip;</span></li>'
+                : tombol(n, n, { aktif: n === halamanSaatIni, labelAria: `Halaman ${n}` });
+        });
+        isi += tombol('&rsaquo;', halamanSaatIni + 1, { mati: halamanSaatIni === totalHalaman, labelAria: 'Halaman berikutnya' });
+        nav.innerHTML = isi;
+    }
+    function keHalaman(n) {
+        halamanSaatIni = n;
+        renderList();
+        document.getElementById('itemsList').scrollTop = 0;
     }
 
     function renderQuickReasons() {
@@ -851,8 +924,13 @@
         });
     }
 
-    document.getElementById('searchInput').addEventListener('input', renderList);
-    document.getElementById('statusFilter').addEventListener('change', renderList);
+    // Pencarian atau filter baru selalu dimulai dari halaman pertama.
+    document.getElementById('searchInput').addEventListener('input', () => { halamanSaatIni = 1; renderList(); });
+    document.getElementById('statusFilter').addEventListener('change', () => { halamanSaatIni = 1; renderList(); });
+    document.getElementById('paginasiNav').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-halaman]');
+        if (btn && !btn.disabled) keHalaman(parseInt(btn.dataset.halaman, 10));
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         renderList();

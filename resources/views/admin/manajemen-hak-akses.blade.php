@@ -13,12 +13,6 @@
     </button>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="border-radius: 0.5rem;">
-        <i class="bi bi-check-circle-fill"></i>
-        <span>{{ session('success') }}</span>
-    </div>
-@endif
 @php
     // Error yang berasal dari dalam modal tidak perlu ditampilkan lagi sebagai banner atas.
     $errorDariModal = session('open_edit_user') || old('sumber') || old('username') || old('nik');
@@ -117,11 +111,11 @@
             </table>
         </div>
     </div>
-    @if($users->hasPages())
-    <div class="admin-card-footer">
+    @if($users->total() > 0)
+    <div class="admin-card-footer" data-testid="paginasi-pengguna">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="text-muted small">Menampilkan {{ $users->firstItem() }}-{{ $users->lastItem() }} dari {{ $users->total() }} pengguna</span>
-            <div>{{ $users->links() }}</div>
+            @if($users->hasPages())<div>{{ $users->links('pagination::bootstrap-5') }}</div>@endif
         </div>
     </div>
     @endif

@@ -8,9 +8,12 @@ use Illuminate\Database\Seeder;
  * Seeder DEMO (showcase).
  *
  * Menjalankan MasterSeeder lebih dahulu (agar seluruh data fondasi tersedia),
- * kemudian mengisi data dummy lengkap untuk kebutuhan demonstrasi aplikasi:
- * user demo, keluarga, penduduk, berita, agenda, pengumuman, UMKM, transaksi
- * keuangan, dan laporan keuangan.
+ * kemudian mengisi data demo yang sesuai dengan aturan aplikasi terbaru:
+ * akun per peran, keluarga dan penduduk, pejabat RT/RW, konten (berita, agenda,
+ * galeri, pengumuman), UMKM, keuangan (rekening, iuran, tagihan, transaksi,
+ * laporan), dan contoh surat.
+ *
+ * Aman dijalankan ulang (idempotent). Semua kata sandi akun demo: "password".
  *
  * Dapat dipanggil manual: php artisan db:seed --class=DemoSeeder
  */
@@ -21,20 +24,27 @@ class DemoSeeder extends Seeder
         $this->call([
             MasterSeeder::class,
 
-            // Data demo/showcase
+            // Akun dan kependudukan
             UserSeeder::class,
             KeluargaSeeder::class,
             PendudukSeeder::class,
             PendudukDemoSeeder::class,
             PejabatDemoSeeder::class,
-            BeritaSeeder::class,
-            DummyBeritaSeeder::class,
-            DummyAgendaSeeder::class,
-            DummyPengumumanSeeder::class,
+
+            // Konten
+            KontenDemoSeeder::class,
+
+            // UMKM
             UmkmUsahaSeeder::class,
             UmkmProdukSeeder::class,
+
+            // Keuangan
+            KeuanganDemoSeeder::class,
             TransaksiKeuanganSeeder::class,
             LaporanKeuanganDemoSeeder::class,
+
+            // Layanan surat
+            ContohSuratSeeder::class,
         ]);
     }
 }

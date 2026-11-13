@@ -162,7 +162,7 @@ window.initCalendar = function(containerId, events = []) {
         // Current month
         for (let d = 1; d <= daysInMonth; d++) {
             const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-            const hasEvent = events.some(e => e.day === d && e.month === month);
+            const hasEvent = events.some(e => e.day === d && e.month === month && (e.year === undefined || e.year === year));
             let classes = 'day-cell';
             if (isToday) classes += ' today';
             if (hasEvent) classes += ' has-event';

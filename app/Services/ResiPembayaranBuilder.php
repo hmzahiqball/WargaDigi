@@ -31,6 +31,8 @@ class ResiPembayaranBuilder
         $rtId = $unit === 'RT' ? ($viaRt ? $pembayaran->keluarga?->rt_id : $tagihan->rt_id) : null;
         $rt = $rtId ? MasterRt::find($rtId) : null;
         $konfig = config('surat.kop', []);
+        // Logo kop mengikuti Pengaturan Sistem (bawaan: config surat).
+        $konfig['logo'] = \App\Models\SystemSetting::gambarUnggahan('logo_kop') ? \App\Models\SystemSetting::gambarPath('logo_kop') : ($konfig['logo'] ?? \App\Models\SystemSetting::gambarPath('logo_kop'));
         $kodeRw = $konfig['kode_rw'] ?? '21';
 
         $kop = self::kop($unit, $rt, $konfig, $kodeRw);

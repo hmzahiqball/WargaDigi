@@ -89,11 +89,12 @@ class KontenPerRtTest extends TestCase
 
     public function test_konten_yang_dibuat_operator_rt_terikat_ke_rt_di_akunnya(): void
     {
+        $kategori = \App\Models\KategoriKonten::create(['nama' => 'Uji Cakupan RT', 'warna' => 'hijau']);
         $this->actingAs($this->opRt1)->post(route('opkonten.pengumuman.store'), [
-            'judul_pengumuman' => 'Kerja bakti RT 981', 'isi_pengumuman' => '<p>Minggu pagi</p>',
+            'judul_pengumuman' => 'Kerja bakti RT 981', 'kategori_id' => $kategori->id, 'isi_pengumuman' => '<p>Minggu pagi</p>',
         ])->assertRedirect();
         $this->actingAs($this->opRw)->post(route('opkonten.pengumuman.store'), [
-            'judul_pengumuman' => 'Rapat RW', 'isi_pengumuman' => '<p>Sabtu malam</p>',
+            'judul_pengumuman' => 'Rapat RW', 'kategori_id' => $kategori->id, 'isi_pengumuman' => '<p>Sabtu malam</p>',
         ])->assertRedirect();
 
         $this->assertSame($this->rt1->id, Pengumuman::where('judul_pengumuman', 'Kerja bakti RT 981')->value('rt_id'));
@@ -127,8 +128,9 @@ class KontenPerRtTest extends TestCase
     {
         $tanpaRt = $this->user('Op Konten RT', '3217010101012599');
 
+        $kategori = \App\Models\KategoriKonten::create(['nama' => 'Uji Tanpa RT', 'warna' => 'biru']);
         $this->actingAs($tanpaRt)->post(route('opkonten.pengumuman.store'), [
-            'judul_pengumuman' => 'Tanpa RT', 'isi_pengumuman' => '<p>x</p>',
+            'judul_pengumuman' => 'Tanpa RT', 'kategori_id' => $kategori->id, 'isi_pengumuman' => '<p>x</p>',
         ])->assertForbidden();
         $this->assertSame(0, Pengumuman::where('judul_pengumuman', 'Tanpa RT')->count());
     }
@@ -150,34 +152,42 @@ class KontenPerRtTest extends TestCase
 
     // ───────────── Persetujuan ─────────────
 
-    public function test_ketua_rt_hanya_menyetujui_konten_rt_nya(): void
+    public function test_admin_rw_menyetujui_agenda_dan_pengumuman_dari_rt_maupun_rw(): void
     {
-        $milikRt1 = $this->berita('Berita RT satu', $this->opRt1, $this->rt1->id);
-        $milikRt2 = $this->berita('Berita RT dua', $this->opRt2, $this->rt2->id);
-        $milikRw = $this->berita('Berita RW', $this->opRw, null);
+        $adminRw = $this->user('Admin RW', '3217010101012599');
+        $agendaRt1 = $this->agenda('Agenda RT satu', $this->opRt1, $this->rt1->id, 'Review');
+        $agendaRw = $this->agenda('Agenda RW', $this->opRw, null, 'Review');
+        $infoRt2 = $this->pengumuman('Info RT dua', $this->opRt2, $this->rt2->id, 'Review');
 
-        $this->actingAs($this->ketuaRt1)->get(route('rt.pusat-informasi.index'))->assertOk()
-            ->assertSee('Berita RT satu')->assertDontSee('Berita RT dua')->assertDontSee('Berita RW');
+        $this->actingAs($adminRw)->get(route('rw.persetujuan-konten.index'))->assertOk()
+            ->assertSee('Agenda RT satu')->assertSee('Agenda RW')->assertSee('Info RT dua');
 
-        $this->actingAs($this->ketuaRt1)->put(route('rt.pusat-informasi.berita.approve', $milikRt2->id))->assertNotFound();
-        $this->actingAs($this->ketuaRt1)->put(route('rt.pusat-informasi.berita.approve', $milikRw->id))->assertNotFound();
-        $this->actingAs($this->ketuaRt1)->put(route('rt.pusat-informasi.berita.approve', $milikRt1->id))->assertOk();
+        $this->actingAs($adminRw)->put(route('rw.persetujuan-konten.agenda.approve', $agendaRt1->id))->assertOk();
+        $this->actingAs($adminRw)->put(route('rw.persetujuan-konten.agenda.approve', $agendaRw->id))->assertOk();
+        $this->actingAs($adminRw)->put(route('rw.persetujuan-konten.pengumuman.approve', $infoRt2->id))->assertOk();
 
-        $this->assertSame('Publish', $milikRt1->fresh()->status);
-        $this->assertSame('Review', $milikRt2->fresh()->status);
-        $this->assertSame('Review', $milikRw->fresh()->status);
+        $this->assertSame('Publish', $agendaRt1->fresh()->status);
+        $this->assertSame('Publish', $agendaRw->fresh()->status);
+        $this->assertSame('Publish', $infoRt2->fresh()->status);
     }
 
-    public function test_ketua_rw_hanya_menyetujui_konten_tingkat_rw(): void
+    public function test_ketua_rt_dan_ketua_rw_tidak_menyetujui_konten(): void
     {
-        $milikRt1 = $this->berita('Berita RT satu', $this->opRt1, $this->rt1->id);
-        $milikRw = $this->berita('Berita RW', $this->opRw, null);
+        $agendaRt1 = $this->agenda('Agenda RT satu', $this->opRt1, $this->rt1->id, 'Review');
+        $infoRw = $this->pengumuman('Info RW', $this->opRw, null, 'Review');
 
-        $this->actingAs($this->ketuaRw)->put(route('rw.pusat-informasi.berita.approve', $milikRt1->id))->assertNotFound();
-        $this->actingAs($this->ketuaRw)->put(route('rw.pusat-informasi.berita.approve', $milikRw->id))->assertOk();
+        // Ketua RT tidak punya akses persetujuan konten sama sekali (rute tidak ada).
+        $this->actingAs($this->ketuaRt1)->get('/rt/persetujuan-konten')->assertNotFound();
+        $this->actingAs($this->ketuaRt1)->put('/rt/persetujuan-konten/agenda/' . $agendaRt1->id . '/approve')->assertNotFound();
 
-        $this->assertSame('Review', $milikRt1->fresh()->status);
-        $this->assertSame('Publish', $milikRw->fresh()->status);
+        // Ketua RW ditolak (403) pada antrean maupun aksinya.
+        $this->actingAs($this->ketuaRw)->get(route('rw.persetujuan-konten.index'))->assertForbidden();
+        $this->actingAs($this->ketuaRw)->put(route('rw.persetujuan-konten.agenda.approve', $agendaRt1->id))->assertForbidden();
+        $this->actingAs($this->ketuaRw)->put(route('rw.persetujuan-konten.pengumuman.approve', $infoRw->id))->assertForbidden();
+        $this->actingAs($this->ketuaRw)->put(route('rw.persetujuan-konten.pengumuman.reject', $infoRw->id), ['catatan_revisi' => 'x'])->assertForbidden();
+
+        $this->assertSame('Review', $agendaRt1->fresh()->status);
+        $this->assertSame('Review', $infoRw->fresh()->status);
     }
 
     // ───────────── Tampilan warga ─────────────
@@ -200,15 +210,22 @@ class KontenPerRtTest extends TestCase
         $warga1 = $this->warga($this->rt1, '3217010101012512');
 
         $this->actingAs($warga1)->get(route('warga.agenda.show', $agendaRt2->id))->assertNotFound();
-        $this->actingAs($warga1)->get(route('warga.agenda.show', $agendaRt1->id))->assertOk();
+        // URL warga memakai slug; link lama berbasis id dialihkan ke slug.
+        $this->actingAs($warga1)->get(route('warga.agenda.show', $agendaRt1->id))->assertRedirect(route('warga.agenda.show', $agendaRt1->slug));
+        $this->actingAs($warga1)->get(route('warga.agenda.show', $agendaRt1->slug))->assertOk();
     }
 
-    public function test_beranda_publik_hanya_menampilkan_konten_rw(): void
+    public function test_beranda_publik_menampilkan_berita_rw_dan_rt_dengan_lencana_asal(): void
     {
+        // Keputusan: berita RT juga tampil di halaman publik (agenda tetap mengikuti cakupan RT).
         $this->berita('Berita tingkat RW', $this->opRw, null, 'Publish');
-        $this->berita('Berita khusus RT satu', $this->opRt1, $this->rt1->id, 'Publish');
+        $rtBerita = $this->berita('Berita khusus RT satu', $this->opRt1, $this->rt1->id, 'Publish');
+        $this->berita('Berita RT masih draft', $this->opRt1, $this->rt1->id, 'Draft');
 
-        $this->get('/')->assertOk()->assertSee('Berita tingkat RW')->assertDontSee('Berita khusus RT satu');
+        $this->get('/')->assertOk()->assertSee('Berita tingkat RW')->assertSee('Berita khusus RT satu')
+            ->assertDontSee('Berita RT masih draft')->assertSee('RT ' . $this->rt1->kode_rt);
+        $this->get(route('berita'))->assertOk()->assertSee('Berita khusus RT satu')->assertDontSee('Berita RT masih draft');
+        $this->get(route('berita.show', $rtBerita->slug))->assertOk()->assertSee('Berita khusus RT satu');
     }
 
     public function test_notifikasi_konten_rt_hanya_untuk_warga_rt_tersebut(): void

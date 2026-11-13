@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DokumenSementara;
 use App\Services\Ocr\OcrService;
 use Illuminate\Http\Request;
 
@@ -35,9 +36,9 @@ class OcrController extends Controller
             'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
 
-        $path = $request->file('file')->store('dokumen/kk', 'public');
+        $path = DokumenSementara::simpanUpload($request->file('file'), $request->user());
 
-        return response()->json(['path' => $path, 'url' => asset('storage/' . $path)]);
+        return response()->json(['path' => $path, 'url' => self::urlPreview($path)]);
     }
 
     /**
@@ -73,11 +74,11 @@ class OcrController extends Controller
             'file.max'      => 'Ukuran maksimal 5MB.',
         ]);
 
-        $path = $request->file('file')->store('dokumen/ktp', 'public');
+        $path = DokumenSementara::simpanUpload($request->file('file'), $request->user());
 
         return response()->json([
             'path' => $path,
-            'url'  => asset('storage/' . $path),
+            'url'  => self::urlPreview($path),
         ]);
     }
 
@@ -114,6 +115,26 @@ class OcrController extends Controller
         ]);
     }
 
+    /**
+     * Preview berkas sementara milik akun yang login (KTP/KK belum disimpan).
+     * Berkas privat: akun lain mendapat 404.
+     */
+    public function lihatSementara(Request $request, string $nama)
+    {
+        $path = DokumenSementara::pathUntukNama($nama, $request->user());
+        abort_unless($path, 404);
+
+        return response()->file(DokumenSementara::absolut($path), [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private static function urlPreview(string $path): string
+    {
+        return route('dokumen-sementara.lihat', ['nama' => basename($path)]);
+    }
+
     private function proses(Request $request, string $jenis)
     {
         $request->validate([
@@ -124,9 +145,10 @@ class OcrController extends Controller
             'file.max'      => 'Ukuran maksimal 5MB.',
         ]);
 
-        $folder = $jenis === 'kk' ? 'dokumen/kk' : 'dokumen/ktp';
-        $path = $request->file('file')->store($folder, 'public');
-        $absolute = storage_path('app/public/' . $path);
+        // Berkas asli disimpan sementara (privat) agar OCR membaca kualitas penuh;
+        // konversi WebP dan pemindahan ke folder final terjadi saat formulir disimpan.
+        $path = DokumenSementara::simpanUpload($request->file('file'), $request->user());
+        $absolute = DokumenSementara::absolut($path);
         $mime = $request->file('file')->getClientMimeType();
 
         $hasil = $jenis === 'kk'
@@ -137,7 +159,7 @@ class OcrController extends Controller
             'terbaca' => $hasil['terbaca'],
             'data'    => $hasil['data'],
             'path'    => $path,
-            'url'     => asset('storage/' . $path),
+            'url'     => self::urlPreview($path),
             'pesan'   => $hasil['terbaca']
                 ? 'Dokumen berhasil dibaca. Periksa & lengkapi data bila perlu.'
                 : 'Dokumen tidak dapat dibaca otomatis. Silakan isi data secara manual.',

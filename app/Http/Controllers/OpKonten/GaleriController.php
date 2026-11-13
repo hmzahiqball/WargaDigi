@@ -61,7 +61,11 @@ class GaleriController extends Controller
             'total_foto' => $totalFoto,
         ];
 
-        return view('opKonten.galeri.index', compact('agendaSelesai', 'stats'));
+        // Pilihan filter dari master kategori konten yang berlaku untuk agenda (termasuk yang
+        // sudah dinonaktifkan, agar agenda lama tetap bisa difilter).
+        $kategoriFilter = \App\Models\KategoriKonten::query()->untuk('agenda')->urut()->get();
+
+        return view('opKonten.galeri.index', compact('agendaSelesai', 'stats', 'kategoriFilter'));
     }
 
     public function show($id)
@@ -108,9 +112,7 @@ class GaleriController extends Controller
         $photoPaths = [];
         if ($request->hasFile('foto')) {
             foreach ($request->file('foto') as $file) {
-                $filename = 'galeri_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('assets/images/galeri'), $filename);
-                $photoPaths[] = 'assets/images/galeri/' . $filename;
+                $photoPaths[] = \App\Services\KonversiGambarWebp::simpanKePublik($file, 'assets/images/galeri', 'galeri', \App\Services\KonversiGambarWebp::KONTEN);
             }
         }
 
@@ -159,9 +161,7 @@ class GaleriController extends Controller
         if ($request->hasFile('foto_baru')) {
             foreach ($request->file('foto_baru') as $file) {
                 if (count($existingPhotos) >= 10) break;
-                $filename = 'galeri_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('assets/images/galeri'), $filename);
-                $existingPhotos[] = 'assets/images/galeri/' . $filename;
+                $existingPhotos[] = \App\Services\KonversiGambarWebp::simpanKePublik($file, 'assets/images/galeri', 'galeri', \App\Services\KonversiGambarWebp::KONTEN);
             }
         }
 

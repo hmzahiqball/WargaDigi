@@ -26,10 +26,13 @@ class PendudukDemoSeeder extends Seeder
             return;
         }
 
+        // Hasil acak tetap sama setiap kali seeding (nama, usia, jumlah anggota) agar demo dapat diulang.
+        mt_srand(2121);
+
         $nama = [
             'L' => [
                 'Agus', 'Bayu', 'Cahyo', 'Dadang', 'Eko', 'Firman', 'Galih', 'Hadi',
-                'Indra', 'Joko', 'Kurnia', 'Lukman', 'Mulyana', 'Nanang', 'Oman',
+                'Indra', 'Joko', 'Kurnia', 'Luthfi', 'Mulyana', 'Nanang', 'Oman',
                 'Prasetyo', 'Qomar', 'Rahmat', 'Supriyadi', 'Taufik', 'Usman',
                 'Wawan', 'Yoga', 'Zainal', 'Arman', 'Bagas', 'Candra', 'Deni',
             ],
@@ -43,7 +46,7 @@ class PendudukDemoSeeder extends Seeder
 
         $marga = [
             'Wijaya', 'Santoso', 'Pratama', 'Nugroho', 'Kusuma', 'Hidayat',
-            'Permana', 'Saputra', 'Gunawan', 'Lesmana', 'Setiawan', 'Firdaus',
+            'Permana', 'Saputra', 'Gunawan', 'Lesmana', 'Setiawan', 'Rusmana',
             'Maulana', 'Ramadhan', 'Suryana', 'Hartono',
         ];
 
@@ -77,7 +80,7 @@ class PendudukDemoSeeder extends Seeder
             }
 
             // 6-8 keluarga demo per RT -> total ~36-48 KK, 180-220 jiwa.
-            $jumlahKk = random_int(6, 8);
+            $jumlahKk = mt_rand(6, 8);
 
             for ($k = 0; $k < $jumlahKk; $k++) {
                 $noKk = '3217' . '02' . str_pad((string) $kkCounter, 10, '0', STR_PAD_LEFT);
@@ -97,7 +100,7 @@ class PendudukDemoSeeder extends Seeder
                 );
 
                 // Jumlah anggota: 2-5 per KK.
-                $jumlahAnggota = random_int(2, 5);
+                $jumlahAnggota = mt_rand(2, 5);
 
                 for ($a = 0; $a < $jumlahAnggota; $a++) {
                     if ($a === 0) {
@@ -121,7 +124,7 @@ class PendudukDemoSeeder extends Seeder
                         $namaLengkap = $nama['P'][array_rand($nama['P'])] . ' ' . $margaKeluarga;
                     } else {
                         // Anak (gender campur, usia balita s/d dewasa muda 0-24 tahun).
-                        $jk = random_int(0, 1) ? 'L' : 'P';
+                        $jk = mt_rand(0, 1) ? 'L' : 'P';
                         $hubungan = 'Anak';
                         $bucket = $tahunBucket[[0, 1, 2][array_rand([0, 1, 2])]];
                         $perkawinan = 'Belum Kawin';
@@ -131,8 +134,8 @@ class PendudukDemoSeeder extends Seeder
                         $namaLengkap = $nama[$jk][array_rand($nama[$jk])] . ' ' . $margaKeluarga;
                     }
 
-                    $tahunLahir = random_int($bucket[0], $bucket[1]);
-                    $tanggalLahir = sprintf('%04d-%02d-%02d', $tahunLahir, random_int(1, 12), random_int(1, 28));
+                    $tahunLahir = mt_rand($bucket[0], $bucket[1]);
+                    $tanggalLahir = sprintf('%04d-%02d-%02d', $tahunLahir, mt_rand(1, 12), mt_rand(1, 28));
 
                     Penduduk::updateOrCreate(
                         ['nik' => $nik],

@@ -20,11 +20,6 @@
     <p class="text-muted">Tetapkan Ketua, Sekretaris, dan Bendahara dari data penduduk. Setiap pergantian tersimpan sebagai riwayat untuk pelacakan. Nama Bendahara dan Ketua dipakai pada laporan keuangan dan resi pembayaran.</p>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="border-radius: 0.5rem;">
-        <i class="bi bi-check-circle-fill"></i> <span>{{ session('success') }}</span>
-    </div>
-@endif
 @if($errors->any() && ! old('jabatan'))
     <div class="alert alert-danger mb-4" style="border-radius: 0.5rem;">
         <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>

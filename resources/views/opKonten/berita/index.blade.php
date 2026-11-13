@@ -21,6 +21,11 @@
     .berita-table thead th {
         text-align: center;
     }
+    /* Judul berita rata kiri agar mudah dibaca; kolom lain tetap di tengah. */
+    .berita-table th:nth-child(2),
+    .berita-table td:nth-child(2) {
+        text-align: left;
+    }
     .berita-table td:nth-child(1),
     .berita-table td:nth-child(3),
     .berita-table td:nth-child(4),
@@ -301,12 +306,10 @@
             <div>
                 <label class="form-label text-muted small fw-medium mb-1">Kategori</label>
                 <select name="kategori" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 160px;" onchange="this.form.submit()">
-                    <option value="">Semua Kategori</option>
-                    <option value="Sosial" {{ request('kategori') == 'Sosial' ? 'selected' : '' }}>Sosial</option>
-                    <option value="Infrastruktur" {{ request('kategori') == 'Infrastruktur' ? 'selected' : '' }}>Infrastruktur</option>
-                    <option value="Hiburan" {{ request('kategori') == 'Hiburan' ? 'selected' : '' }}>Hiburan</option>
-                    <option value="Kesehatan" {{ request('kategori') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
-                    <option value="Keamanan" {{ request('kategori') == 'Keamanan' ? 'selected' : '' }}>Keamanan</option>
+                            <option value="">Semua Kategori</option>
+                            @foreach($kategoriFilter as $kat)
+                                <option value="{{ $kat->nama }}" {{ request('kategori') == $kat->nama ? 'selected' : '' }}>{{ $kat->nama }}</option>
+                            @endforeach
                 </select>
             </div>
             <div>
@@ -452,7 +455,7 @@
                     <div class="d-flex gap-3">
                         <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
                         <div>
-                            <h6 class="fw-bold mb-1">Catatan Revisi dari RW:</h6>
+                            <h6 class="fw-bold mb-1">Catatan Revisi dari Admin RW:</h6>
                             <p id="teksDetailCatatanRevisi" class="mb-0 small" style="font-size: 14px;"></p>
                         </div>
                     </div>
@@ -558,7 +561,7 @@
                 <div id="alertCatatanRevisi" class="alert alert-danger d-none d-flex gap-3 align-items-start mb-4" role="alert" style="border-radius: 10px; border-left: 4px solid #dc3545;">
                     <i class="bi bi-exclamation-octagon-fill fs-4 text-danger mt-1"></i>
                     <div>
-                        <h6 class="fw-bold mb-1 text-danger">Catatan Perbaikan dari RW</h6>
+                        <h6 class="fw-bold mb-1 text-danger">Catatan Perbaikan dari Admin RW</h6>
                         <p id="teksCatatanRevisi" class="mb-0 small text-dark"></p>
                     </div>
                 </div>
@@ -570,13 +573,11 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark" style="font-size: 14px;">Kategori</label>
-                        <select name="kategori" id="kategoriSelect" class="form-select bg-light" style="font-size: 14px; border: 1px solid #BFCABA;" required>
+                        <select name="kategori_id" id="kategoriSelect" class="form-select bg-light" style="font-size: 14px; border: 1px solid #BFCABA;" required>
                             <option selected disabled value="">Pilih kategori</option>
-                            <option value="Sosial">Sosial</option>
-                            <option value="Infrastruktur">Infrastruktur</option>
-                            <option value="Hiburan">Hiburan</option>
-                            <option value="Kesehatan">Kesehatan</option>
-                            <option value="Keamanan">Keamanan</option>
+                            @foreach($kategoriPilihan as $kat)
+                                <option value="{{ $kat->id }}">{{ $kat->nama }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -589,7 +590,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold text-dark" style="font-size: 14px;">Foto Utama</label>
+                    <label class="form-label fw-bold text-dark" style="font-size: 14px;">Foto Utama <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden">(wajib)</span></label>
                     <input type="file" name="foto_utama" id="fotoUtama" class="d-none" accept="image/*">
                     <div id="dropZone" class="p-4 text-center rounded-3 bg-white" style="border: 2px dashed #BFCABA; cursor: pointer; transition: all 0.2s;">
                         <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background: rgba(13, 99, 27, 0.1);">
@@ -615,7 +616,7 @@
                         Simpan sebagai Draft
                     </button>
                     <button type="submit" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="document.getElementById('actionInput').value='review'">
-                        Ajukan Berita
+                        {{ $teks['tombol'] }}
                     </button>
                 </div>
 
@@ -901,6 +902,13 @@
 
     // Sync Quill content before submit
     document.getElementById('formBuatBerita').addEventListener('submit', function(e) {
+        const adaFoto = fileInput.files.length > 0 || !previewContainer.classList.contains('d-none');
+        if (!adaFoto) {
+            e.preventDefault();
+            if (window.resetFormSubmitting) window.resetFormSubmitting(this);
+            showNotification('Foto utama wajib diunggah.', true);
+            return false;
+        }
         const textContent = quill.getText().trim();
         if (!textContent) {
             e.preventDefault();
@@ -913,11 +921,11 @@
         if (action === 'review') {
             e.preventDefault();
             Swal.fire({
-                title: 'Ajukan berita ke Ketua RW?',
-                html: 'Berita akan masuk tahap review dan menunggu persetujuan Ketua RW.',
+                title: {!! json_encode($teks['judul']) !!},
+                html: {!! json_encode($teks['isi']) !!},
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, ajukan!',
+                confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {
@@ -1060,8 +1068,8 @@
                 <form action="/op-konten/berita/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="_method" value="PUT">
-                    <button type="button" class="btn fw-semibold px-4 text-nowrap text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Berita">
-                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Berita</span><span class="label-short">Ajukan</span>
+                    <button type="button" class="btn fw-semibold px-4 text-nowrap text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="{{ $teks['tombol'] }}">
+                        <i class="bi bi-send"></i> <span class="label-full">{{ $teks['tombol'] }}</span><span class="label-short">{{ $teks['singkat'] }}</span>
                     </button>
                 </form>
             `;
@@ -1137,7 +1145,14 @@
 
         if (item) {
             document.getElementById('judulBeritaInput').value = item.judul_berita;
-            document.getElementById('kategoriSelect').value = item.kategori;
+            (function () {
+                const sel = document.getElementById('kategoriSelect');
+                // Kategori yang sudah dinonaktifkan tetap tampil agar draf lama bisa disimpan.
+                if (item.kategori_id && !Array.from(sel.options).some(o => o.value === item.kategori_id)) {
+                    sel.add(new Option(item.kategori + ' (nonaktif)', item.kategori_id));
+                }
+                sel.value = item.kategori_id || '';
+            })();
             quill.root.innerHTML = item.isi_berita;
 
             if (item.featured_image) {
@@ -1219,12 +1234,12 @@
 
     function confirmSubmit(id) {
         Swal.fire({
-            title: 'Ajukan berita ke Ketua RW?',
-            text: "Berita akan masuk tahap review dan menunggu persetujuan Ketua RW.",
+            title: {!! json_encode($teks['judul']) !!},
+            text: {!! json_encode($teks['isi']) !!},
             icon: 'question',
             showCancelButton: true,
             buttonsStyling: false,
-            confirmButtonText: 'Ya, ajukan!',
+            confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
             cancelButtonText: 'Batal',
             customClass: {
                 popup: 'custom-swal-popup',
@@ -1259,17 +1274,7 @@
         })
     }
 
-    @if(session('success'))
-        document.addEventListener('DOMContentLoaded', function() {
-            showNotification("{!! addslashes(session('success')) !!}");
-        });
-    @endif
-
-    @if(session('error'))
-        document.addEventListener('DOMContentLoaded', function() {
-            showNotification("{!! addslashes(session('error')) !!}", true);
-        });
-    @endif
+    {{-- Pesan sukses/galat sesi ditampilkan oleh dialog global (alertModal); tidak diulang di sini. --}}
 
     // Live search with debounce
     document.addEventListener('DOMContentLoaded', function() {

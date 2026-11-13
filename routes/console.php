@@ -22,3 +22,8 @@ Schedule::command('iuran:reminder-lainnya')
     ->dailyAt('08:05')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping();
+
+// Berkas KTP/KK sementara (unggahan OCR) yang tidak jadi disimpan: dihapus setelah 24 jam.
+Schedule::command('dokumen:bersihkan-sementara')
+    ->hourly()
+    ->withoutOverlapping();

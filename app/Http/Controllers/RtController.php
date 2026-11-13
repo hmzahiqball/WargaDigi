@@ -218,7 +218,7 @@ class RtController extends Controller
                 'status_perkawinan' => $p->status_perkawinan ?? '-',
                 'file_ktp_url' => $ktpPath ? asset('storage/' . $ktpPath) : null,
                 'file_kk_url' => $kkPath ? asset('storage/' . $kkPath) : null,
-                'pendidikan' => $p->pendidikan ?? '-',
+                'pendidikan' => $p->pendidikan_terakhir ?? '-',
                 'kewarganegaraan' => 'WNI',
                 'nama_orang_tua' => '-',
                 'kode_rt' => $k && $k->rt_id ? (\App\Models\MasterRt::find($k->rt_id)->kode_rt ?? '01') : '01',

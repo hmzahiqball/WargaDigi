@@ -51,6 +51,30 @@ class UmkmStatusNotification extends Notification
                 'pesan'         => "Selamat! Pendaftaran usaha '{$this->usaha->nama_usaha}' telah disetujui oleh RW.",
                 'url'           => route('warga.umkm.kelola', ['usaha_id' => $this->usaha->id]),
             ];
+        } elseif ($this->status === 'Nonaktif') {
+            $pesan = "Usaha '{$this->usaha->nama_usaha}' dinonaktifkan oleh RW dan tidak tampil di Pojok UMKM.";
+            if (!empty($this->catatan)) {
+                $pesan .= " Alasan: " . $this->catatan;
+            }
+            return [
+                'umkm_usaha_id' => $this->usaha->id,
+                'status'        => 'Nonaktif',
+                'type'          => 'danger',
+                'icon'          => 'bi-pause-circle-fill',
+                'judul'         => 'Usaha Dinonaktifkan',
+                'pesan'         => $pesan,
+                'url'           => route('warga.umkm.kelola', ['usaha_id' => $this->usaha->id]),
+            ];
+        } elseif ($this->status === 'Aktif') {
+            return [
+                'umkm_usaha_id' => $this->usaha->id,
+                'status'        => 'Aktif',
+                'type'          => 'success',
+                'icon'          => 'bi-play-circle-fill',
+                'judul'         => 'Usaha Diaktifkan Kembali',
+                'pesan'         => "Usaha '{$this->usaha->nama_usaha}' telah diaktifkan kembali dan tampil di Pojok UMKM.",
+                'url'           => route('warga.umkm.kelola', ['usaha_id' => $this->usaha->id]),
+            ];
         } elseif ($this->status === 'Rejected') {
             $pesan = "Pendaftaran usaha '{$this->usaha->nama_usaha}' ditolak oleh RW.";
             if (!empty($this->catatan)) {
@@ -62,8 +86,9 @@ class UmkmStatusNotification extends Notification
                 'type'          => 'danger',
                 'icon'          => 'bi-x-circle-fill',
                 'judul'         => 'Pendaftaran UMKM Ditolak',
-                'pesan'         => $pesan,
-                'url'           => route('warga.umkm.galeri'),
+                'pesan'         => $pesan . ' Perbaiki data lalu ajukan ulang.',
+                // Arahkan ke halaman kelola agar pemilik bisa memperbaiki dan mengajukan ulang.
+                'url'           => route('warga.umkm.kelola', ['usaha_id' => $this->usaha->id]),
             ];
         } else {
             return [

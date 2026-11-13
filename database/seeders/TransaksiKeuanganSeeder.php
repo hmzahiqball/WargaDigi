@@ -22,7 +22,7 @@ class TransaksiKeuanganSeeder extends Seeder
                 ['kode_transaksi' => 'TRX-RT01-2609-001'],
                 [
                     'tipe' => 'pemasukan',
-                    'kategori' => 'Iuran Warga',
+                    'kategori' => 'Iuran Bulanan Warga',
                     'judul' => 'Iuran Warga Bulanan - Blok A',
                     'deskripsi' => 'Iuran bulanan warga RT 01 Blok A untuk bulan September',
                     'jumlah' => 250000,
@@ -59,7 +59,7 @@ class TransaksiKeuanganSeeder extends Seeder
                 ['kode_transaksi' => 'TRX-RW21-2609-001'],
                 [
                     'tipe' => 'pengeluaran',
-                    'kategori' => 'Operasional',
+                    'kategori' => 'Operasional & ATK',
                     'judul' => 'Pembayaran Listrik Fasum',
                     'deskripsi' => 'Bayar listrik fasilitas umum RW 21',
                     'jumlah' => 1240000,
@@ -79,7 +79,7 @@ class TransaksiKeuanganSeeder extends Seeder
                 ['kode_transaksi' => 'TRX-DKM-2609-001'],
                 [
                     'tipe' => 'pemasukan',
-                    'kategori' => 'Dana Kematian',
+                    'kategori' => 'Donasi Kematian',
                     'judul' => 'Sumbangan Dana Kematian',
                     'deskripsi' => 'Sumbangan dari donatur anonim',
                     'jumlah' => 500000,
@@ -89,6 +89,12 @@ class TransaksiKeuanganSeeder extends Seeder
                     'dicatat_oleh' => $dkm->id,
                 ]
             );
+        }
+ 
+
+        // Tautkan ke master kategori transaksi berdasarkan nama.
+        foreach (\App\Models\KategoriTransaksi::all() as $kat) {
+            TransaksiKeuangan::whereNull('kategori_id')->where('kategori', $kat->nama)->update(['kategori_id' => $kat->id]);
         }
     }
 }

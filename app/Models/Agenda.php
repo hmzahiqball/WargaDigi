@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Agenda extends Model
 {
-    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt;
+    use HasFactory, HasUuids, \App\Models\Concerns\PunyaCakupanRt, \App\Models\Concerns\PunyaSlug, \App\Models\Concerns\PunyaKategoriKonten;
 
     protected $table = 'agenda';
 
@@ -29,6 +29,8 @@ class Agenda extends Model
         'catatan_revisi',
         'operator_id',
         'rt_id',
+        'kategori_id',
+        'slug',
         'approval_id',
     ];
 
@@ -38,6 +40,11 @@ class Agenda extends Model
         'is_rsvp_enabled' => 'boolean',
         'foto_dokumentasi' => 'array',
     ];
+
+    public function kolomJudulSlug(): string
+    {
+        return 'judul_agenda';
+    }
 
     public function operator()
     {

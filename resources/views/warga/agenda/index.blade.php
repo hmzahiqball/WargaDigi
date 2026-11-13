@@ -662,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${props.lokasi ? '<span><i class="bi bi-geo-alt me-1"></i>' + (props.lokasi.length > 15 ? props.lokasi.substring(0,15) + '...' : props.lokasi) + '</span>' : ''}
                         </div>
                         ${rsvpHtml}
-                        <a href="/warga/agenda/${ev.id}" class="btn btn-sm btn-success rounded-pill w-100 mt-2" style="font-size: 0.75rem;">
+                        <a href="/warga/agenda/${ev.extendedProps.slug || ev.id}" class="btn btn-sm btn-success rounded-pill w-100 mt-2" style="font-size: 0.75rem;">
                             <i class="bi bi-eye me-1"></i>Lihat Detail
                         </a>
                     </div>

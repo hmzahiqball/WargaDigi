@@ -166,7 +166,7 @@ class NotificationService
      */
     public static function ketuaRw(): \Illuminate\Support\Collection
     {
-        return static::usersByRole(['Ketua RW', 'Pimpinan RW', 'Pimpinan']);
+        return static::usersByRole(['Ketua RW']);
     }
 
     /**
@@ -477,20 +477,31 @@ class NotificationService
         ]);
     }
 
-    /** Konten butuh review → approver konten RW (Admin RW + Ketua RW). */
-    public static function notifikasiKontenReview(string $jenis, string $judul, ?string $url = null): void
+    /**
+     * Penyetuju konten (berita, agenda, pengumuman; RT maupun RW): hanya Admin RW.
+     *
+     * @return \Illuminate\Support\Collection<int,\App\Models\User>
+     */
+    public static function penyetujuKonten(string $jenis, ?string $rtId = null): \Illuminate\Support\Collection
     {
-        $target = static::adminRw()->merge(static::ketuaRw())->unique('id')->values();
-        static::kirimKeBanyak($target, [
+        return static::adminRw();
+    }
+
+    /** Konten diajukan untuk ditinjau ? Admin RW diberi tahu, dengan tautan ke antrean Persetujuan Konten. */
+    public static function notifikasiKontenReview(string $jenis, string $judul, ?string $rtId = null, ?string $url = null): void
+    {
+        $asal = empty($rtId) ? 'RW' : 'RT ' . (\App\Models\MasterRt::find($rtId)?->kode_rt ?? '');
+        $halaman = 'rw.persetujuan-konten.index';
+
+        static::kirimKeBanyak(static::penyetujuKonten($jenis, $rtId), [
             'type'     => 'info',
             'icon'     => 'bi-eye',
-            'judul'    => ucfirst($jenis) . ' Menunggu Review',
-            'pesan'    => "{$jenis} \"{$judul}\" menunggu review untuk dipublikasikan.",
-            'url'      => $url ?? route('rw.dashboard'),
+            'judul'    => ucfirst($jenis) . ' Menunggu Persetujuan',
+            'pesan'    => ucfirst($jenis) . " \"{$judul}\" dari {$asal} menunggu persetujuan Anda.",
+            'url'      => $url ?? (\Illuminate\Support\Facades\Route::has($halaman) ? route($halaman) : route('home')),
             'kategori' => 'konten',
         ]);
     }
-
     /** Konten dikembalikan untuk revisi → pembuat (Op Konten). */
     public static function notifikasiKontenRevisi(?\App\Models\User $pembuat, string $jenis, string $judul, ?string $catatan = null, ?string $url = null): void
     {

@@ -268,12 +268,9 @@
                 <label class="form-label text-muted small fw-medium mb-1">Kategori</label>
                 <select name="kategori" class="form-select rounded-3 py-2 fs-6" style="width: auto; min-width: 160px;" onchange="document.getElementById('filterForm').submit()">
                     <option value="">Semua Kategori</option>
-                    <option value="Sosial" {{ request('kategori') == 'Sosial' ? 'selected' : '' }}>Sosial</option>
-                    <option value="Infrastruktur" {{ request('kategori') == 'Infrastruktur' ? 'selected' : '' }}>Infrastruktur</option>
-                    <option value="Hiburan" {{ request('kategori') == 'Hiburan' ? 'selected' : '' }}>Hiburan</option>
-                    <option value="Kesehatan" {{ request('kategori') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
-                    <option value="Keamanan" {{ request('kategori') == 'Keamanan' ? 'selected' : '' }}>Keamanan</option>
-                    <option value="Organisasi" {{ request('kategori') == 'Organisasi' ? 'selected' : '' }}>Organisasi</option>
+                    @foreach($kategoriFilter as $kat)
+                        <option value="{{ $kat->nama }}" {{ request('kategori') == $kat->nama ? 'selected' : '' }}>{{ $kat->nama }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -304,7 +301,7 @@
             </colgroup>
             <thead class="thead-green-gradient">
                 <tr class="text-uppercase text-xs fw-bold" style="letter-spacing: 0.5px;">
-                    <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Judul Agenda</th>
+                    <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-start">Judul Agenda</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Kategori</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Tanggal & Waktu</th>
                     <th scope="col" class="py-3 px-3 fw-semibold border-0 text-white text-center">Lokasi</th>
@@ -315,7 +312,7 @@
             <tbody>
                 @forelse($agenda as $item)
                     <tr class="border-bottom" style="border-color: #BFCABA !important;">
-                        <td class="py-4 px-3 text-center">
+                        <td class="py-4 px-3 text-start">
                             <div class="fw-bold text-dark mb-1">{{ $item->judul_agenda }}</div>
                         </td>
                         <td class="py-4 px-3 text-center">
@@ -424,14 +421,11 @@
 
                         <div class="col-12">
                             <label class="form-label fw-medium text-dark" style="font-size: 14px;">Kategori Agenda</label>
-                            <select name="kategori" id="kategoriAgenda" class="form-select" required>
+                            <select name="kategori_id" id="kategoriAgenda" class="form-select" required>
                                 <option value="">Pilih kategori...</option>
-                                <option value="Sosial">Sosial</option>
-                                <option value="Infrastruktur">Infrastruktur</option>
-                                <option value="Hiburan">Hiburan</option>
-                                <option value="Kesehatan">Kesehatan</option>
-                                <option value="Keamanan">Keamanan</option>
-                                <option value="Organisasi">Organisasi</option>
+                                @foreach($kategoriPilihan as $kat)
+                                    <option value="{{ $kat->id }}">{{ $kat->nama }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -510,7 +504,7 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label fw-medium text-dark mb-1" style="font-size: 14px;">Lampiran Flyer/Poster (Opsional)</label>
+                            <label class="form-label fw-medium text-dark mb-1" style="font-size: 14px;">Foto Utama / Flyer Agenda <span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden">(wajib)</span></label>
 
                             <!-- Existing File Preview (For Edit) -->
                             <div id="existingFilePreview" class="image-preview-container mb-3 d-none">
@@ -540,7 +534,7 @@
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-dark fw-semibold px-4 btn-hover-gray" style="border-color: #D1D5DB; background: white;" onclick="confirmCloseModal()">Batal</button>
                         <button type="submit" class="btn btn-draft fw-semibold px-4" style="border: 1px solid #707A6C; color: #1B1C1C;" onclick="document.getElementById('formAction').value='draft'">Simpan ke Draf</button>
-                        <button type="submit" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="document.getElementById('formAction').value='review'">Ajukan Agenda</button>
+                        <button type="submit" class="btn fw-semibold px-4 text-white btn-gradient-green" onclick="document.getElementById('formAction').value='review'">{{ $teks['tombol'] }}</button>
                     </div>
                 </div>
             </form>
@@ -594,7 +588,7 @@
                     <div class="d-flex gap-3">
                         <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
                         <div>
-                            <h6 class="fw-bold mb-1">Catatan Revisi dari RW:</h6>
+                            <h6 class="fw-bold mb-1">Catatan Revisi dari {{ \App\Support\KontenScope::penyetuju('agenda', auth()->user()) }}:</h6>
                             <p id="teksDetailCatatanRevisi" class="mb-0 small" style="font-size: 14px;"></p>
                         </div>
                     </div>
@@ -819,6 +813,20 @@
         // Sync Quill content before submit
         document.getElementById('formAgenda').addEventListener('submit', function(e) {
             const formEl = this;
+            const adaFoto = document.getElementById('bannerFlyer').files.length > 0 || !document.getElementById('existingFilePreview').classList.contains('d-none');
+            if (!adaFoto) {
+                e.preventDefault();
+                if (window.resetFormSubmitting) {
+                    window.resetFormSubmitting(formEl);
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    text: 'Foto utama agenda wajib diunggah.',
+                    confirmButtonColor: '#2E7D32'
+                });
+                return false;
+            }
             const textContent = quill.getText().trim();
             if (!textContent) {
                 e.preventDefault();
@@ -841,11 +849,11 @@
                     window.resetFormSubmitting(formEl);
                 }
                 Swal.fire({
-                    title: 'Ajukan agenda ke Ketua RW?',
-                    html: 'Agenda akan masuk tahap review dan menunggu persetujuan Ketua RW.',
+                    title: {!! json_encode($teks['judul']) !!},
+                    html: {!! json_encode($teks['isi']) !!},
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Ya, ajukan!',
+                    confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
                     cancelButtonText: 'Batal',
                     reverseButtons: true,
                     customClass: {
@@ -935,15 +943,9 @@
             });
         }
 
-        // Toast
-        @if(session('success'))
-            showNotification("{!! addslashes(session('success')) !!}");
-        @endif
+        // Pesan sukses/galat sesi ditampilkan oleh dialog global (alertModal); hanya galat validasi yang ditampilkan di sini.
         @if($errors->any())
             showNotification("{!! addslashes($errors->first()) !!}", true);
-        @endif
-        @if(session('error'))
-            showNotification("{!! addslashes(session('error')) !!}", true);
         @endif
     });
 
@@ -1032,7 +1034,14 @@
         document.getElementById('modalTitle').textContent = 'Edit Agenda';
 
         document.getElementById('judulAgenda').value = agenda.judul_agenda;
-        document.getElementById('kategoriAgenda').value = agenda.kategori;
+        (function () {
+            const sel = document.getElementById('kategoriAgenda');
+            // Kategori yang sudah dinonaktifkan tetap tampil agar draf lama bisa disimpan.
+            if (agenda.kategori_id && !Array.from(sel.options).some(o => o.value === agenda.kategori_id)) {
+                sel.add(new Option(agenda.kategori + ' (nonaktif)', agenda.kategori_id));
+            }
+            sel.value = agenda.kategori_id || '';
+        })();
         document.getElementById('lokasiAgenda').value = agenda.lokasi;
         quill.root.innerHTML = agenda.detail_pengumuman;
         document.getElementById('deskripsiAgendaInput').value = quill.getText().trim() === '' ? '' : quill.getText().trim();
@@ -1298,8 +1307,8 @@
                 </button>
                 <form action="/op-konten/agenda/${item.id}/submit" method="POST" class="d-inline" id="formSubmit_${item.id}">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="Ajukan Agenda">
-                        <i class="bi bi-send"></i> <span class="label-full">Ajukan Agenda</span><span class="label-short">Ajukan</span>
+                    <button type="button" class="btn fw-semibold px-4 text-white btn-gradient-green d-flex align-items-center justify-content-center gap-2" onclick="confirmSubmit('${item.id}')" data-bs-toggle="tooltip" title="{{ $teks['tombol'] }}">
+                        <i class="bi bi-send"></i> <span class="label-full">{{ $teks['tombol'] }}</span><span class="label-short">{{ $teks['singkat'] }}</span>
                     </button>
                 </form>
             `;
@@ -1356,12 +1365,12 @@
 
     function confirmSubmit(id) {
         Swal.fire({
-            title: 'Ajukan agenda ke Ketua RW?',
-            text: "Agenda akan masuk tahap review dan menunggu persetujuan Ketua RW.",
+            title: {!! json_encode($teks['judul']) !!},
+            text: {!! json_encode($teks['isi']) !!},
             icon: 'question',
             showCancelButton: true,
             buttonsStyling: false,
-            confirmButtonText: 'Ya, ajukan!',
+            confirmButtonText: {!! json_encode($teks['konfirmasi']) !!},
             cancelButtonText: 'Batal',
             customClass: {
                 popup: 'custom-swal-popup',
@@ -1470,6 +1479,5 @@
     }
 </script>
 @endpush
-
 
 

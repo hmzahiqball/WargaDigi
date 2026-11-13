@@ -223,48 +223,32 @@ class GaleriUmkmController extends Controller
     }
 
 
+    /** Form pendaftaran berupa modal di halaman galeri: buka galeri dengan modal langsung tampil. */
     public function createUsaha()
     {
-        return redirect()->route('warga.umkm.galeri');
+        return redirect()->route('umkm.galeri', ['daftar' => 1]);
     }
 
     public function storeUsaha(Request $request)
     {
-        $kategoriId = $request->get('kategori_umkm_id');
-        if ($kategoriId && !KategoriUmkm::where('id', $kategoriId)->exists()) {
-            $kat = KategoriUmkm::firstOrCreate(['nama_kategori' => $kategoriId]);
-            $kategoriId = $kat->id;
-        } elseif (!$kategoriId && $request->filled('kategori')) {
-            $kat = KategoriUmkm::firstOrCreate(['nama_kategori' => $request->kategori]);
-            $kategoriId = $kat->id;
-        }
+        self::terapkanKontakProfil($request);
 
+        // Kategori wajib dari master (tanpa membuat kategori baru); Koperasi sementara tidak bisa dipilih.
         $validated = $request->validate([
             'nama_usaha' => 'required|string|max:100',
+            'kategori_umkm_id' => KategoriUmkm::aturan(),
             'alamat_usaha' => 'required|string',
             'no_wa' => 'required|string|max:20',
             'deskripsi' => 'nullable|string',
             'foto_sampul' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'foto_usaha' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
-        ]);
+        ], KategoriUmkm::pesan());
 
         $validated['nama_usaha'] = strip_tags($validated['nama_usaha']);
         $validated['alamat_usaha'] = strip_tags($validated['alamat_usaha']);
         if (!empty($validated['deskripsi'])) {
             $validated['deskripsi'] = strip_tags($validated['deskripsi']);
         }
-
-        if (!$kategoriId) {
-            $defaultKat = KategoriUmkm::firstOrCreate(['nama_kategori' => 'Lainnya']);
-            $kategoriId = $defaultKat->id;
-        }
-
-        $katDipilih = KategoriUmkm::find($kategoriId);
-        if ($katDipilih && strtolower(trim($katDipilih->nama_kategori)) === 'koperasi') {
-            return back()->with('error', 'Kategori Koperasi saat ini dinonaktifkan dan tidak dapat dipilih untuk pendaftaran usaha baru.');
-        }
-
-        $validated['kategori_umkm_id'] = $kategoriId;
 
         $userNik = Auth::user()->nik ?? null;
         if (!$userNik) {
@@ -278,7 +262,7 @@ class GaleriUmkmController extends Controller
 
         $file = $request->file('foto_sampul') ?? $request->file('foto_usaha');
         if ($file) {
-            $path = $file->store('umkm-photos', 'public');
+            $path = \App\Services\KonversiGambarWebp::simpanKeDisk($file, 'umkm-photos', 'public', \App\Services\KonversiGambarWebp::KONTEN);
             $validated['foto_usaha'] = $path;
         }
         unset($validated['foto_sampul']);
@@ -289,17 +273,7 @@ class GaleriUmkmController extends Controller
             Auth::user()->notify(new \App\Notifications\UmkmStatusNotification($usahaBaru, 'Pending'));
         }
 
-        // Notifikasi: UMKM baru menunggu verifikasi → Admin RW + Ketua RW.
-        $targetRw = \App\Services\NotificationService::adminRw()
-            ->merge(\App\Services\NotificationService::ketuaRw())->unique('id')->values();
-        \App\Services\NotificationService::kirimKeBanyak($targetRw, [
-            'type'     => 'warning',
-            'icon'     => 'bi-shop',
-            'judul'    => 'UMKM Baru Menunggu Verifikasi',
-            'pesan'    => "Usaha \"{$usahaBaru->nama_usaha}\" menunggu verifikasi RW.",
-            'url'      => \Illuminate\Support\Facades\Route::has('rw.umkm.index') ? route('rw.umkm.index') : route('rw.dashboard'),
-            'kategori' => 'umkm',
-        ]);
+        self::notifikasiMenungguVerifikasi($usahaBaru, false);
 
         KategoriProduk::firstOrCreate([
             'umkm_usaha_id' => $usahaBaru->id,
@@ -312,5 +286,53 @@ class GaleriUmkmController extends Controller
 
         return redirect()->route('warga.umkm.kelola')
             ->with('success', 'Pendaftaran usaha ' . $usahaBaru->nama_usaha . ' berhasil dikirim dan berstatus Pending menunggu verifikasi dari Pengurus RW.');
+    }
+
+    /**
+     * Ceklis "Gunakan nomor kontak di profil": nomor WA diambil dari database (profil pemilik akun),
+     * bukan dari nilai yang dikirim klien.
+     */
+    public static function terapkanKontakProfil(Request $request): void
+    {
+        $galat = [];
+
+        if ($request->boolean('pakai_kontak_profil')) {
+            $nomor = UmkmUsaha::nomorKontakProfil($request->user());
+            $nomor
+                ? $request->merge(['no_wa' => $nomor])
+                : $galat['no_wa'] = 'Nomor WA di profil belum diisi. Isi nomor kontak bisnis secara manual.';
+        }
+
+        // Ceklis "Gunakan alamat di profil": alamat juga diambil dari database.
+        if ($request->boolean('pakai_alamat_profil')) {
+            $alamat = UmkmUsaha::alamatProfil($request->user());
+            $alamat
+                ? $request->merge(['alamat_usaha' => $alamat])
+                : $galat['alamat_usaha'] = 'Alamat di profil belum diisi. Isi alamat usaha secara manual.';
+        }
+
+        if ($galat) {
+            throw \Illuminate\Validation\ValidationException::withMessages($galat);
+        }
+    }
+
+    /**
+     * Notifikasi usaha menunggu verifikasi ke Admin RW (penyetuju) dan Ketua RW (pemantau).
+     * Dipakai untuk pendaftaran baru maupun pengajuan ulang setelah ditolak.
+     */
+    public static function notifikasiMenungguVerifikasi(UmkmUsaha $usaha, bool $ajukanUlang): void
+    {
+        $targetRw = \App\Services\NotificationService::adminRw()
+            ->merge(\App\Services\NotificationService::ketuaRw())->unique('id')->values();
+        \App\Services\NotificationService::kirimKeBanyak($targetRw, [
+            'type'     => 'warning',
+            'icon'     => 'bi-shop',
+            'judul'    => $ajukanUlang ? 'UMKM Diajukan Ulang' : 'UMKM Baru Menunggu Verifikasi',
+            'pesan'    => $ajukanUlang
+                ? "Usaha \"{$usaha->nama_usaha}\" telah diperbaiki dan diajukan ulang, menunggu verifikasi RW."
+                : "Usaha \"{$usaha->nama_usaha}\" menunggu verifikasi RW.",
+            'url'      => route('rw.persetujuan-umkm'),
+            'kategori' => 'umkm',
+        ]);
     }
 }

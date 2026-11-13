@@ -442,7 +442,7 @@ Seluruh akun contoh menggunakan password `password`. Login memerlukan NIK + Nomo
 | Publik / Landing | HomeController, InformasiController, TransparansiController, BeritaController, LayananController, UmkmController |
 | Autentikasi | AuthController, RegisterController |
 | Admin Aplikasi | AdminController |
-| RW | RwController, Rw/MasterRtController, Rw/PusatInformasiController |
+| RW | RwController, Rw/MasterRtController, Rw/PusatInformasiController (konten terbit), Rw/PersetujuanKontenController (persetujuan konten) |
 | RT | RtController |
 | Operator Konten | OpKontenController, OpKonten/(Berita, Agenda, Pengumuman, Galeri)Controller |
 | Operator Keuangan | OpKeuanganController, TagihanController, PersetujuanKeuanganController |

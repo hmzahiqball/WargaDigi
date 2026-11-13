@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/ocr/parse-ktp', [\App\Http\Controllers\OcrController::class, 'parseKtp'])->name('ocr.parse-ktp');
     Route::post('/ocr/simpan-kk', [\App\Http\Controllers\OcrController::class, 'simpanKk'])->name('ocr.simpan-kk');
     Route::post('/ocr/parse-kk', [\App\Http\Controllers\OcrController::class, 'parseKk'])->name('ocr.parse-kk');
+    // Preview KTP/KK sementara (privat, hanya pemilik) sebelum formulir disimpan.
+    Route::get('/dokumen-sementara/{nama}', [\App\Http\Controllers\OcrController::class, 'lihatSementara'])
+        ->where('nama', '[A-Za-z0-9]{40}\.(jpg|jpeg|png|pdf)')->name('dokumen-sementara.lihat');
 
     // Dropdown wilayah bertingkat (provinsi → kelurahan).
     Route::get('/wilayah/anak', [\App\Http\Controllers\WilayahController::class, 'anak'])->name('wilayah.anak');
@@ -56,11 +59,19 @@ Route::middleware('auth')->group(function () {
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/informasi', [InformasiController::class, 'index'])->name('informasi');
+// PWA: manifest dan ikon aplikasi mengikuti Pengaturan Sistem (bawaan: public/icons).
+Route::get('/manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/ikon-aplikasi/{varian}.png', [\App\Http\Controllers\PwaController::class, 'ikon'])->whereIn('varian', ['192', '512', 'maskable'])->name('pwa.ikon');
+// Halaman Informasi (statistik warga) ditutup untuk publik karena terlalu membuka data; alamat lama dialihkan ke beranda.
+// Aktifkan kembali: Route::get('/informasi', [InformasiController::class, 'index'])->name('informasi');
+Route::redirect('/informasi', '/')->name('informasi');
 Route::get('/transparansi', [TransparansiController::class, 'index'])->name('transparansi');
 Route::get('/transparansi/{id}/pdf', [TransparansiController::class, 'downloadPdf'])->name('transparansi.download-pdf');
 Route::get('/berita', [BeritaController::class, 'index'])->name('berita');
 Route::get('/berita/{id}', [BeritaController::class, 'show'])->name('berita.show');
+// Agenda publik: kalender kegiatan, agenda mendatang, arsip, dan detail (tanpa RSVP).
+Route::get('/agenda', [\App\Http\Controllers\AgendaPublikController::class, 'index'])->name('agenda');
+Route::get('/agenda/{agenda}', [\App\Http\Controllers\AgendaPublikController::class, 'show'])->name('agenda.show');
 Route::get('/layanan-mandiri', [LayananController::class, 'index'])->name('layanan-mandiri');
 
 // Shared Domain: UMKM (Galeri, Koleksi, Usaha, Produk)
@@ -133,24 +144,29 @@ Route::middleware(['auth', 'role:Admin Aplikasi'])->prefix('admin')->group(funct
     Route::post('/pejabat', [\App\Http\Controllers\Admin\PejabatController::class, 'store'])->name('admin.pejabat.store');
     Route::get('/pejabat/riwayat', [\App\Http\Controllers\Admin\PejabatController::class, 'riwayat'])->name('admin.pejabat.riwayat');
     Route::post('/pejabat/{id}/aktifkan', [\App\Http\Controllers\Admin\PejabatController::class, 'aktifkan'])->name('admin.pejabat.aktifkan');
+    // Pengaturan Halaman Utama (banner dan footer landing page).
+    Route::get('/halaman-utama', [\App\Http\Controllers\Admin\HalamanUtamaController::class, 'edit'])->name('admin.halaman-utama');
+    Route::post('/halaman-utama', [\App\Http\Controllers\Admin\HalamanUtamaController::class, 'update'])->name('admin.halaman-utama.update');
     Route::get('/arsip-data-warga', [AdminController::class, 'arsipDataWarga'])->name('admin.arsip-data-warga');
     Route::get('/manajemen-data', [AdminController::class, 'manajemenData'])->name('admin.manajemen-data');
 });
 
 // RW (Role: Admin RW, Ketua RW)
-Route::middleware(['auth', 'role:Admin RW,Ketua RW,Pimpinan'])->prefix('rw')->name('rw.')->group(function () {
+Route::middleware(['auth', 'role:Admin RW,Ketua RW'])->prefix('rw')->name('rw.')->group(function () {
     Route::get('/dashboard', [RwController::class, 'dashboard'])->name('dashboard');
     Route::get('/rekap-iuran', [\App\Http\Controllers\SetoranRtController::class, 'rekapRw'])->name('rekap-iuran');
     Route::get('/', [RwController::class, 'dashboard']);
 
-    // Pusat Informasi (Berita & Agenda Approval)
+    // Pusat Informasi: konten yang sudah terbit (hanya dilihat)
     Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('pusat-informasi.index');
-    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('pusat-informasi.berita.approve');
-    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('pusat-informasi.berita.reject');
-    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('pusat-informasi.agenda.approve');
-    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('pusat-informasi.agenda.reject');
-    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('pusat-informasi.pengumuman.approve');
-    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('pusat-informasi.pengumuman.reject');
+    // Persetujuan Konten (menu Persetujuan): seluruh berita, agenda, dan pengumuman (RT dan RW) hanya oleh Admin RW
+    Route::get('/persetujuan-konten', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'index'])->name('persetujuan-konten.index');
+    Route::put('/persetujuan-konten/berita/{id}/approve', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'approveBerita'])->name('persetujuan-konten.berita.approve');
+    Route::put('/persetujuan-konten/berita/{id}/reject', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'rejectBerita'])->name('persetujuan-konten.berita.reject');
+    Route::put('/persetujuan-konten/agenda/{id}/approve', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'approveAgenda'])->name('persetujuan-konten.agenda.approve');
+    Route::put('/persetujuan-konten/agenda/{id}/reject', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'rejectAgenda'])->name('persetujuan-konten.agenda.reject');
+    Route::put('/persetujuan-konten/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'approvePengumuman'])->name('persetujuan-konten.pengumuman.approve');
+    Route::put('/persetujuan-konten/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PersetujuanKontenController::class, 'rejectPengumuman'])->name('persetujuan-konten.pengumuman.reject');
 
     // Master Data RT (CRUD)
     Route::get('/rt', [MasterRtController::class, 'index'])->name('master-rt.index');
@@ -166,10 +182,14 @@ Route::middleware(['auth', 'role:Admin RW,Ketua RW,Pimpinan'])->prefix('rw')->na
     Route::get('/surat/{id}/preview', [RwController::class, 'previewSurat'])->name('surat.preview');
 
     // UMKM
+    // Pojok UMKM RW: daftar usaha disetujui. Persetujuan dan yang ditolak ada di menu Persetujuan.
     Route::get('/umkm', [RwController::class, 'umkm'])->name('umkm.index');
+    Route::get('/persetujuan-umkm', [RwController::class, 'persetujuanUmkm'])->name('persetujuan-umkm');
     Route::get('/umkm/usaha/{id}', [RwController::class, 'detailUsahaUmkm'])->name('umkm.usaha.detail');
     Route::post('/umkm/{id}/approve', [RwController::class, 'approveUmkm'])->name('umkm.approve');
     Route::post('/umkm/{id}/reject', [RwController::class, 'rejectUmkm'])->name('umkm.reject');
+    Route::post('/umkm/{id}/nonaktifkan', [RwController::class, 'nonaktifkanUmkm'])->name('umkm.nonaktifkan');
+    Route::post('/umkm/{id}/aktifkan', [RwController::class, 'aktifkanUmkm'])->name('umkm.aktifkan');
 
     // Persetujuan Keuangan
     Route::get('/persetujuan-keuangan', [PersetujuanKeuanganController::class, 'index'])->name('persetujuan-keuangan.index');
@@ -186,6 +206,8 @@ Route::middleware(['auth', 'role:Admin RW,Ketua RW,Pimpinan'])->prefix('rw')->na
     Route::get('/penduduk', [PendudukController::class, 'index'])->name('penduduk.index');
     Route::get('/penduduk/export', [PendudukController::class, 'export'])->name('penduduk.export');
     Route::get('/penduduk/{id}', [PendudukController::class, 'show'])->name('penduduk.show');
+    // Detail keluarga (hanya lihat, view bersama dengan RT).
+    Route::get('/keluarga/{keluarga}', [\App\Http\Controllers\Rt\KeluargaController::class, 'show'])->name('keluarga.show');
 });
 
 //RT (Role: Ketua RT)
@@ -203,14 +225,8 @@ Route::middleware(['auth', 'role:Ketua RT'])->prefix('rt')->group(function () {
     Route::put('/persetujuan-keuangan/{id}/approve', [PersetujuanKeuanganController::class, 'approve'])->name('rt.persetujuan-keuangan.approve');
     Route::put('/persetujuan-keuangan/{id}/reject', [PersetujuanKeuanganController::class, 'reject'])->name('rt.persetujuan-keuangan.reject');
 
-    // Pusat Informasi: Ketua RT menyetujui konten RT-nya sendiri
+    // Pusat Informasi: konten yang sudah terbit (hanya dilihat)
     Route::get('/pusat-informasi', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'index'])->name('rt.pusat-informasi.index');
-    Route::put('/pusat-informasi/berita/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveBerita'])->name('rt.pusat-informasi.berita.approve');
-    Route::put('/pusat-informasi/berita/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectBerita'])->name('rt.pusat-informasi.berita.reject');
-    Route::put('/pusat-informasi/agenda/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approveAgenda'])->name('rt.pusat-informasi.agenda.approve');
-    Route::put('/pusat-informasi/agenda/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectAgenda'])->name('rt.pusat-informasi.agenda.reject');
-    Route::put('/pusat-informasi/pengumuman/{id}/approve', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'approvePengumuman'])->name('rt.pusat-informasi.pengumuman.approve');
-    Route::put('/pusat-informasi/pengumuman/{id}/reject', [\App\Http\Controllers\Rw\PusatInformasiController::class, 'rejectPengumuman'])->name('rt.pusat-informasi.pengumuman.reject');
     // Mutasi Warga
     Route::get('/mutasi-warga', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'index'])->name('rt.mutasi.index');
     Route::post('/mutasi-warga/{id}/approve', [\App\Http\Controllers\Rt\MutasiWargaController::class, 'approve'])->name('rt.mutasi.approve');
@@ -261,6 +277,15 @@ Route::middleware(['auth', 'role:Op Konten RW,Op Konten RT,Op. Konten RW,Op. Kon
         Route::delete('/pengumuman/{id}', [OpKontenPengumumanController::class, 'destroy'])->name('pengumuman.destroy');
         Route::post('/pengumuman/{id}/submit', [OpKontenPengumumanController::class, 'submit'])->name('pengumuman.submit');
         Route::post('/pengumuman/{id}/cancel-submit', [OpKontenPengumumanController::class, 'cancelSubmit'])->name('pengumuman.cancel-submit');
+        Route::put('/pengumuman/{id}/archive', [OpKontenPengumumanController::class, 'archive'])->name('pengumuman.archive');
+        Route::put('/pengumuman/{id}/unarchive', [OpKontenPengumumanController::class, 'unarchive'])->name('pengumuman.unarchive');
+        // Master kategori konten: hanya Operator Konten RW; Operator Konten RT hanya memakai.
+        Route::middleware('role:Op Konten RW,Op. Konten RW')->group(function () {
+            Route::get('/kategori-konten', [\App\Http\Controllers\OpKonten\KategoriKontenController::class, 'index'])->name('kategori.index');
+            Route::post('/kategori-konten', [\App\Http\Controllers\OpKonten\KategoriKontenController::class, 'store'])->name('kategori.store');
+            Route::put('/kategori-konten/{id}', [\App\Http\Controllers\OpKonten\KategoriKontenController::class, 'update'])->name('kategori.update');
+            Route::delete('/kategori-konten/{id}', [\App\Http\Controllers\OpKonten\KategoriKontenController::class, 'destroy'])->name('kategori.destroy');
+        });
         Route::get('/', [OpKontenController::class, 'dashboard']);
     });
     Route::get('/opkonten/dashboard', [OpKontenController::class, 'dashboard']);
@@ -370,6 +395,7 @@ Route::middleware(['auth', 'role:Warga'])->prefix('warga')->name('warga.')->grou
 
     Route::get('/galeri/kelola', [KelolaUmkmController::class, 'index'])->name('umkm.kelola');
     Route::put('/galeri/usaha/{id}', [KelolaUmkmController::class, 'updateUsaha'])->name('umkm.update-usaha');
+    Route::put('/galeri/usaha/{id}/ajukan-ulang', [KelolaUmkmController::class, 'ajukanUlangUsaha'])->name('umkm.ajukan-ulang');
     Route::post('/galeri/usaha/{id}/sampul', [KelolaUmkmController::class, 'updateSampulUsaha'])->name('umkm.update-sampul');
     Route::get('/galeri/kelola/produk/create', [KelolaUmkmController::class, 'createProduk'])->name('umkm.produk.create');
     Route::post('/galeri/kelola/produk', [KelolaUmkmController::class, 'storeProduk'])->name('umkm.produk.store');
@@ -400,6 +426,3 @@ Route::get('/storage/{path}', function ($path) {
     $mime = mime_content_type($filePath) ?: 'application/octet-stream';
     return response()->file($filePath, ['Content-Type' => $mime]);
 })->where('path', '.*')->name('storage.file');
-
-
-

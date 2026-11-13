@@ -8,8 +8,8 @@ use Illuminate\Database\Seeder;
  * Seeder MASTER (produksi).
  *
  * Berisi HANYA data fondasi yang wajib ada di lingkungan produksi:
- * role, master RT, kategori UMKM/produk, pengaturan sistem, satu akun
- * superadmin, serta data master fasilitas umum dan layanan surat.
+ * role, wilayah, master RT, kategori UMKM/produk/transaksi/konten, pengaturan
+ * sistem, satu akun superadmin, serta data master fasilitas umum.
  *
  * TIDAK berisi data dummy/showcase. Untuk data demo gunakan DemoSeeder.
  *
@@ -26,10 +26,10 @@ class MasterSeeder extends Seeder
             KategoriUmkmSeeder::class,
             KategoriProdukSeeder::class,
             KategoriTransaksiSeeder::class,
+            KategoriKontenSeeder::class,
             SystemSettingSeeder::class,
             SuperAdminSeeder::class,
             FasilitasUmumSeeder::class,
-            LayananSuratSeeder::class,
         ]);
     }
 }

@@ -7,33 +7,33 @@
 
 @if(isset($items) && count($items) > 0)
     <div class="carousel-products-wrapper position-relative mb-4" data-carousel-wrapper>
-        <button type="button" 
-                class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 start-0 translate-middle-y carousel-nav-btn ms-1 ms-md-2" 
+        <button type="button"
+                class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 start-0 translate-middle-y carousel-nav-btn ms-1 ms-md-2"
                 data-carousel-prev
-                style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: all 0.2s ease;" 
+                style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: all 0.2s ease;"
                 title="Geser Kiri"
                 aria-label="Geser Kiri">
             <i class="bi bi-chevron-left fs-5 text-dark"></i>
         </button>
 
-        <div class="d-flex gap-3 overflow-x-auto py-2 px-1 carousel-track" 
-             data-carousel-track 
+        <div class="d-flex gap-3 overflow-x-auto py-2 px-1 carousel-track"
+             data-carousel-track
              style="scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none;">
             @foreach($items as $item)
                 <div class="flex-shrink-0" style="width: {{ $cardWidth }}px;">
                     @include('warga.umkm.components.cardProduct', [
-                        'item' => $item, 
-                        'colClass' => false, 
+                        'item' => $item,
+                        'colClass' => false,
                         'showOwner' => $showOwner
                     ])
                 </div>
             @endforeach
         </div>
 
-        <button type="button" 
-                class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 end-0 translate-middle-y carousel-nav-btn me-1 me-md-2" 
+        <button type="button"
+                class="btn btn-white bg-white border shadow-sm rounded-circle d-flex align-items-center justify-content-center position-absolute top-50 end-0 translate-middle-y carousel-nav-btn me-1 me-md-2"
                 data-carousel-next
-                style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: all 0.2s ease;" 
+                style="width: 42px; height: 42px; z-index: 20; cursor: pointer; transition: all 0.2s ease;"
                 title="Geser Kanan"
                 aria-label="Geser Kanan">
             <i class="bi bi-chevron-right fs-5 text-dark"></i>
@@ -52,7 +52,7 @@
                     <i class="bi bi-plus-circle me-1"></i> Daftarkan UMKM Anda
                 </a>
                 <a href="{{ route('warga.umkm.galeri') }}" class="btn btn-outline-success px-3 py-2 small fw-semibold rounded-3">
-                    Kunjungi Galeri UMKM
+                    Kunjungi Pojok UMKM
                 </a>
             </div>
         </div>
