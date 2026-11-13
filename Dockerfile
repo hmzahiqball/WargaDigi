@@ -19,8 +19,11 @@ RUN npm run build
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
-# Install tanpa dev & tanpa menjalankan skript yang butuh artisan (belum ada source penuh)
-RUN composer install --no-dev --no-scripts --prefer-dist --no-interaction --optimize-autoloader
+# Install tanpa dev & tanpa menjalankan skript yang butuh artisan (belum ada source penuh).
+# Image composer:2 tidak punya ext-gd (dibutuhkan phpoffice/phpspreadsheet); ext-gd terpasang di
+# image aplikasi (stage 3) dan dump-autoload di sana membuat ulang platform check dengan ext-gd.
+RUN composer install --no-dev --no-scripts --prefer-dist --no-interaction --optimize-autoloader \
+        --ignore-platform-req=ext-gd
 
 ############################
 # Stage 3: Image aplikasi
