@@ -19,6 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
+        // Percayai reverse proxy (Caddy) agar skema HTTPS, host, dan port
+        // terdeteksi benar saat aplikasi berada di belakang proxy.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
+
         $middleware->validateCsrfTokens(except: [
             'usaha/*/klik-wa',
         ]);

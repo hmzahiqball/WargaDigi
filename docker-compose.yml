@@ -1,0 +1,63 @@
+﻿services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wargadigi-app
+    container_name: wargadigi_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      APP_NAME: WargaDigi
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8080
+      # Aset dilayani relatif terhadap host:port yang diakses browser (hindari masalah port)
+      ASSET_URL: "/"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: wargadigi
+      DB_USERNAME: wargadigi
+      DB_PASSWORD: secret_change_me
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    volumes:
+      # Persist file unggahan (logo, bukti bayar, foto UMKM)
+      - storage_data:/var/www/html/storage/app
+    networks:
+      - wargadigi
+
+  db:
+    image: mysql:8.0
+    container_name: wargadigi_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wargadigi
+      MYSQL_USER: wargadigi
+      MYSQL_PASSWORD: secret_change_me
+      MYSQL_ROOT_PASSWORD: root_change_me
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_change_me"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - wargadigi
+
+volumes:
+  db_data:
+  storage_data:
+
+networks:
+  wargadigi:
+    driver: bridge
