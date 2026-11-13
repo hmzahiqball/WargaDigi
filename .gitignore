@@ -29,3 +29,5 @@ testsprite_tests/
 
 # Docker production secrets (jangan commit)
 /.env.docker
+# Pengaturan Docker khusus server (mis. network eksternal), dibaca scripts/deploy-update.sh
+/docker-compose.server.yml

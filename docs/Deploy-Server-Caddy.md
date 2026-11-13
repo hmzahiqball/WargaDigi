@@ -69,6 +69,27 @@ git fetch origin main && git show origin/main:scripts/deploy-update.sh > /tmp/de
 sudo bash /tmp/deploy-update.sh
 ```
 
+### Pengaturan Docker khusus server
+
+Jangan mengubah `docker-compose.prod.yml` langsung di server (membuat `git pull` gagal). Taruh
+tambahan khusus server di `docker-compose.server.yml` (tidak ikut Git); skrip otomatis memakainya.
+Contoh: menyambungkan app ke network eksternal `resource`:
+
+```yaml
+services:
+  app:
+    networks:
+      - wargadigi
+      - resource
+
+networks:
+  resource:
+    external: true
+```
+
+Bila menjalankan `docker compose` manual, tambahkan `-f docker-compose.server.yml` setelah
+`-f docker-compose.prod.yml`.
+
 ## Update versi baru (manual)
 
 Migrasi berjalan otomatis saat container start (`docker/scripts/entrypoint.sh`); seeder TIDAK

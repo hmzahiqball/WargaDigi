@@ -60,6 +60,11 @@ while [ $# -gt 0 ]; do
 done
 
 DC=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+# Pengaturan khusus server (mis. network eksternal) disimpan di file override yang tidak ikut Git.
+SERVER_OVERRIDE="docker-compose.server.yml"
+if [ -f "$SERVER_OVERRIDE" ]; then
+    DC+=(-f "$SERVER_OVERRIDE")
+fi
 # safe.directory: hindari error 'dubious ownership' saat dijalankan dengan sudo (tanpa mengubah git config).
 G=(git -c safe.directory="$(pwd)")
 
@@ -74,8 +79,13 @@ command -v curl >/dev/null 2>&1            || die "curl tidak ditemukan."
 
 if [ -n "$("${G[@]}" status --porcelain --untracked-files=no)" ]; then
     "${G[@]}" status --short --untracked-files=no
+    if "${G[@]}" status --porcelain --untracked-files=no | grep -q "$COMPOSE_FILE"; then
+        warn "Pengaturan khusus server untuk Docker taruh di $SERVER_OVERRIDE (tidak ikut Git),"
+        warn "lalu kembalikan $COMPOSE_FILE: git checkout -- $COMPOSE_FILE (lihat docs/Deploy-Server-Caddy.md)."
+    fi
     die "Ada perubahan lokal pada file ter-track. Rapikan dulu agar git pull aman."
 fi
+[ -f "$SERVER_OVERRIDE" ] && info "Memakai pengaturan khusus server: $SERVER_OVERRIDE"
 
 "${DC[@]}" ps --status running --services 2>/dev/null | grep -qx db  || die "Container db tidak berjalan. Jalankan: ${DC[*]} up -d"
 "${DC[@]}" ps --status running --services 2>/dev/null | grep -qx app || warn "Container app tidak berjalan; backup foto agenda/galeri akan dilewati."
