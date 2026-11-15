@@ -88,8 +88,21 @@ env_set() {
     if grep -qE "^${key}=" "$ENV_FILE"; then
         sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
     else
+        # Pastikan file diakhiri baris baru agar baris baru tidak tersambung ke baris terakhir.
+        [ -s "$ENV_FILE" ] && [ -n "$(tail -c 1 "$ENV_FILE")" ] && printf '\n' >> "$ENV_FILE"
         printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
     fi
+}
+# Perbaiki .env.docker yang rusak oleh versi skrip sebelumnya: baris kunci yang tersambung
+# ke akhir baris lain (mis. "APP_HOST_PORT=8080WEBPUSH_SUBJECT=...") dipisah kembali.
+perbaiki_env() {
+    local k
+    for k in WEBPUSH_SUBJECT WEBPUSH_PUBLIC_KEY WEBPUSH_PRIVATE_KEY OCR_PROVIDER OCR_SPACE_API_KEY OCR_SPACE_LANGUAGE OCR_SPACE_ENGINE; do
+        if grep -qE "^[A-Z][A-Z0-9_]*=.+${k}=" "$ENV_FILE"; then
+            sed -i -E "s/^([A-Z][A-Z0-9_]*=.+)(${k}=)/\1\n\2/" "$ENV_FILE"
+            warn "Memperbaiki baris $k yang tersambung di $ENV_FILE."
+        fi
+    done
 }
 
 # ------------------------------------------------------------------ 1. Prasyarat
@@ -110,6 +123,9 @@ if [ -n "$("${G[@]}" status --porcelain --untracked-files=no)" ]; then
     die "Ada perubahan lokal pada file ter-track. Rapikan dulu agar git pull aman."
 fi
 [ -f "$SERVER_OVERRIDE" ] && info "Memakai pengaturan khusus server: $SERVER_OVERRIDE"
+
+perbaiki_env
+"${DC[@]}" config --quiet 2>/dev/null || die "Konfigurasi Docker Compose tidak valid (cek $ENV_FILE dan file compose): ${DC[*]} config"
 
 "${DC[@]}" ps --status running --services 2>/dev/null | grep -qx db  || die "Container db tidak berjalan. Jalankan: ${DC[*]} up -d"
 "${DC[@]}" ps --status running --services 2>/dev/null | grep -qx app || warn "Container app tidak berjalan; backup foto agenda/galeri akan dilewati."
@@ -227,8 +243,9 @@ cek_halaman() {
 
 rollback() {
     set +e   # rollback harus berjalan sampai akhir walau ada langkah yang gagal
-    warn "ROLLBACK: mengembalikan kode, database, dan foto ke kondisi sebelum deploy..."
+    warn "ROLLBACK: mengembalikan kode, database, foto, dan $ENV_FILE ke kondisi sebelum deploy..."
     "${G[@]}" reset --quiet --keep "$COMMIT_LAMA"
+    [ -f "$BACKUP_DIR/env-docker-$TGL" ] && cp "$BACKUP_DIR/env-docker-$TGL" "$ENV_FILE"
 
     info "Menghentikan app lalu memulihkan database dari $DB_BACKUP"
     "${DC[@]}" stop app >/dev/null 2>&1
@@ -288,10 +305,18 @@ if [ -n "$OCR_PROVIDER_SET" ]; then
     [ -n "$(env_get OCR_SPACE_ENGINE)" ]   || env_set OCR_SPACE_ENGINE 2
 fi
 chmod 600 "$ENV_FILE" 2>/dev/null || true
+if ! "${DC[@]}" config --quiet 2>/dev/null; then
+    cp "$BACKUP_DIR/env-docker-$TGL" "$ENV_FILE"
+    "${G[@]}" reset --quiet --keep "$COMMIT_LAMA" || true
+    die "Konfigurasi menjadi tidak valid setelah mengubah $ENV_FILE; file dan kode dikembalikan. Container lama tetap berjalan."
+fi
 
 # ------------------------------------------------------------------ 5. Jalankan
 info "Menjalankan container baru (migrasi berjalan otomatis)..."
-"${DC[@]}" up -d app
+if ! "${DC[@]}" up -d app; then
+    cp "$BACKUP_DIR/env-docker-$TGL" "$ENV_FILE"
+    rollback
+fi
 info "Menunggu aplikasi siap di $BASE_URL ..."
 if ! tunggu_sehat; then
     "${DC[@]}" logs --tail=60 app || true
