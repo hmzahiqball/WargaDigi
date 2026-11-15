@@ -180,6 +180,33 @@ class PusatBantuanTest extends TestCase
             ->assertSee('href="' . route('bantuan.index') . '"', false);
     }
 
+    public function test_faq_dipaginasi(): void
+    {
+        $topik = $this->topikContoh();
+        foreach (range(1, 10) as $i) {
+            $faq = $topik[2];
+            $faq['judul'] = sprintf('Pertanyaan nomor %02d?', $i);
+            $faq['slug'] = 'warga-faq-nomor-' . $i;
+            $topik[] = $faq;
+        }
+        $this->tulisSumber($topik, 'versi-faq');
+        $warga = $this->pengguna(['Warga'], 'wargafaq');
+
+        // 11 FAQ Warga: halaman 1 berisi 8, halaman 2 berisi 3.
+        $hal1 = $this->actingAs($warga)->get(route('bantuan.index'))->assertOk()
+            ->assertSee('data-testid="paginasi-faq-bantuan"', false)
+            ->assertSee('Menampilkan 1-8 dari 11 pertanyaan')
+            ->assertSee('faq=2#faq', false);
+        $this->assertCount(8, $hal1->viewData('faq'));
+
+        $hal2 = $this->actingAs($warga)->get(route('bantuan.index', ['faq' => 2]))->assertOk()
+            ->assertSee('Menampilkan 9-11 dari 11 pertanyaan')
+            ->assertSee('Pertanyaan nomor 10?')
+            ->assertDontSee('Surat saya ditolak.', false)
+            ->assertSee('Mengajukan Surat');
+        $this->assertCount(3, $hal2->viewData('faq'));
+    }
+
     public function test_nama_peran_lama_dinormalisasi(): void
     {
         $repo = app(PanduanRepository::class);

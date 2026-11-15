@@ -113,7 +113,7 @@
 
 {{-- FAQ sebagai akordeon --}}
 @if($faq->isNotEmpty())
-    <section class="mb-2">
+    <section class="mb-2" id="faq" style="scroll-margin-top: 90px;">
         <h2 class="pb-judul-bagian">Pertanyaan yang sering muncul <small>Klik untuk melihat jawaban</small></h2>
         <div class="pb-faq" data-testid="daftar-faq-bantuan">
             @foreach($faq as $t)
@@ -127,6 +127,12 @@
                 </details>
             @endforeach
         </div>
+        @if($faq->hasPages())
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 mt-3" data-testid="paginasi-faq-bantuan">
+                <small class="text-muted">Menampilkan {{ $faq->firstItem() }}-{{ $faq->lastItem() }} dari {{ $faq->total() }} pertanyaan</small>
+                @include('pusat-bantuan.partials.paginasi', ['halaman' => $faq])
+            </div>
+        @endif
     </section>
 @endif
 @endsection

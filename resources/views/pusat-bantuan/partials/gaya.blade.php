@@ -82,6 +82,9 @@
     .pb-faq details[open] summary::after { transform: rotate(180deg); color: #157347; }
     .pb-faq .pb-faq-jawab { padding: .2rem 1.2rem 1rem 3.1rem; color: #495057; }
     .pb-faq .pb-faq-jawab p:last-child { margin-bottom: .4rem; }
+    .pb-paginasi .page-link { color: #157347; border-color: #E9ECEF; min-width: 2.1rem; text-align: center; }
+    .pb-paginasi .page-item.active .page-link { background: #198754; border-color: #198754; color: #fff; }
+    .pb-paginasi .page-item.disabled .page-link { color: #ADB5BD; }
     .pb-label-umum { font-size: .7rem; font-weight: 700; color: #6C757D; background: #F1F3F5; border-radius: 999px; padding: .1rem .5rem; }
 
     /* Hasil pencarian */

@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class PusatBantuanController extends Controller
 {
+    private const FAQ_PER_HALAMAN = 8;
+
     public function __construct(private PanduanRepository $repo, private PanduanPencarian $pencarian)
     {
     }
@@ -35,10 +37,13 @@ class PusatBantuanController extends Controller
         $bab = $topikPeran->where('jenis', 'topik')->groupBy('bab_judul');
         $umum = $topik->where('peran', PanduanTopik::PERAN_SEMUA)->where('jenis', 'topik')->groupBy('bab_judul');
 
-        // FAQ ditampilkan sebagai akordeon, jadi isi jawabannya ikut diambil.
+        // FAQ ditampilkan sebagai akordeon (isi jawaban ikut diambil), dipecah per halaman.
+        // Parameter halaman terpisah (?faq=) dan tautan kembali ke bagian FAQ (#faq).
         $faq = PanduanTopik::query()->untukPeran($peran)->where('jenis', 'faq')
             ->orderByRaw('CASE WHEN peran = ? THEN 1 ELSE 0 END', [PanduanTopik::PERAN_SEMUA])
-            ->orderBy('urutan')->get(['id', 'peran', 'judul', 'slug', 'isi_html']);
+            ->orderBy('urutan')->orderBy('id')
+            ->paginate(self::FAQ_PER_HALAMAN, ['id', 'peran', 'judul', 'slug', 'isi_html'], 'faq')
+            ->withQueryString()->fragment('faq');
 
         $populer = $this->topikPopuler($bab);
 
