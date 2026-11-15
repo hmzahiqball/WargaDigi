@@ -45,6 +45,14 @@ set_env DB_PASSWORD "$DB_PASSWORD"
 set_env SESSION_DRIVER "$SESSION_DRIVER"
 set_env CACHE_STORE "$CACHE_STORE"
 set_env QUEUE_CONNECTION "$QUEUE_CONNECTION"
+# Notifikasi browser (Web Push) dan OCR KK/KTP
+set_env WEBPUSH_SUBJECT "$WEBPUSH_SUBJECT"
+set_env WEBPUSH_PUBLIC_KEY "$WEBPUSH_PUBLIC_KEY"
+set_env WEBPUSH_PRIVATE_KEY "$WEBPUSH_PRIVATE_KEY"
+set_env OCR_PROVIDER "$OCR_PROVIDER"
+set_env OCR_SPACE_API_KEY "$OCR_SPACE_API_KEY"
+set_env OCR_SPACE_LANGUAGE "$OCR_SPACE_LANGUAGE"
+set_env OCR_SPACE_ENGINE "$OCR_SPACE_ENGINE"
 
 # Tunggu database siap (khusus MySQL). Lewati bila SQLite.
 DB_CONN=$(php -r "echo trim(getenv('"'"'DB_CONNECTION'"'"') ?: '"'"''"'"');")

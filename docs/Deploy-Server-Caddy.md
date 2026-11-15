@@ -61,6 +61,15 @@ sudo bash scripts/deploy-update.sh                # update biasa, data dipertaha
 sudo bash scripts/deploy-update.sh --reset-demo   # update + HAPUS SEMUA DATA, isi data demo terbaru
 ```
 
+Notifikasi browser dan OCR ikut disiapkan otomatis:
+- **Notifikasi browser (Web Push):** bila `WEBPUSH_PUBLIC_KEY`/`WEBPUSH_PRIVATE_KEY` di `.env.docker`
+  kosong, skrip membuat kunci VAPID sekali, lalu menyalakan pengaturan `notif_push`. Kunci yang
+  sudah ada tidak diganti (mengganti kunci memaksa semua browser mendaftar ulang).
+- **OCR KK/KTP:** bila masih memakai kunci demo `helloworld`, skrip menanyakan API key OCR.space.
+  Opsi: `--ocr-key <KEY>` (kunci sendiri), `--no-ocr` (matikan OCR, isi manual).
+- `--no-push` melewati notifikasi browser. Status keduanya ditampilkan di akhir skrip.
+- `.env.docker` lama dicadangkan ke `~/wargadigi-backup/env-docker-<waktu>` sebelum diubah.
+
 Pertama kali, bila server masih memakai kode lama yang belum punya skrip ini:
 
 ```bash

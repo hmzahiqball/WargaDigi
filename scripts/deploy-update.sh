@@ -10,14 +10,21 @@
 #   5. Jalankan container baru (migrasi otomatis lewat entrypoint), tunggu sampai sehat.
 #   6. Pulihkan foto agenda/galeri (tidak tersimpan di volume Docker).
 #   7. (Opsional --reset-demo) hapus semua data lalu isi data demo terbaru.
-#   8. Cek halaman utama. Bila gagal: rollback otomatis (kode + database + foto).
+#   8. Siapkan notifikasi browser (kunci VAPID dibuat bila belum ada, notif_push dinyalakan)
+#      dan OCR KK/KTP (API key OCR.space di .env.docker).
+#   9. Cek halaman utama. Bila gagal: rollback otomatis (kode + database + foto).
 #
 # Seeder TIDAK dijalankan pada update biasa. Caddy tidak diubah.
 #
-# Pemakaian (dari root project, mis. /opt/wargadigi):
+# Pemakaian (dari root project, mis. ~/WargaDigi):
 #   sudo bash scripts/deploy-update.sh                 # update biasa, data dipertahankan
 #   sudo bash scripts/deploy-update.sh --reset-demo    # update + reset ke data demo (HAPUS SEMUA DATA)
-#   Opsi lain: --yes (tanpa konfirmasi), --branch <nama> (default main)
+#   Opsi lain:
+#     --yes               tanpa konfirmasi/pertanyaan
+#     --branch <nama>     branch sumber (default main)
+#     --ocr-key <KEY>     pakai API key OCR.space milik sendiri
+#     --no-ocr            matikan OCR (form KK/KTP selalu diisi manual)
+#     --no-push           jangan menyalakan notifikasi browser
 #
 # Pertama kali (server masih kode lama yang belum punya skrip ini):
 #   git fetch origin main && git show origin/main:scripts/deploy-update.sh > /tmp/deploy-update.sh
@@ -40,6 +47,9 @@ COMPOSE_FILE="docker-compose.prod.yml"
 BRANCH="main"
 RESET_DEMO=0
 ASSUME_YES=0
+OCR_KEY_BARU=""
+NO_OCR=0
+NO_PUSH=0
 BACKUP_DIR="${BACKUP_DIR:-$HOME/wargadigi-backup}"
 SIMPAN_BACKUP=10   # jumlah set backup terakhir yang disimpan
 
@@ -53,7 +63,10 @@ while [ $# -gt 0 ]; do
         --reset-demo) RESET_DEMO=1 ;;
         --yes|-y)     ASSUME_YES=1 ;;
         --branch)     shift; BRANCH="${1:?--branch butuh nama branch}" ;;
-        -h|--help)    sed -n '2,25p' "$0"; exit 0 ;;
+        --ocr-key)    shift; OCR_KEY_BARU="${1:?--ocr-key butuh API key}" ;;
+        --no-ocr)     NO_OCR=1 ;;
+        --no-push)    NO_PUSH=1 ;;
+        -h|--help)    sed -n '2,33p' "$0"; exit 0 ;;
         *)            die "Opsi tidak dikenal: $1 (lihat --help)" ;;
     esac
     shift
@@ -67,6 +80,17 @@ if [ -f "$SERVER_OVERRIDE" ]; then
 fi
 # safe.directory: hindari error 'dubious ownership' saat dijalankan dengan sudo (tanpa mengubah git config).
 G=(git -c safe.directory="$(pwd)")
+
+# Baca/tulis nilai di .env.docker (nilai terakhir menang; kutip dan CR dibuang).
+env_get() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '\r' | sed -e 's/^"//' -e 's/"$//' || true; }
+env_set() {
+    local key="$1" val="$2"
+    if grep -qE "^${key}=" "$ENV_FILE"; then
+        sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+    else
+        printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
+    fi
+}
 
 # ------------------------------------------------------------------ 1. Prasyarat
 info "Memeriksa prasyarat..."
@@ -116,9 +140,38 @@ elif [ "$ASSUME_YES" != "1" ]; then
     case "$JAWAB" in y|Y|ya|Ya) ;; *) die "Dibatalkan." ;; esac
 fi
 
+# ------------------------------------------------------------------ Keputusan OCR (ditanya di awal)
+OCR_PROVIDER_LAMA="$(env_get OCR_PROVIDER)"
+OCR_KEY_LAMA="$(env_get OCR_SPACE_API_KEY)"
+OCR_PROVIDER_SET=""; OCR_KEY_SET=""
+if [ "$NO_OCR" = "1" ]; then
+    OCR_PROVIDER_SET="null"
+elif [ -n "$OCR_KEY_BARU" ]; then
+    OCR_PROVIDER_SET="ocrspace"; OCR_KEY_SET="$OCR_KEY_BARU"
+elif [ "$OCR_PROVIDER_LAMA" = "null" ]; then
+    :   # OCR sengaja dimatikan sebelumnya; biarkan.
+elif [ -z "$OCR_KEY_LAMA" ] || [ "$OCR_KEY_LAMA" = "helloworld" ]; then
+    if [ "$ASSUME_YES" != "1" ] && [ -t 0 ]; then
+        echo
+        echo "OCR baca KK/KTP masih memakai kunci demo publik OCR.space (batas pemakaian ketat)."
+        echo "Daftar gratis untuk kunci sendiri: https://ocr.space/ocrapi"
+        read -r -p "API key OCR.space (Enter = tetap kunci demo, ketik null = matikan OCR): " JAWAB_OCR
+        case "$JAWAB_OCR" in
+            "")   OCR_PROVIDER_SET="ocrspace"; OCR_KEY_SET="helloworld" ;;
+            null) OCR_PROVIDER_SET="null" ;;
+            *)    OCR_PROVIDER_SET="ocrspace"; OCR_KEY_SET="$JAWAB_OCR" ;;
+        esac
+    else
+        OCR_PROVIDER_SET="ocrspace"; OCR_KEY_SET="helloworld"
+    fi
+fi
+case "$OCR_KEY_SET" in *"|"*|*" "*) die "API key OCR tidak valid (mengandung spasi atau '|')." ;; esac
+
 # ------------------------------------------------------------------ 2. Backup
 TGL="$(date +%F-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+cp "$ENV_FILE" "$BACKUP_DIR/env-docker-$TGL" && chmod 600 "$BACKUP_DIR/env-docker-$TGL"
 DB_BACKUP="$BACKUP_DIR/db-$TGL.sql.gz"
 IMG_BACKUP="$BACKUP_DIR/images-$TGL.tar.gz"
 
@@ -142,7 +195,7 @@ echo "$COMMIT_LAMA" > "$BACKUP_DIR/commit-$TGL.txt"
 # Simpan hanya beberapa set backup terakhir.
 ls -1t "$BACKUP_DIR"/db-*.sql.gz 2>/dev/null | tail -n +$((SIMPAN_BACKUP + 1)) | while read -r f; do
     t="${f##*/db-}"; t="${t%.sql.gz}"
-    rm -f "$f" "$BACKUP_DIR/images-$t.tar.gz" "$BACKUP_DIR/commit-$t.txt"
+    rm -f "$f" "$BACKUP_DIR/images-$t.tar.gz" "$BACKUP_DIR/commit-$t.txt" "$BACKUP_DIR/env-docker-$t"
 done
 
 # ------------------------------------------------------------------ Fungsi bantu
@@ -208,6 +261,34 @@ if ! "${DC[@]}" build app; then
 fi
 ok "Build selesai."
 
+# ------------------------------------------------------------------ 4b. Konfigurasi Web Push + OCR
+# Ditulis ke .env.docker sebelum container baru dijalankan agar langsung terbaca.
+info "Menyiapkan konfigurasi notifikasi browser dan OCR..."
+[ -n "$(env_get WEBPUSH_SUBJECT)" ] || env_set WEBPUSH_SUBJECT "$(env_get APP_URL)"
+PUSH_BARU=0
+if [ "$NO_PUSH" != "1" ] && { [ -z "$(env_get WEBPUSH_PUBLIC_KEY)" ] || [ -z "$(env_get WEBPUSH_PRIVATE_KEY)" ]; }; then
+    info "Membuat kunci VAPID (sekali saja)..."
+    # Pakai image baru tanpa menjalankan entrypoint (tanpa migrasi).
+    VAPID_OUT="$("${DC[@]}" run --rm --no-deps -T --entrypoint php app artisan webpush:vapid 2>/dev/null || true)"
+    PUB="$(printf '%s\n' "$VAPID_OUT" | sed -n 's/^WEBPUSH_PUBLIC_KEY=\([A-Za-z0-9_-]*\).*/\1/p' | head -n 1)"
+    PRIV="$(printf '%s\n' "$VAPID_OUT" | sed -n 's/^WEBPUSH_PRIVATE_KEY=\([A-Za-z0-9_-]*\).*/\1/p' | head -n 1)"
+    if [ ${#PUB} -ge 80 ] && [ ${#PRIV} -ge 40 ]; then
+        env_set WEBPUSH_PUBLIC_KEY "$PUB"
+        env_set WEBPUSH_PRIVATE_KEY "$PRIV"
+        PUSH_BARU=1
+        ok "Kunci VAPID dibuat dan disimpan di $ENV_FILE (cadangan .env lama: $BACKUP_DIR/env-docker-$TGL)."
+    else
+        warn "Gagal membuat kunci VAPID; notifikasi browser dilewati (notifikasi di aplikasi tetap jalan)."
+    fi
+fi
+if [ -n "$OCR_PROVIDER_SET" ]; then
+    env_set OCR_PROVIDER "$OCR_PROVIDER_SET"
+    [ -n "$OCR_KEY_SET" ] && env_set OCR_SPACE_API_KEY "$OCR_KEY_SET"
+    [ -n "$(env_get OCR_SPACE_LANGUAGE)" ] || env_set OCR_SPACE_LANGUAGE eng
+    [ -n "$(env_get OCR_SPACE_ENGINE)" ]   || env_set OCR_SPACE_ENGINE 2
+fi
+chmod 600 "$ENV_FILE" 2>/dev/null || true
+
 # ------------------------------------------------------------------ 5. Jalankan
 info "Menjalankan container baru (migrasi berjalan otomatis)..."
 "${DC[@]}" up -d app
@@ -237,7 +318,19 @@ if [ "$RESET_DEMO" = "1" ]; then
     "${DC[@]}" exec -T app tar -czf - public/assets/images > "$BACKUP_DIR/images-demo-$TGL.tar.gz"
 fi
 
-# ------------------------------------------------------------------ 8. Cek akhir
+# ------------------------------------------------------------------ 8. Aktifkan notifikasi + cek fitur
+# notif_push tidak bisa diubah dari menu (bagian Notifikasi di Pengaturan Sistem disembunyikan),
+# dan seeder demo mengembalikannya ke false; jadi dinyalakan di sini bila kunci VAPID ada.
+if [ "$NO_PUSH" != "1" ] && [ -n "$(env_get WEBPUSH_PUBLIC_KEY)" ]; then
+    "${DC[@]}" exec -T app php artisan tinker --execute="App\Models\SystemSetting::setMany(['notif_push' => true]); App\Models\SystemSetting::flushCache();" >/dev/null 2>&1 \
+        || warn "Gagal menyalakan pengaturan notif_push."
+fi
+STATUS_FITUR="$("${DC[@]}" exec -T app php artisan tinker --execute="echo 'PUSH=' . (App\Services\NotificationService::isWebPushEnabled() ? 'aktif' : 'nonaktif') . ' OCR=' . config('ocr.provider') . ' KUNCI=' . (config('ocr.ocrspace.api_key') === 'helloworld' ? 'demo' : (config('ocr.ocrspace.api_key') ? 'sendiri' : 'kosong'));" 2>/dev/null | tr -d '\r' | grep -o 'PUSH=.*' | tail -n 1 || true)"
+STATUS_PUSH="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*PUSH=\([a-z]*\).*/\1/p')"
+STATUS_OCR="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*OCR=\([a-z]*\).*/\1/p')"
+STATUS_KUNCI="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*KUNCI=\([a-z]*\).*/\1/p')"
+
+# ------------------------------------------------------------------ 9. Cek akhir
 info "Cek halaman utama..."
 if ! cek_halaman; then
     if [ "$RESET_DEMO" = "1" ]; then
@@ -253,6 +346,12 @@ echo
 ok "DEPLOY SELESAI: $("${G[@]}" log -1 --format='%h %s')"
 echo "    Backup   : $BACKUP_DIR (db-$TGL.sql.gz${IMG_BACKUP:+, images-$TGL.tar.gz})"
 echo "    Log app  : ${DC[*]} logs -f app"
+echo "    Notifikasi browser : ${STATUS_PUSH:-tidak diketahui}$( [ "$PUSH_BARU" = "1" ] && echo ' (kunci VAPID baru dibuat)')"
+case "$STATUS_OCR" in
+    null)     echo "    OCR KK/KTP         : dimatikan (isi manual)" ;;
+    ocrspace) echo "    OCR KK/KTP         : aktif, kunci ${STATUS_KUNCI:-?}$( [ "$STATUS_KUNCI" = "demo" ] && echo ' (batas ketat; ganti: --ocr-key <KEY>)')" ;;
+    *)        echo "    OCR KK/KTP         : ${STATUS_OCR:-tidak diketahui}" ;;
+esac
 if [ "$RESET_DEMO" = "1" ]; then
     echo "    Akun demo: superadmin, adminrw21, pimpinan, opkontenrw21, opkeuanganrw21, dkm, ketuart01rw21,"
     echo "               opkontenrt01rw21, opkeuanganrt01rw21, opkonten_3, operator_rt3, budisampurno, budisantoso"
