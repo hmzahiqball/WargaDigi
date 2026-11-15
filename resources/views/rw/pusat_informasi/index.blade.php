@@ -71,7 +71,7 @@
         background-color: #198754;
         border-radius: 4px 0 0 4px;
     }
-    
+
     .item-icon-wrapper {
         width: 52px;
         height: 52px;
@@ -88,7 +88,7 @@
         height: 100%;
         object-fit: cover;
     }
-    
+
     /* Detail Panel Styling */
     .detail-panel {
         background: #fff;
@@ -192,13 +192,13 @@
         background: #CBD5E1;
         border-radius: 10px;
     }
-    
+
     .fade-in { animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-    @keyframes fadeIn { 
-        from { opacity: 0; transform: translateY(8px); } 
-        to { opacity: 1; transform: translateY(0); } 
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    
+
     /* Layout Transition Classes */
     #listCol, #detailCol {
         transition: all 0.3s ease-in-out;
@@ -217,12 +217,15 @@
         <p class="text-muted mb-0" data-testid="keterangan-pusat-informasi">{{ $keterangan ?? '' }}</p>
         @endif
     </div>
+    @if(($mode ?? 'publikasi') !== 'persetujuan')
+        @include('pusat-bantuan.partials.tautan')
+    @endif
 </div>
 
 <div class="row g-4" id="mainRow">
     {{-- List Column --}}
     <div class="col-12" id="listCol">
-        
+
         {{-- Header Controls: Tabs + Search/Filter --}}
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 border-bottom pb-2 gap-3">
             {{-- Tabs --}}
@@ -263,7 +266,7 @@
 
     {{-- Details Column (Hidden by default) --}}
     <div class="col-12 d-none fade-in" id="detailCol">
-        
+
         {{-- Breadcrumb Navigation for Detail --}}
         <div class="d-flex align-items-center mb-3">
             <button class="btn btn-light border btn-sm me-3 text-muted rounded-circle d-flex justify-content-center align-items-center" style="width: 36px; height: 36px;" onclick="closeDetail()" title="Kembali ke daftar">
@@ -356,7 +359,7 @@
                         <div class="p-4 rounded-4 border" style="background-color: #FAFAFA;">
                             <h6 class="fw-bold text-danger mb-2" style="font-size: 14px;"><i class="bi bi-x-circle me-1"></i> Catatan Revisi</h6>
                             <p class="small text-muted mb-3">Pilih atau ketik alasan penolakan jika Anda meminta revisi untuk pengajuan ini.</p>
-                            
+
                             {{-- Quick Pills --}}
                             <div class="mb-3" id="quickPillsBox">
                                 <!-- Injected by JS -->
@@ -366,7 +369,7 @@
                             <div class="invalid-feedback fw-medium small mt-2">Catatan perbaikan wajib diisi jika Anda menolak.</div>
                         </div>
                     </div>
-                    
+
                     {{-- Catatan Penolakan Lama (Jika status = Revisi) --}}
                     <div id="pastRejectionBox" class="mb-4 d-none">
                         <div class="alert alert-danger mb-0 border-0 shadow-sm p-4" style="background-color: #FEF2F2; color: #991B1B; border-radius: 16px;">
@@ -445,7 +448,7 @@
     const agendaData = @json($agenda);
     const beritaData = @json($berita);
     const pengumumanData = @json($pengumuman);
-    
+
     const PER_HALAMAN = 10;
     let halamanSaatIni = 1;
         let currentTab = 'Semua';
@@ -479,16 +482,16 @@
         else if(tabName === 'Berita') currentData = beritaData;
         else if(tabName === 'Pengumuman') currentData = pengumumanData;
         else currentData = semuaData;
-        
+
         document.getElementById('tabSemua').classList.toggle('active', tabName === 'Semua');
         document.getElementById('tabAgenda').classList.toggle('active', tabName === 'Agenda');
         const tabBerita = document.getElementById('tabBerita');
         if (tabBerita) tabBerita.classList.toggle('active', tabName === 'Berita');
         document.getElementById('tabPengumuman').classList.toggle('active', tabName === 'Pengumuman');
-        
+
         document.getElementById('searchInput').value = '';
         document.getElementById('statusFilter').value = 'all';
-        
+
         halamanSaatIni = 1;
         closeDetail();
         renderList();
@@ -509,9 +512,9 @@
         const listContainer = document.getElementById('itemsList');
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
-        
+
         let filteredData = currentData.filter(item => {
-            const matchesSearch = item.title.toLowerCase().includes(searchTerm) || 
+            const matchesSearch = item.title.toLowerCase().includes(searchTerm) ||
                                   item.author.toLowerCase().includes(searchTerm);
             const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
             return matchesSearch && matchesStatus;
@@ -538,7 +541,7 @@
         dataHalaman.forEach(item => {
             const isSelected = selectedItem && selectedItem.id === item.id && selectedItem.type === item.type;
             const descPreview = item.description ? (item.description.length > 55 ? item.description.substring(0, 55) + '...' : item.description) : 'Tidak ada deskripsi.';
-            
+
             // Icon or Image Wrapper logic
             const conf = typeConfig[item.type] || { color: '#6B7280', bg: '#F3F4F6', icon: 'bi-file-earmark' };
             let iconHtml = '';
@@ -547,7 +550,7 @@
             } else {
                 iconHtml = `<i class="bi ${conf.icon} fs-4"></i>`;
             }
-            
+
             let wrapperStyle = `background: ${conf.bg}; color: ${conf.color};`;
             if(isSelected) wrapperStyle = `background: rgba(25, 135, 84, 0.15); color: #198754;`;
 
@@ -574,7 +577,7 @@
                 </div>
             `;
         });
-        
+
         listContainer.innerHTML = html;
         renderPaginasi(filteredData.length);
     }
@@ -655,10 +658,10 @@
         selectedItem = null;
         const listCol = document.getElementById('listCol');
         const detailCol = document.getElementById('detailCol');
-        
+
         listCol.classList.remove('d-none');
         detailCol.classList.add('d-none');
-        
+
         renderList();
     }
 
@@ -678,7 +681,7 @@
     function selectItem(item) {
         try {
             selectedItem = item;
-            
+
             if (!item) {
                 closeDetail();
                 return;
@@ -691,9 +694,9 @@
             // Change layout to full page detail
             listCol.classList.add('d-none');
             detailCol.classList.remove('d-none');
-            
+
             detailContent.classList.remove('fade-in');
-            void detailContent.offsetWidth; 
+            void detailContent.offsetWidth;
             detailContent.classList.add('fade-in');
 
             // Update Breadcrumb
@@ -708,10 +711,10 @@
             document.getElementById('detailAuthor').textContent = item.author || '';
             document.getElementById('detailTimeAgo').textContent = item.time_ago || '';
             document.getElementById('detailDate').textContent = item.date || '';
-            
+
             const detailKategori = document.getElementById('detailKategori');
             if(detailKategori) detailKategori.textContent = item.kategori || '-';
-            
+
             const detailRawContent = document.getElementById('detailRawContent');
             if(detailRawContent) detailRawContent.innerHTML = item.raw_content || '<i class="text-muted">Tidak ada konten</i>';
 
@@ -719,7 +722,7 @@
             const extraInfoBox = document.getElementById('detailExtraInfoBox');
             if (item.type === 'Agenda') {
                 extraInfoBox.classList.remove('d-none');
-                
+
                 // RSVP
                 const rsvpStatus = document.getElementById('detailRsvpStatus');
                 const totalHadirBadgeRw = document.getElementById('detailTotalHadirRw');
@@ -734,7 +737,7 @@
                     rsvpStatus.className = 'd-block text-muted';
                     totalHadirBadgeRw.classList.add('d-none');
                 }
-                
+
                 // Map
                 const mapContainer = document.getElementById('detailMapContainer');
                 if (item.latitude && item.longitude) {
@@ -784,7 +787,7 @@
             const rejectionBox = document.getElementById('rejectionBox');
             const pastRejectionBox = document.getElementById('pastRejectionBox');
             const inputCatatan = document.getElementById('catatanRevisi');
-            
+
             if (inputCatatan) {
                 inputCatatan.value = '';
                 inputCatatan.classList.remove('is-invalid');
@@ -798,7 +801,7 @@
             } else {
                 if(footerActions) footerActions.classList.add('d-none');
                 if(rejectionBox) rejectionBox.classList.add('d-none');
-                
+
                 if (item.status === 'Revisi' && item.reject_note) {
                     if(pastRejectionBox) pastRejectionBox.classList.remove('d-none');
                     const pastCatatan = document.getElementById('pastCatatanRevisi');
@@ -807,10 +810,10 @@
                     if(pastRejectionBox) pastRejectionBox.classList.add('d-none');
                 }
             }
-            
+
             const detailBody = document.querySelector('.detail-body');
             if(detailBody) detailBody.scrollTop = 0;
-            
+
         } catch (e) {
             console.error("Error in selectItem:", e);
         }
@@ -841,7 +844,7 @@
 
     function handleReject() {
         if (!selectedItem) return;
-        
+
         const catatan = document.getElementById('catatanRevisi');
         if (!catatan.value.trim()) {
             catatan.classList.add('is-invalid');
@@ -873,12 +876,12 @@
     function submitAction(actionType, catatan = null) {
         const typePath = selectedItem.type.toLowerCase();
         const url = `{{ $basePath }}/${typePath}/${selectedItem.id}/${actionType}`;
-        
+
         const payload = {
             _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             _method: 'PUT'
         };
-        
+
         if (actionType === 'reject') {
             payload.catatan_revisi = catatan;
         }

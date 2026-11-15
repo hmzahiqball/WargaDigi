@@ -10,8 +10,8 @@
 #   5. Jalankan container baru (migrasi otomatis lewat entrypoint), tunggu sampai sehat.
 #   6. Pulihkan foto agenda/galeri (tidak tersimpan di volume Docker).
 #   7. (Opsional --reset-demo) hapus semua data lalu isi data demo terbaru.
-#   8. Siapkan notifikasi browser (kunci VAPID dibuat bila belum ada, notif_push dinyalakan)
-#      dan OCR KK/KTP (API key OCR.space di .env.docker).
+#   8. Siapkan notifikasi browser (kunci VAPID dibuat bila belum ada, notif_push dinyalakan),
+#      OCR KK/KTP (API key OCR.space di .env.docker), dan muat isi Pusat Bantuan.
 #   9. Cek halaman utama. Bila gagal: rollback otomatis (kode + database + foto).
 #
 # Seeder TIDAK dijalankan pada update biasa. Caddy tidak diubah.
@@ -238,6 +238,11 @@ cek_halaman() {
         kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$url" || true)"
         if [ "$kode" = "200" ]; then echo "    $url -> $kode"; else echo "    $url -> $kode  (GAGAL)"; gagal=1; fi
     done
+    # Halaman yang wajib login: harus mengarahkan ke /login (302), bukan error 500.
+    for url in /pusat-bantuan; do
+        kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$url" || true)"
+        if [ "$kode" = "302" ]; then echo "    $url -> $kode (wajib login)"; else echo "    $url -> $kode  (GAGAL)"; gagal=1; fi
+    done
     return $gagal
 }
 
@@ -355,6 +360,10 @@ STATUS_PUSH="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*PUSH=\([a-z]*\).*/\1/p'
 STATUS_OCR="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*OCR=\([a-z]*\).*/\1/p')"
 STATUS_KUNCI="$(printf '%s' "$STATUS_FITUR" | sed -n 's/.*KUNCI=\([a-z]*\).*/\1/p')"
 
+# Pusat Bantuan: muat isi panduan versi terbaru (sebenarnya juga dimuat otomatis saat dibuka).
+JUMLAH_PANDUAN="$("${DC[@]}" exec -T app php artisan panduan:muat 2>/dev/null | tr -d '\r' | grep -o '[0-9]\+ topik' | tail -n 1 || true)"
+[ -n "$JUMLAH_PANDUAN" ] || warn "Isi Pusat Bantuan belum termuat; akan dimuat otomatis saat halaman dibuka."
+
 # ------------------------------------------------------------------ 9. Cek akhir
 info "Cek halaman utama..."
 if ! cek_halaman; then
@@ -377,6 +386,7 @@ case "$STATUS_OCR" in
     ocrspace) echo "    OCR KK/KTP         : aktif, kunci ${STATUS_KUNCI:-?}$( [ "$STATUS_KUNCI" = "demo" ] && echo ' (batas ketat; ganti: --ocr-key <KEY>)')" ;;
     *)        echo "    OCR KK/KTP         : ${STATUS_OCR:-tidak diketahui}" ;;
 esac
+echo "    Pusat Bantuan      : ${JUMLAH_PANDUAN:-belum termuat (dimuat saat dibuka)}"
 if [ "$RESET_DEMO" = "1" ]; then
     echo "    Akun demo: superadmin, adminrw21, pimpinan, opkontenrw21, opkeuanganrw21, dkm, ketuart01rw21,"
     echo "               opkontenrt01rw21, opkeuanganrt01rw21, opkonten_3, operator_rt3, budisampurno, budisantoso"

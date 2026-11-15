@@ -53,7 +53,7 @@
         display: flex;
         gap: 1.5rem;
     }
-    
+
     /* Tabs */
     .custom-tabs-container {
         border-bottom: 1px solid #E5E7EB;
@@ -198,7 +198,7 @@
         align-items: center;
         gap: 0.5rem;
     }
-    
+
     /* Pengumuman Alerts */
     .pengumuman-alert {
         border-radius: 12px;
@@ -222,7 +222,7 @@
     }
     .pengumuman-alert.danger .icon { color: #DC2626; }
     .pengumuman-alert.info .icon { color: #2563EB; }
-    
+
     .pengumuman-alert-title {
         font-size: 0.95rem;
         font-weight: 700;
@@ -230,14 +230,14 @@
     }
     .pengumuman-alert.danger .pengumuman-alert-title { color: #B91C1C; }
     .pengumuman-alert.info .pengumuman-alert-title { color: #1D4ED8; }
-    
+
     .pengumuman-alert-text {
         font-size: 0.85rem;
         color: #4B5563;
         margin-bottom: 0;
         line-height: 1.5;
     }
-    
+
     .btn-outline-green {
         border: 1px solid #198754;
         color: #198754;
@@ -299,15 +299,18 @@
 
 @section('content')
 <div id="listView">
-    <div class="page-title-section">
-        <h1 class="fw-bold text-success mb-1" style="font-size: 2.2rem;">Pusat Informasi</h1>
-        <p class="text-muted fs-5">Ikuti terus perkembangan terkini di komunitas kami.</p>
+    <div class="page-title-section d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="fw-bold text-success mb-1" style="font-size: 2.2rem;">Pusat Informasi</h1>
+            <p class="text-muted fs-5">Ikuti terus perkembangan terkini di komunitas kami.</p>
+        </div>
+        @include('pusat-bantuan.partials.tautan')
     </div>
 
     <div class="row">
         <!-- Main Column -->
         <div class="col-lg-8 pe-lg-4">
-            
+
             <!-- Hero / Unggulan -->
             @if($unggulan)
             <div class="hero-card cursor-pointer" onclick="openDetail('{{ $unggulan['id'] }}', '{{ $unggulan['type'] }}')">
@@ -342,7 +345,7 @@
             <div class="row g-4" id="contentGrid">
                 <!-- Injected via JS -->
             </div>
-            
+
             <div class="text-center mt-5 mb-5" id="emptyState" style="display: none;">
                 <i class="bi bi-inbox text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
                 <p class="text-muted mt-2">Belum ada konten di kategori ini.</p>
@@ -352,7 +355,7 @@
 
         <!-- Right Sidebar -->
         <div class="col-lg-4 mt-4 mt-lg-0">
-            
+
             <!-- Pengumuman Penting -->
             <div class="widget-box border-0 shadow-sm rounded-4" style="background: #ffffff;">
                 <div class="d-flex align-items-center mb-3">
@@ -363,7 +366,7 @@
                         Pengumuman Penting
                     </h4>
                 </div>
-                
+
                 <div class="d-flex flex-column gap-3 mt-3">
                     @forelse($pengumumanPenting as $pengumuman)
                         <div class="p-3 rounded-3 border" style="cursor: pointer; background: #fffcf9; border-color: #ffedd5 !important; transition: all 0.2s;" onclick="openDetail('{{ $pengumuman['id'] }}', 'Pengumuman')" onmouseover="this.style.borderColor='#fdba74'; this.style.backgroundColor='#fff7ed'" onmouseout="this.style.borderColor='#ffedd5'; this.style.backgroundColor='#fffcf9'">
@@ -396,7 +399,7 @@
                     <i class="bi bi-star text-success"></i> Sorotan UMKM
                     <i class="bi bi-shop ms-auto opacity-25 fs-4"></i>
                 </h4>
-                
+
                 <div class="umkm-card cursor-pointer" onclick="openDetail('{{ $sorotanUmkm['id'] }}', 'UMKM News')">
                     @if($sorotanUmkm['image'])
                         <img src="{{ $sorotanUmkm['image'] }}" alt="UMKM">
@@ -438,7 +441,7 @@
         <div id="detailHeroContainer" style="height: 350px; position: relative; background: #000; display: none;">
             <img id="detailHeroImage" src="" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
         </div>
-        
+
         <div class="card-body p-4 p-md-5">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -452,9 +455,9 @@
                         <span class="text-muted small" style="font-family: monospace;" id="detailIdText"></span>
                     </div>
             </div>
-            
+
             <h1 class="fw-bold text-dark mb-4" id="detailFullTitle" style="font-size: 2.2rem; line-height: 1.3;"></h1>
-            
+
             <div class="d-flex flex-wrap align-items-center gap-4 mb-5 pb-4 border-bottom">
                 <div class="d-flex align-items-center gap-2 text-muted">
                     <i class="bi bi-person-circle fs-4"></i>
@@ -473,7 +476,7 @@
             <div id="detailContentHtml" class="content-html text-dark" style="font-size: 1.1rem; line-height: 1.8;">
                 <!-- Content injected here -->
             </div>
-            
+
             <div id="detailExtraInfoBox" class="mt-5 d-none">
                 <hr class="mb-4" style="border-color: #E5E7EB;">
                 <div class="row">
@@ -547,7 +550,7 @@
     function renderGrid() {
         const grid = document.getElementById('contentGrid');
         const emptyState = document.getElementById('emptyState');
-        
+
         let filtered = semuaData;
         if (currentTab !== 'Semua') {
             filtered = semuaData.filter(item => item.type === currentTab);
@@ -575,10 +578,10 @@
                 iconClass = 'bi-camera-fill text-success';
             }
 
-            const imgHtml = item.image 
+            const imgHtml = item.image
                 ? `<img src="${item.image}" alt="Thumbnail">`
                 : `<div class="placeholder-img bg-light border"><i class="bi ${iconClass}"></i></div>`;
-            
+
             html += `
                 <div class="col-md-6">
                     <div class="content-card cursor-pointer" onclick="openDetail('${item.id}', '${item.type}')">
@@ -609,7 +612,7 @@
 
     function switchTab(tabName) {
         currentTab = tabName;
-        
+
         // Update active class
         document.querySelectorAll('.custom-tab-warga').forEach(btn => {
             if(btn.textContent.trim() === tabName || (tabName === 'Semua' && btn.textContent.trim() === 'Semua Pembaharuan')) {
@@ -634,7 +637,7 @@
         document.getElementById('listView').style.display = 'none';
         const detailView = document.getElementById('detailView');
         detailView.style.display = 'block';
-        
+
         // Reflow for animation
         detailView.classList.remove('fade-in');
         void detailView.offsetWidth;
@@ -643,7 +646,7 @@
         // Populate Detail
         document.getElementById('detailBreadcrumbType').textContent = item.type;
         document.getElementById('detailBreadcrumbTitle').textContent = item.title;
-        
+
         const heroContainer = document.getElementById('detailHeroContainer');
         if (item.image) {
             heroContainer.style.display = 'block';
@@ -679,7 +682,7 @@
         const extraInfoBox = document.getElementById('detailExtraInfoBox');
         if (item.type === 'Agenda') {
             extraInfoBox.classList.remove('d-none');
-            
+
             // RSVP
             const rsvpStatus = document.getElementById('detailRsvpStatus');
             if (item.is_rsvp_enabled == 1) {
@@ -689,7 +692,7 @@
                 rsvpStatus.textContent = 'Tidak Aktif';
                 rsvpStatus.className = 'd-block text-muted';
             }
-            
+
             // Map
             const mapContainer = document.getElementById('detailMapContainer');
             if (item.latitude && item.longitude) {
@@ -713,7 +716,7 @@
         } else {
             extraInfoBox.classList.add('d-none');
         }
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -722,11 +725,11 @@
         document.getElementById('detailView').style.display = 'none';
         const listView = document.getElementById('listView');
         listView.style.display = 'block';
-        
+
         listView.classList.remove('fade-in');
         void listView.offsetWidth;
         listView.classList.add('fade-in');
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -741,7 +744,7 @@
         const shareUrl = baseUrl + '?open=' + encodeURIComponent((dataItem && dataItem.slug) || id) + '&type=' + encodeURIComponent(type);
         const message = '📰 *' + title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
         const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
-        
+
         window.open(waUrl, '_blank');
     }
 
@@ -754,7 +757,7 @@
         const shareUrl = baseUrl + '?open=' + encodeURIComponent(item.slug || item.id) + '&type=' + encodeURIComponent(item.type);
         const message = '📰 *' + item.title + '*\n\nBaca selengkapnya di:\n' + shareUrl;
         const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(message);
-        
+
         window.open(waUrl, '_blank');
     }
 
@@ -780,7 +783,7 @@
                 const tabName = tabParam.charAt(0).toUpperCase() + tabParam.slice(1);
                 if (['Semua', 'Berita', 'Pengumuman', 'UMKM News', 'Galeri Dokumentasi'].includes(tabName)) {
                     switchTab(tabName);
-                    
+
                     // Clean URL without reloading page
                     const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                     window.history.replaceState({path:newUrl}, '', newUrl);
@@ -793,7 +796,7 @@
 </script>
 <style>
     .cursor-pointer { cursor: pointer; }
-    
+
     /* WhatsApp Share Button - Card */
     .btn-share-wa {
         background: #25D366;
@@ -808,7 +811,7 @@
         color: white;
         transform: scale(1.1);
     }
-    
+
     /* WhatsApp Share Button - Detail */
     .btn-share-wa-detail {
         background: #25D366;

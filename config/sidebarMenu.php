@@ -535,18 +535,14 @@ return [
         'active'   => ['pengaturan.ttd.*', 'pengaturan/tanda-tangan*'],
     ],
     [
+        // Panduan aplikasi yang bisa dicari; isi menyesuaikan peran aktif.
         'title'    => 'Pusat Bantuan',
-        'url'      => '#',
+        'route'    => 'bantuan.index',
+        'url'      => '/pusat-bantuan',
         'icon'     => 'bi-question-circle',
-        'roles'    => ['Admin RW', 'Ketua RW', 'Warga'],
+        'roles'    => ['Admin Aplikasi', 'Admin RW', 'Ketua RW', 'Ketua RT', 'Op Konten RW', 'Op Konten RT', 'Op Keuangan RW', 'Op Keuangan RT', 'Op. Konten RW', 'Op. Konten RT', 'Op. Keuangan RW', 'Op. Keuangan RT', 'DKM', 'Warga'],
         'position' => 'bottom',
-    ],
-    [
-        'title'    => 'Bantuan',
-        'url'      => '#',
-        'icon'     => 'bi-question-circle',
-        'roles'    => ['Admin Aplikasi', 'Op Konten RW', 'Op Konten RT', 'Op Keuangan RW', 'Op Keuangan RT', 'DKM'],
-        'position' => 'bottom',
+        'active'   => ['bantuan.*', 'pusat-bantuan*'],
     ],
     [
         'title'     => 'Keluar',
