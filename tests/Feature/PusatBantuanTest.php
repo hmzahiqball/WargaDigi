@@ -95,6 +95,7 @@ class PusatBantuanTest extends TestCase
             ->assertSee('Memeriksa Pengajuan Surat')
             ->assertSee('data-testid="topik-terkunci"', false)
             ->assertSee('data-testid="catatan-perlu-masuk"', false)
+            ->assertSee('<option value="ketua-rt" selected', false)
             ->assertDontSee('Setujui surat dengan tanda tangan digital.')
             ->assertDontSee('Iuran Bulanan');
 

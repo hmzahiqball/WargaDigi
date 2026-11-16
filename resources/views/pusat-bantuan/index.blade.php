@@ -36,14 +36,25 @@
         <p class="pb-banner-sub mb-2">
             Panduan memakai WargaDigi. Pilih peran Anda, ketik apa yang ingin dilakukan, lalu ikuti langkahnya.
         </p>
-        <nav class="pb-pilih-peran" aria-label="Pilih peran" data-testid="pilih-peran-bantuan">
-            @foreach($daftarPeran as $p)
-                <a href="{{ route('bantuan.index', ['peran' => $p['slug']]) }}" class="{{ $p['nama'] === $peran ? 'aktif' : '' }}"
-                   @if($p['nama'] === $peran) aria-current="page" @endif>
-                    @unless($p['publik'])<i class="bi bi-lock-fill me-1" aria-hidden="true"></i>@endunless{{ $p['nama'] }}
-                </a>
-            @endforeach
-        </nav>
+        {{-- Pilih peran: dropdown biasa (mudah di HP), langsung berganti saat dipilih. --}}
+        <form action="{{ route('bantuan.index') }}" method="GET" class="pb-pilih-peran" data-testid="pilih-peran-bantuan">
+            <label for="pbPeran"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Saya ingin melihat panduan untuk</label>
+            <div class="pb-pilih-peran-isi">
+                <select id="pbPeran" name="peran" class="form-select" onchange="this.form.submit()">
+                    <optgroup label="Bisa langsung dibaca">
+                        @foreach($daftarPeran->where('publik', true) as $p)
+                            <option value="{{ $p['slug'] }}" @selected($p['nama'] === $peran)>{{ $p['nama'] }}</option>
+                        @endforeach
+                    </optgroup>
+                    <optgroup label="Perlu masuk untuk membaca isi">
+                        @foreach($daftarPeran->where('publik', false) as $p)
+                            <option value="{{ $p['slug'] }}" @selected($p['nama'] === $peran)>🔒 {{ $p['nama'] }}</option>
+                        @endforeach
+                    </optgroup>
+                </select>
+                <noscript><button type="submit" class="btn btn-light">Tampilkan</button></noscript>
+            </div>
+        </form>
         @if($peranTerkunci)
             <p class="pb-banner-sub small mb-3" data-testid="catatan-perlu-masuk">
                 <i class="bi bi-lock-fill me-1"></i>Panduan {{ $peran }} bisa dibaca setelah

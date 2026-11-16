@@ -24,13 +24,15 @@
     .pb-banner h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: .35rem; }
     .pb-banner .pb-banner-sub { color: #DDF5E8; margin-bottom: 1.1rem; }
     .pb-banner .pb-peran { display: inline-block; background: rgba(255,255,255,.18); border-radius: 999px; padding: .1rem .65rem; font-weight: 600; }
-    /* Pilihan peran untuk pengunjung (bisa digeser di HP). */
-    .pb-pilih-peran { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .35rem; margin-bottom: .9rem; scrollbar-width: thin; }
-    .pb-pilih-peran a { flex: 0 0 auto; color: #fff; text-decoration: none; font-size: .85rem; font-weight: 600; border-radius: 999px;
-        padding: .3rem .8rem; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1); }
-    .pb-pilih-peran a:hover { background: rgba(255,255,255,.25); }
-    .pb-pilih-peran a.aktif { background: #fff; color: #157347; border-color: #fff; }
-    .pb-pilih-peran a:focus-visible, .pb-chips a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    /* Pilihan peran untuk pengunjung: label + dropdown dalam satu baris (bertumpuk di HP). */
+    .pb-pilih-peran { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: 1rem; }
+    .pb-pilih-peran label { color: #DDF5E8; font-size: .92rem; margin: 0; }
+    .pb-pilih-peran-isi { display: flex; gap: .5rem; flex: 0 1 280px; min-width: 220px; }
+    .pb-pilih-peran .form-select { border: 0; border-radius: 999px; font-weight: 600; color: #157347; padding: .45rem 2.4rem .45rem 1rem;
+        box-shadow: 0 4px 14px rgba(0,0,0,.08); cursor: pointer; }
+    .pb-pilih-peran .form-select:focus { box-shadow: 0 0 0 .2rem rgba(255,255,255,.55); }
+    .pb-chips a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    @media (max-width: 575.98px) { .pb-pilih-peran-isi { flex-basis: 100%; } }
     .pb-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: 1rem; }
     .pb-chips span { color: #DDF5E8; font-size: .85rem; margin-right: .25rem; }
     .pb-chips a { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px;
