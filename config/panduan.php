@@ -23,6 +23,10 @@ return [
     // Profil konversi gambar ke WebP.
     'gambar' => ['lebar' => 1366, 'kualitas' => 78],
 
+    // Pengunjung yang belum masuk boleh membaca isi panduan peran ini (ditambah panduan umum).
+    // Peran lain tetap terlihat daftar topiknya, tetapi isinya baru terbuka setelah masuk.
+    'peran_publik' => ['Warga'],
+
     // Nomor buku pada nama file Word -> peran yang melihatnya. 'Semua' = semua peran.
     'buku' => [
         '00' => 'Semua',

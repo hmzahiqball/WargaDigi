@@ -56,7 +56,7 @@
                                 <span class="input-group-text bg-white border-end-0" style="border-radius: 0.5rem 0 0 0.5rem;">
                                     <i class="bi bi-person-badge text-success"></i>
                                 </span>
-                                <input type="text" name="login" class="form-control @error('login') is-invalid @enderror" placeholder="Username atau 081234567890" required value="{{ old('login', old('no_wa')) }}">
+                                <input type="text" name="login" class="form-control @error('login') is-invalid @enderror" placeholder="Username atau Nomor WhatsApp" required value="{{ old('login', old('no_wa')) }}">
                             </div>
                             @error('login')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                         </div>

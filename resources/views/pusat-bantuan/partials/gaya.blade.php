@@ -24,6 +24,13 @@
     .pb-banner h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: .35rem; }
     .pb-banner .pb-banner-sub { color: #DDF5E8; margin-bottom: 1.1rem; }
     .pb-banner .pb-peran { display: inline-block; background: rgba(255,255,255,.18); border-radius: 999px; padding: .1rem .65rem; font-weight: 600; }
+    /* Pilihan peran untuk pengunjung (bisa digeser di HP). */
+    .pb-pilih-peran { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .35rem; margin-bottom: .9rem; scrollbar-width: thin; }
+    .pb-pilih-peran a { flex: 0 0 auto; color: #fff; text-decoration: none; font-size: .85rem; font-weight: 600; border-radius: 999px;
+        padding: .3rem .8rem; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1); }
+    .pb-pilih-peran a:hover { background: rgba(255,255,255,.25); }
+    .pb-pilih-peran a.aktif { background: #fff; color: #157347; border-color: #fff; }
+    .pb-pilih-peran a:focus-visible, .pb-chips a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .pb-chips { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: 1rem; }
     .pb-chips span { color: #DDF5E8; font-size: .85rem; margin-right: .25rem; }
     .pb-chips a { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px;

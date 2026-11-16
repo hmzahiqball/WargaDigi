@@ -234,14 +234,9 @@ pulihkan_foto() {
 
 cek_halaman() {
     local gagal=0 url kode
-    for url in / /login /berita /agenda /pojok-umkm /layanan-mandiri; do
+    for url in / /login /berita /agenda /pojok-umkm /layanan-mandiri /pusat-bantuan; do
         kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$url" || true)"
         if [ "$kode" = "200" ]; then echo "    $url -> $kode"; else echo "    $url -> $kode  (GAGAL)"; gagal=1; fi
-    done
-    # Halaman yang wajib login: harus mengarahkan ke /login (302), bukan error 500.
-    for url in /pusat-bantuan; do
-        kode="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$url" || true)"
-        if [ "$kode" = "302" ]; then echo "    $url -> $kode (wajib login)"; else echo "    $url -> $kode  (GAGAL)"; gagal=1; fi
     done
     return $gagal
 }

@@ -228,6 +228,8 @@ class PenyesuaianTeksPanduan
         $html = preg_replace('#<div class="pb-tips"><strong>Tips:</strong>\s*</div>#u', '', $html);
         $html = preg_replace('#<(p|li|strong)>\s*</\1>#u', '', $html);
         $html = preg_replace('#<(ul|ol)( [^>]*)?>\s*</\1>#u', '', $html);
+        // Bagian yang hanya berisi judul (mis. "Langkah-langkah" kosong, lalu muncul lagi berisi) dibuang.
+        $html = preg_replace('#<section class="pb-bagian[^"]*">\s*<h4>[^<]*</h4>\s*</section>#u', '', $html);
 
         return $html;
     }

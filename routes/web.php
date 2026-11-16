@@ -55,14 +55,16 @@ Route::middleware('auth')->group(function () {
 
     // Dropdown wilayah bertingkat (provinsi → kelurahan).
     Route::get('/wilayah/anak', [\App\Http\Controllers\WilayahController::class, 'anak'])->name('wilayah.anak');
-
-    // Pusat Bantuan: panduan aplikasi sesuai peran aktif (sumber: Manual Book, lihat config/panduan.php).
-    Route::get('/pusat-bantuan', [\App\Http\Controllers\PusatBantuanController::class, 'index'])->name('bantuan.index');
-    Route::get('/pusat-bantuan/cari', [\App\Http\Controllers\PusatBantuanController::class, 'cari'])
-        ->middleware('throttle:60,1')->name('bantuan.cari');
-    Route::get('/pusat-bantuan/{slug}', [\App\Http\Controllers\PusatBantuanController::class, 'show'])
-        ->where('slug', '[a-z0-9-]+')->name('bantuan.show');
 });
+
+// Pusat Bantuan (sumber: Manual Book, lihat config/panduan.php). Terbuka untuk publik:
+// pengguna masuk melihat panduan peran aktifnya; pengunjung membaca panduan umum + Warga,
+// topik peran lain tampil judulnya dan meminta masuk saat dibuka (lihat PusatBantuanController).
+Route::get('/pusat-bantuan', [\App\Http\Controllers\PusatBantuanController::class, 'index'])->name('bantuan.index');
+Route::get('/pusat-bantuan/cari', [\App\Http\Controllers\PusatBantuanController::class, 'cari'])
+    ->middleware('throttle:60,1')->name('bantuan.cari');
+Route::get('/pusat-bantuan/{slug}', [\App\Http\Controllers\PusatBantuanController::class, 'show'])
+    ->where('slug', '[a-z0-9-]+')->name('bantuan.show');
 
 // LandingPage & Shared Domain: UMKM
 Route::get('/', [HomeController::class, 'index'])->name('home');

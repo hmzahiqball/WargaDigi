@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" href="{{ \App\Models\SystemSetting::getLogoUrl() }}">
     <title>@yield('title', 'WargaDigi 21') — Digital Gotong Royong</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 <body>
     {{-- Navbar --}}

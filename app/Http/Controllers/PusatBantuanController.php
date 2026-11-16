@@ -12,9 +12,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
- * Pusat Bantuan: panduan aplikasi yang bisa dicari, khusus untuk pengguna yang masuk.
- * Topik yang tampil (daftar, hasil cari, maupun halaman topik) hanya untuk peran aktif
- * pengguna ditambah panduan umum.
+ * Pusat Bantuan: panduan aplikasi yang bisa dicari.
+ *
+ * - Pengguna yang masuk: hanya topik untuk peran aktifnya ditambah panduan umum.
+ * - Pengunjung (belum masuk): bisa memilih peran (?peran=ketua-rt). Panduan umum dan peran
+ *   publik (config panduan.peran_publik, bawaan Warga) bisa dibaca penuh; topik peran lain
+ *   hanya tampil judulnya dan membuka halaman masuk saat diklik.
  */
 class PusatBantuanController extends Controller
 {
@@ -27,7 +30,11 @@ class PusatBantuanController extends Controller
     public function index(Request $request)
     {
         $this->repo->sinkron();
-        $peran = $this->peranAktif();
+        $login = Auth::check();
+        $peran = $login ? $this->peranAktif() : $this->peranTamu($request);
+        $peranTerkunci = ! $login && ! $this->peranPublik($peran);
+        $daftarPeran = $login ? collect() : $this->daftarPeran();
+        $layout = $this->layout();
         $q = $this->pertanyaan($request);
 
         $hasil = $q !== '' ? $this->pencarian->cari($q, $peran, 20) : collect();
@@ -47,7 +54,9 @@ class PusatBantuanController extends Controller
 
         $populer = $this->topikPopuler($bab);
 
-        return view('pusat-bantuan.index', compact('q', 'hasil', 'bab', 'faq', 'umum', 'peran', 'populer'));
+        return view('pusat-bantuan.index', compact(
+            'q', 'hasil', 'bab', 'faq', 'umum', 'peran', 'populer', 'login', 'peranTerkunci', 'daftarPeran', 'layout'
+        ));
     }
 
     /** Saran untuk kotak pencarian (dipanggil saat pengguna mengetik). */
@@ -59,11 +68,13 @@ class PusatBantuanController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $data = $this->pencarian->cari($q, $this->peranAktif(), 8)->map(fn (PanduanTopik $t) => [
+        $peran = Auth::check() ? $this->peranAktif() : $this->peranTamu($request);
+        $data = $this->pencarian->cari($q, $peran, 8)->map(fn (PanduanTopik $t) => [
             'judul' => $t->judul,
             'bab' => $t->jenis === 'faq' ? 'Pertanyaan umum' : $t->bab_judul,
-            'ringkasan' => Str::limit((string) $t->ringkasan, 110),
+            'ringkasan' => $this->bolehDibaca($t) ? Str::limit((string) $t->ringkasan, 110) : 'Masuk untuk membaca panduan ini.',
             'url' => route('bantuan.show', $t->slug),
+            'terkunci' => ! $this->bolehDibaca($t),
         ]);
 
         return response()->json(['data' => $data]);
@@ -72,9 +83,21 @@ class PusatBantuanController extends Controller
     public function show(Request $request, string $slug)
     {
         $this->repo->sinkron();
-        $peran = $this->peranAktif();
-        $topik = $this->repo->cariSlug($slug, $peran);
+        $topik = PanduanTopik::query()->where('slug', $slug)->first();
         abort_if($topik === null, 404);
+
+        if (! Auth::check() && ! $this->bolehDibaca($topik)) {
+            // Setelah masuk, pengguna kembali ke topik ini (redirect()->intended di AuthController).
+            return redirect()->guest(route('login'))
+                ->with('status', 'Masuk dulu untuk membaca panduan “' . $topik->judul . '”.');
+        }
+
+        $peran = Auth::check() ? $this->peranAktif() : null;
+        if (Auth::check() && ! in_array($topik->peran, [PanduanTopik::PERAN_SEMUA, $peran], true)) {
+            return redirect()->route('bantuan.index')->with('bantuan_info',
+                'Panduan “' . $topik->judul . '” untuk peran ' . $topik->peran . '. Ganti peran aktif Anda untuk membukanya.');
+        }
+        $layout = $this->layout();
 
         $sebab = PanduanTopik::query()->where('peran', $topik->peran)->where('jenis', $topik->jenis)
             ->where('bab_judul', $topik->bab_judul)->orderBy('urutan')
@@ -86,7 +109,7 @@ class PusatBantuanController extends Controller
         [$isiHtml, $daftarIsi] = TemaPanduan::daftarIsi($topik->isi_html);
         $tema = TemaPanduan::untuk($topik->isFaq() ? 'Pertanyaan' : $topik->bab_judul);
 
-        return view('pusat-bantuan.show', compact('topik', 'sebab', 'sebelum', 'sesudah', 'peran', 'isiHtml', 'daftarIsi', 'tema'));
+        return view('pusat-bantuan.show', compact('topik', 'sebab', 'sebelum', 'sesudah', 'peran', 'isiHtml', 'daftarIsi', 'tema', 'layout'));
     }
 
     /**
@@ -119,6 +142,40 @@ class PusatBantuanController extends Controller
     private function peranAktif(): ?string
     {
         return $this->repo->normalisasiPeran(Auth::user()?->activeRole());
+    }
+
+    /** Peran yang dipilih pengunjung lewat ?peran=<slug>; bawaan peran publik pertama. */
+    private function peranTamu(Request $request): string
+    {
+        $pilihan = (string) $request->query('peran', '');
+
+        return $this->daftarPeran()->firstWhere('slug', $pilihan)['nama']
+            ?? (config('panduan.peran_publik')[0] ?? 'Warga');
+    }
+
+    /** Peran selain "Semua" untuk pilihan pengunjung: [nama, slug, publik]. */
+    private function daftarPeran()
+    {
+        return collect(config('panduan.buku'))
+            ->reject(fn ($p) => $p === PanduanTopik::PERAN_SEMUA)->values()
+            ->map(fn ($p) => ['nama' => $p, 'slug' => Str::slug($p), 'publik' => $this->peranPublik($p)]);
+    }
+
+    private function peranPublik(?string $peran): bool
+    {
+        return in_array($peran, (array) config('panduan.peran_publik', []), true);
+    }
+
+    /** Pengguna masuk membaca topik yang sudah lolos filter peran; pengunjung hanya umum + peran publik. */
+    private function bolehDibaca(PanduanTopik $topik): bool
+    {
+        return Auth::check() || $topik->peran === PanduanTopik::PERAN_SEMUA || $this->peranPublik($topik->peran);
+    }
+
+    /** Pengunjung memakai tampilan publik (navbar + footer), pengguna masuk memakai dasbor. */
+    private function layout(): string
+    {
+        return Auth::check() ? 'layouts.global' : 'layouts.app';
     }
 
     private function pertanyaan(Request $request): string

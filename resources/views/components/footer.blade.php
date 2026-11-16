@@ -31,6 +31,7 @@
                 <a href="{{ route('agenda') }}" class="footer-link">Agenda</a>
                 <a href="/layanan-mandiri" class="footer-link">Layanan Mandiri</a>
                 <a href="/pojok-umkm" class="footer-link">Pojok UMKM</a>
+                <a href="{{ route('bantuan.index') }}" class="footer-link" data-testid="footer-pusat-bantuan">Pusat Bantuan</a>
             </div>
             @if($hu['sekretariat'])
                 <div class="col-sm-6 col-lg-4">

@@ -1,6 +1,7 @@
-@extends('layouts.global')
+@extends($layout)
 
 @section('title', $topik->judul . ' - Pusat Bantuan')
+@section('meta_description', \Illuminate\Support\Str::limit((string) $topik->ringkasan, 155))
 
 @push('styles')
     @include('pusat-bantuan.partials.gaya')
@@ -13,6 +14,7 @@
 @endphp
 
 @section('content')
+@guest<div class="container py-4 py-lg-5" data-testid="bantuan-publik">@endguest
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small mb-0">
@@ -83,4 +85,5 @@
         </div>
     </div>
 </div>
+@guest</div>@endguest
 @endsection

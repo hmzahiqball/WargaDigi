@@ -5,7 +5,12 @@ yang bisa dicari. Isinya berasal dari Manual Book (Word) Buku 00 sampai 10.
 
 ## Perilaku
 
-- Hanya untuk pengguna yang sudah masuk (`/pusat-bantuan`).
+- Terbuka untuk publik di `/pusat-bantuan`, dengan tautan di footer.
+  - Pengguna yang masuk: panduan peran aktif + panduan umum (tampilan dasbor).
+  - Pengunjung: bisa memilih peran (`?peran=ketua-rt`). Panduan umum dan peran di
+    `config('panduan.peran_publik')` (bawaan: Warga) bisa dibaca penuh. Topik peran lain hanya
+    tampil judulnya (ikon gembok); saat dibuka diarahkan ke halaman masuk lalu kembali ke topik.
+  - Pengguna masuk yang membuka topik peran lain diarahkan ke daftar dengan penjelasan.
 - Isi, daftar topik, pencarian, dan halaman topik **hanya sesuai peran aktif** ditambah panduan
   umum (Buku 00). Topik peran lain menghasilkan 404.
 - Pencarian memahami pertanyaan sehari-hari ("bagaimana cara mengajukan surat"), potongan kata

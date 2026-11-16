@@ -72,11 +72,45 @@ class PusatBantuanTest extends TestCase
         return $user->fresh();
     }
 
-    public function test_tamu_diarahkan_ke_halaman_masuk(): void
+    public function test_tamu_membaca_panduan_umum_dan_warga_di_tampilan_publik(): void
     {
-        $this->get(route('bantuan.index'))->assertRedirect(route('login'));
-        $this->get(route('bantuan.cari', ['q' => 'surat']))->assertRedirect(route('login'));
-        $this->get(route('bantuan.show', 'warga-mengajukan-surat'))->assertRedirect(route('login'));
+        $this->get(route('bantuan.index'))->assertOk()
+            ->assertSee('data-testid="bantuan-publik"', false)
+            ->assertSee('data-testid="footer-pusat-bantuan"', false)
+            ->assertSee('Mengajukan Surat')
+            ->assertSee('Cara login ke aplikasi')
+            ->assertSee('Baca alasannya lalu ajukan ulang.')
+            ->assertDontSee('Memeriksa Pengajuan Surat')
+            ->assertDontSee('data-testid="topik-terkunci"', false);
+
+        $this->get(route('bantuan.show', 'warga-mengajukan-surat'))->assertOk()
+            ->assertSee('Buka menu Permohonan Surat lalu pilih jenis surat.');
+        $this->get(route('bantuan.show', 'umum-cara-login-ke-aplikasi'))->assertOk();
+        $this->get(route('bantuan.show', 'tidak-ada'))->assertNotFound();
+    }
+
+    public function test_tamu_melihat_daftar_peran_lain_tetapi_isinya_perlu_masuk(): void
+    {
+        $this->get(route('bantuan.index', ['peran' => 'ketua-rt']))->assertOk()
+            ->assertSee('Memeriksa Pengajuan Surat')
+            ->assertSee('data-testid="topik-terkunci"', false)
+            ->assertSee('data-testid="catatan-perlu-masuk"', false)
+            ->assertDontSee('Setujui surat dengan tanda tangan digital.')
+            ->assertDontSee('Iuran Bulanan');
+
+        // Pencarian tamu mengikuti peran yang dipilih; topik terkunci tidak membocorkan ringkasan.
+        $this->getJson(route('bantuan.cari', ['q' => 'tanda tangan', 'peran' => 'ketua-rt']))->assertOk()
+            ->assertJsonPath('data.0.judul', 'Memeriksa Pengajuan Surat')
+            ->assertJsonPath('data.0.terkunci', true)
+            ->assertJsonPath('data.0.ringkasan', 'Masuk untuk membaca panduan ini.');
+
+        // Membuka isi topik peran lain: diarahkan ke login, lalu kembali ke topik setelah masuk.
+        $url = route('bantuan.show', 'ketua-rt-memeriksa-pengajuan-surat');
+        $this->get($url)->assertRedirect(route('login'))->assertSessionHas('status');
+        $this->assertSame($url, session('url.intended'));
+
+        // Peran tidak dikenal kembali ke bawaan (Warga).
+        $this->get(route('bantuan.index', ['peran' => 'asing']))->assertOk()->assertSee('Iuran Bulanan');
     }
 
     public function test_warga_hanya_melihat_panduan_warga_dan_umum(): void
@@ -131,7 +165,10 @@ class PusatBantuanTest extends TestCase
         $this->actingAs($warga)->get(route('bantuan.show', 'warga-mengajukan-surat'))
             ->assertOk()->assertSee('Buka menu Permohonan Surat lalu pilih jenis surat.');
         $this->actingAs($warga)->get(route('bantuan.show', 'umum-cara-login-ke-aplikasi'))->assertOk();
-        $this->actingAs($warga)->get(route('bantuan.show', 'ketua-rt-memeriksa-pengajuan-surat'))->assertNotFound();
+        // Topik peran lain tidak ditampilkan; pengguna diarahkan ke daftar dengan penjelasan.
+        $this->actingAs($warga)->get(route('bantuan.show', 'ketua-rt-memeriksa-pengajuan-surat'))
+            ->assertRedirect(route('bantuan.index'))->assertSessionHas('bantuan_info');
+        $this->actingAs($warga)->get(route('bantuan.index'))->assertOk()->assertDontSee('Setujui surat dengan tanda tangan digital.');
         $this->actingAs($warga)->get(route('bantuan.show', 'tidak-ada'))->assertNotFound();
     }
 
@@ -205,6 +242,17 @@ class PusatBantuanTest extends TestCase
             ->assertDontSee('Surat saya ditolak.', false)
             ->assertSee('Mengajukan Surat');
         $this->assertCount(3, $hal2->viewData('faq'));
+    }
+
+    public function test_bagian_kosong_dari_manual_book_dibuang(): void
+    {
+        $html = app(\App\Services\Panduan\PenyesuaianTeksPanduan::class)->html(
+            '<section class="pb-bagian pb-bagian-langkah"><h4>Langkah-langkah</h4></section>'
+            . '<section class="pb-bagian pb-bagian-langkah"><h4>Langkah-langkah</h4><ol class="pb-langkah"><li>Buka menu.</li></ol></section>'
+        );
+
+        $this->assertSame(1, substr_count($html, 'Langkah-langkah'));
+        $this->assertStringContainsString('Buka menu.', $html);
     }
 
     public function test_nama_peran_lama_dinormalisasi(): void

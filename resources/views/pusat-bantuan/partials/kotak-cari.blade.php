@@ -8,6 +8,7 @@
                aria-autocomplete="list" aria-controls="pbSaran" aria-expanded="false">
         <button type="submit">Cari</button>
     </div>
+    @if(! empty($peranTamu))<input type="hidden" name="peran" value="{{ $peranTamu }}">@endif
     <div id="pbSaran" class="pb-saran d-none" role="listbox" data-testid="saran-bantuan"></div>
 </form>
 
@@ -17,7 +18,8 @@
     const input = document.getElementById('pbCari');
     const kotak = document.getElementById('pbSaran');
     if (!input || !kotak) return;
-    const urlCari = @json(route('bantuan.cari'));
+    const urlCari = @json(route('bantuan.cari', empty($peranTamu) ? [] : ['peran' => $peranTamu]));
+    const sambung = urlCari.includes('?') ? '&' : '?';
     let timer = null, pilih = -1, nomorPermintaan = 0;
 
     const tutup = () => { kotak.classList.add('d-none'); kotak.innerHTML = ''; input.setAttribute('aria-expanded', 'false'); pilih = -1; };
@@ -35,6 +37,10 @@
             a.setAttribute('role', 'option');
             const bab = document.createElement('div'); bab.className = 'pb-saran-bab'; bab.textContent = d.bab;
             const judul = document.createElement('div'); judul.className = 'fw-semibold'; judul.textContent = d.judul;
+            if (d.terkunci) {
+                const gembok = document.createElement('i'); gembok.className = 'bi bi-lock-fill text-muted me-1'; gembok.setAttribute('aria-label', 'Perlu masuk');
+                judul.prepend(gembok);
+            }
             const ringkas = document.createElement('div'); ringkas.className = 'pb-saran-ringkas'; ringkas.textContent = d.ringkasan || '';
             a.append(bab, judul, ringkas);
             kotak.appendChild(a);
@@ -51,7 +57,7 @@
         timer = setTimeout(async () => {
             const nomor = ++nomorPermintaan;
             try {
-                const res = await fetch(urlCari + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+                const res = await fetch(urlCari + sambung + 'q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
                 if (!res.ok) return;
                 const json = await res.json();
                 if (nomor === nomorPermintaan) tampil(json.data || []);
