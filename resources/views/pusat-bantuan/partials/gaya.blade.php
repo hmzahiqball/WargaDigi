@@ -11,12 +11,16 @@
     .pb-tema-oranye     { --pb-c: #D9480F; --pb-bg: #FFF0E6; }
 
     /* Banner */
-    .pb-banner { position: relative; overflow: hidden; border-radius: 20px; padding: 2rem 2rem 1.6rem;
-        background: linear-gradient(135deg, #157347 0%, #1E9B63 60%, #2BB673 100%); color: #fff; margin-bottom: 1.75rem; }
-    .pb-banner::before, .pb-banner::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.08); }
-    .pb-banner::before { width: 260px; height: 260px; right: -70px; top: -110px; }
-    .pb-banner::after { width: 160px; height: 160px; right: 90px; bottom: -90px; }
+    /* Lingkaran hiasan dibuat dengan gradien latar (bukan elemen terpotong overflow) agar
+       daftar saran pencarian boleh keluar dari banner dan tetap bisa digulir. */
+    .pb-banner { position: relative; border-radius: 20px; padding: 2rem 2rem 1.6rem; color: #fff; margin-bottom: 1.75rem;
+        background:
+            radial-gradient(circle at calc(100% - 60px) 20px, rgba(255,255,255,.08) 130px, transparent 131px),
+            radial-gradient(circle at calc(100% - 170px) calc(100% + 10px), rgba(255,255,255,.08) 80px, transparent 81px),
+            linear-gradient(135deg, #157347 0%, #1E9B63 60%, #2BB673 100%); }
     .pb-banner > * { position: relative; z-index: 1; }
+    /* Kotak cari (beserta saran) selalu di atas chip "Sering dicari" dan konten di bawahnya. */
+    .pb-banner > .pb-cari-wrap, .pb-cari-wrap { z-index: 30; }
     .pb-banner h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: .35rem; }
     .pb-banner .pb-banner-sub { color: #DDF5E8; margin-bottom: 1.1rem; }
     .pb-banner .pb-peran { display: inline-block; background: rgba(255,255,255,.18); border-radius: 999px; padding: .1rem .65rem; font-weight: 600; }
@@ -36,7 +40,8 @@
     .pb-cari button { border: 0; border-radius: 999px; background: #157347; color: #fff; font-weight: 700; padding: .6rem 1.4rem; }
     .pb-cari button:hover { background: #0F5C38; }
     .pb-cari-wrap.pb-cari-kecil .pb-cari { box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-    .pb-saran { position: absolute; top: 100%; left: 0; right: 0; z-index: 40; margin-top: 6px; max-height: 420px; overflow-y: auto;
+    .pb-saran { position: absolute; top: 100%; left: 0; right: 0; z-index: 40; margin-top: 6px; max-height: min(420px, 60vh); overflow-y: auto;
+        overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
         background: #fff; border: 1px solid #E9ECEF; border-radius: 14px; box-shadow: 0 14px 30px rgba(0,0,0,.12); color: #212529; }
     .pb-saran a { display: block; padding: .7rem 1rem; color: inherit; text-decoration: none; border-bottom: 1px solid #F1F3F5; }
     .pb-saran a:last-child { border-bottom: 0; }
